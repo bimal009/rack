@@ -3,8 +3,8 @@
 import * as React from "react"
 import { Questionnaire as QuestionnairePrimitive } from "@shadcn/react/questionnaire"
 
-import { cn } from "@/src/lib/utils"
-import { buttonVariants, type Button } from "@/src/components/ui/button"
+import { cn } from "@repo/ui/lib/utils"
+import { buttonVariants, type Button } from "@repo/ui/components/ui/button"
 import { CheckIcon } from "lucide-react"
 
 function Questionnaire({

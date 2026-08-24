@@ -15,6 +15,7 @@ import {
 } from "@repo/ui/components/ui/field"
 import { Spinner } from "@repo/ui/components/ui/spinner"
 import { Alert, AlertDescription } from "@repo/ui/components/ui/alert"
+import { Checkbox } from "@repo/ui/components/ui/checkbox"
 
 import { AuthDivider } from "@/features/auth/components/auth-divider"
 import { GoogleAuthButton } from "@/features/auth/components/google-auth-button"
@@ -28,6 +29,7 @@ export function LoginForm() {
   const [values, setValues] = useState({ email: "", password: "" })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [showPassword, setShowPassword] = useState(false)
+  const [rememberMe, setRememberMe] = useState(false)
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -47,10 +49,7 @@ export function LoginForm() {
   return (
     <div className="space-y-6">
       <div className="space-y-1.5">
-        <h1
-          className="text-2xl text-foreground"
-          style={{ fontFamily: "var(--font-fraunces)" }}
-        >
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
           Welcome back
         </h1>
         <p className="text-sm text-muted-foreground">
@@ -114,6 +113,26 @@ export function LoginForm() {
             <FieldError>{errors.password}</FieldError>
           </Field>
         </FieldGroup>
+
+        <div className="flex items-center justify-between">
+          <label
+            htmlFor="rememberMe"
+            className="flex items-center gap-2 text-sm text-muted-foreground"
+          >
+            <Checkbox
+              id="rememberMe"
+              checked={rememberMe}
+              onCheckedChange={(checked) => setRememberMe(checked === true)}
+            />
+            Remember me
+          </label>
+          <Link
+            href="/forgot-password"
+            className="text-sm font-medium text-primary hover:underline"
+          >
+            Forgot password?
+          </Link>
+        </div>
 
         <Button
           type="submit"

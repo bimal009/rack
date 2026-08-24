@@ -4,6 +4,8 @@
   "private": true,
   "exports": {
     "./globals.css": "./src/styles/globals.css",
+    "./lib/*": "./src/lib/*.ts",
+    "./hooks/*": "./src/hooks/*.ts",
     "./*": "./src/*.tsx"
   },
   "scripts": {
@@ -18,6 +20,7 @@
     "@types/react": "19.2.2",
     "@types/react-dom": "19.2.2",
     "eslint": "^9.39.5",
+    "tailwindcss": "^4.3.3",
     "typescript": "5.9.2"
   },
   "dependencies": {

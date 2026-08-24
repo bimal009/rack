@@ -1,21 +1,17 @@
 import Link from "next/link"
-import { Dumbbell } from "lucide-react"
+import Image from "next/image"
 
 export function AuthHeader() {
   return (
-    <Link
-      href="/"
-      className="inline-flex w-fit items-center gap-2 text-foreground"
-    >
-      <span className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-        <Dumbbell className="size-4" />
-      </span>
-      <span
-        className="text-lg"
-        style={{ fontFamily: "var(--font-fraunces)" }}
-      >
-        Rackrage
-      </span>
+    <Link href="/" className="inline-flex w-fit items-center">
+      <Image
+        src="/logo.svg"
+        alt="Rackrage"
+        width={137}
+        height={32}
+        priority
+        className="h-8 w-auto"
+      />
     </Link>
   )
 }

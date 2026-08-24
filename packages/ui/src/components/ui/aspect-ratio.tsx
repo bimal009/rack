@@ -1,4 +1,4 @@
-import { cn } from "@/src/lib/utils"
+import { cn } from "@repo/ui/lib/utils"
 
 function AspectRatio({
   ratio,

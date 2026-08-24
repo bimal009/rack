@@ -54,10 +54,7 @@ export function SignupForm() {
   return (
     <div className="space-y-6">
       <div className="space-y-1.5">
-        <h1
-          className="text-2xl text-foreground"
-          style={{ fontFamily: "var(--font-fraunces)" }}
-        >
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
           Create your account
         </h1>
         <p className="text-sm text-muted-foreground">
@@ -154,26 +151,25 @@ export function SignupForm() {
 
           <Field
             orientation="horizontal"
+            className="items-start"
             data-invalid={Boolean(errors.acceptTerms)}
           >
             <Checkbox
               id="acceptTerms"
+              className="mt-0.5"
               checked={values.acceptTerms}
               onCheckedChange={(checked) =>
                 setValues((v) => ({ ...v, acceptTerms: checked === true }))
               }
             />
-            <FieldLabel htmlFor="acceptTerms" className="font-normal">
+            <label
+              htmlFor="acceptTerms"
+              className="text-sm leading-snug text-foreground text-pretty [&_a]:underline [&_a]:underline-offset-4 [&_a:hover]:text-primary"
+            >
               I agree to the{" "}
-              <Link href="/terms" className="underline underline-offset-4">
-                Terms of Service
-              </Link>{" "}
-              and{" "}
-              <Link href="/privacy" className="underline underline-offset-4">
-                Privacy Policy
-              </Link>
-              .
-            </FieldLabel>
+              <Link href="/terms">Terms of Service</Link> and{" "}
+              <Link href="/privacy">Privacy Policy</Link>.
+            </label>
           </Field>
           <FieldError className="-mt-3">{errors.acceptTerms}</FieldError>
         </FieldGroup>
