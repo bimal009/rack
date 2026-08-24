@@ -6,6 +6,7 @@ import pinoHttp from "pino-http";
 import { toNodeHandler } from "better-auth/node";
 import { auth } from "./auth";
 import { logger } from "./lib/logger";
+import { handleError } from "./lib/errors";
 import gymRoutes from "./modules/gym/gym.routes";
 
 const isDev = process.env.NODE_ENV === "development";
@@ -37,6 +38,8 @@ app.use(
 app.all("/api/v1/auth/*splat", toNodeHandler(auth));
 app.use(express.json({ limit: "10kb" }));
 
+app.use("/api/v1/gyms", gymRoutes);
+
 app.get("/health", (_req, res) => {
   res.status(200).json({ status: "ok",uptime:process.uptime() });
 });
@@ -47,7 +50,8 @@ app.use((_req, res) => {
 
 const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
   req.log.error({ err }, "Unhandled error");
-  res.status(500).json({ error: "Internal server error" });
+  const { status, body } = handleError("request", err);
+  res.status(status).json(body);
 };
 app.use(errorHandler);
 

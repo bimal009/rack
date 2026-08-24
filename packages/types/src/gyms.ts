@@ -36,6 +36,6 @@ export const onboardingSchema = z.object({
     .regex(/^(98|97)\d{8}$/, "Phone number must be 10 digits starting with 98 or 97"),
   email: z.string().email("Valid email required"),
   website: z.string().url().optional().or(z.literal("")),
-});
+}).strict();
 
 export type OnboardingInput = z.infer<typeof onboardingSchema>;

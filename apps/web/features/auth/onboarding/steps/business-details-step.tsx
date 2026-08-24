@@ -1,23 +1,42 @@
 import type { OnboardingInput } from "@repo/types"
 import { Input } from "@repo/ui/components/ui/input"
 import { Field, FieldGroup, FieldLabel, FieldError } from "@repo/ui/components/ui/field"
+import { Spinner } from "@repo/ui/components/ui/spinner"
 
 type BusinessDetailsValue = Pick<
   OnboardingInput,
-  "businessName" | "address" | "phone" | "email" | "website"
+  "businessName" | "slug" | "address" | "phone" | "email" | "website"
 >
 
 interface BusinessDetailsStepProps {
   value: BusinessDetailsValue
   errors: Record<string, string>
   onChange: (patch: Partial<BusinessDetailsValue>) => void
+  isSubmitting?: boolean
 }
 
 export function BusinessDetailsStep({
   value,
   errors,
   onChange,
+  isSubmitting,
 }: BusinessDetailsStepProps) {
+  if (isSubmitting) {
+    return (
+      <div className="flex flex-col items-center gap-4 py-16 text-center">
+        <Spinner className="size-6" />
+        <div className="space-y-1.5">
+          <h1 className="text-xl font-semibold tracking-tight text-foreground">
+            Making your dashboard ready
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Setting up your club, specialties, and workspace. This only takes a moment.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
       <div className="space-y-1.5">
@@ -40,6 +59,21 @@ export function BusinessDetailsStep({
             onChange={(e) => onChange({ businessName: e.target.value })}
           />
           <FieldError>{errors.businessName}</FieldError>
+        </Field>
+
+        <Field data-invalid={Boolean(errors.slug)}>
+          <FieldLabel htmlFor="slug">URL slug</FieldLabel>
+          <Input
+            id="slug"
+            placeholder="golds-gym"
+            value={value.slug}
+            aria-invalid={Boolean(errors.slug)}
+            onChange={(e) => onChange({ slug: e.target.value })}
+          />
+          <p className="text-xs text-muted-foreground">
+            rackrage.com/{value.slug || "your-slug"}
+          </p>
+          <FieldError>{errors.slug}</FieldError>
         </Field>
 
         <Field data-invalid={Boolean(errors.address)}>

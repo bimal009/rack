@@ -1,6 +1,7 @@
 import { OnboardingInput, onboardingSchema } from "@repo/types";
+import { eq } from "drizzle-orm";
 import { ValidationError } from "../../lib/errors";
-import { gyms } from "../../db/schema";
+import { gyms, user } from "../../db/schema";
 import { db } from "../../db";
 
 export const onboardGym = async (gym: OnboardingInput, userId: string) => {
@@ -13,10 +14,17 @@ export const onboardGym = async (gym: OnboardingInput, userId: string) => {
     );
   }
 
-  const [gymRecord] = await db
-    .insert(gyms)
-    .values({ ...result.data, ownerUserId: userId })
-    .returning();
+  return db.transaction(async (tx) => {
+    const [gymRecord] = await tx
+      .insert(gyms)
+      .values({ ...result.data, ownerUserId: userId })
+      .returning();
 
-  return gymRecord;
+    await tx
+      .update(user)
+      .set({ role: "owner", onboarded: true })
+      .where(eq(user.id, userId));
+
+    return gymRecord;
+  });
 };

@@ -1,22 +1,22 @@
 "use client"
 
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 import { onboardingSchema, type OnboardingInput } from "@repo/types"
 
 import { AuthHeader } from "@/features/auth/components/auth-header"
-import { StepNav } from "@/features/auth/components/onboarding/step-nav"
-import { ClubTypeStep } from "@/features/auth/components/onboarding/steps/club-type-step"
-import { SpecialtiesStep } from "@/features/auth/components/onboarding/steps/specialties-step"
-import { BusinessDetailsStep } from "@/features/auth/components/onboarding/steps/business-details-step"
-import { ReviewStep } from "@/features/auth/components/onboarding/steps/review-step"
-import { useOnboardingMutation } from "@/features/auth/hooks/use-onboarding-mutation"
+import { StepNav } from "@/features/auth/onboarding/step-nav"
+import { ClubTypeStep } from "@/features/auth/onboarding/steps/club-type-step"
+import { SpecialtiesStep } from "@/features/auth/onboarding/steps/specialties-step"
+import { BusinessDetailsStep } from "@/features/auth/onboarding/steps/business-details-step"
+import { useOnboardingMutation } from "@/features/auth/onboarding/hooks/useOnboarding"
 import { fieldErrors } from "@/features/auth/lib/validation"
 import { BUSINESS_TYPES } from "@/features/auth/lib/constants"
 
-const STEP_COUNT = 4
+const STEP_COUNT = 3
 
-type WizardData = Omit<OnboardingInput, "businessType" | "slug" | "specialties"> & {
+type WizardData = Omit<OnboardingInput, "businessType" | "specialties"> & {
   businessType: OnboardingInput["businessType"] | null
   specialties: string[]
 }
@@ -24,6 +24,7 @@ type WizardData = Omit<OnboardingInput, "businessType" | "slug" | "specialties">
 const initialData: WizardData = {
   businessType: null,
   specialties: [],
+  slug: "",
   businessName: "",
   address: "",
   phone: "",
@@ -48,9 +49,18 @@ export function OnboardingWizard() {
   const [errors, setErrors] = useState<Record<string, string>>({})
 
   const selectedType = BUSINESS_TYPES.find((t) => t.id === data.businessType)
+  const slugTouched = useRef(false)
 
   function updateData(patch: Partial<WizardData>) {
-    setData((prev) => ({ ...prev, ...patch }))
+    if ("slug" in patch) slugTouched.current = true
+
+    setData((prev) => {
+      const next = { ...prev, ...patch }
+      if ("businessName" in patch && !slugTouched.current) {
+        next.slug = slugify(next.businessName)
+      }
+      return next
+    })
   }
 
   function handleBack() {
@@ -70,10 +80,7 @@ export function OnboardingWizard() {
         return
       }
     } else if (step === 2) {
-      const result = onboardingSchema.safeParse({
-        ...data,
-        slug: slugify(data.businessName),
-      })
+      const result = onboardingSchema.safeParse(data)
       if (!result.success) {
         setErrors(fieldErrors(result.error))
         return
@@ -92,9 +99,11 @@ export function OnboardingWizard() {
         ...data,
         businessType: data.businessType!,
         specialties: data.specialties as OnboardingInput["specialties"],
-        slug: slugify(data.businessName),
       },
-      { onSuccess: () => router.push("/") }
+      {
+        onSuccess: () => router.push("/dashboard"),
+        onError: (error) => toast.error(error.message),
+      }
     )
   }
 
@@ -126,10 +135,8 @@ export function OnboardingWizard() {
               value={data}
               errors={errors}
               onChange={updateData}
+              isSubmitting={onboarding.isPending}
             />
-          )}
-          {step === 3 && (
-            <ReviewStep data={data} businessType={selectedType} />
           )}
         </div>
       </div>
@@ -140,7 +147,7 @@ export function OnboardingWizard() {
           totalSteps={STEP_COUNT}
           onBack={handleBack}
           onNext={handleContinue}
-          nextLabel={step === STEP_COUNT - 1 ? "Start free trial" : "Continue"}
+          nextLabel={step === STEP_COUNT - 1 ? "Create" : "Continue"}
           isSubmitting={onboarding.isPending}
         />
       </div>
