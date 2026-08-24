@@ -5,16 +5,16 @@ import { Spinner } from "@repo/ui/components/ui/spinner"
 
 import { GoogleIcon } from "@/features/auth/components/google-icon"
 import { useGoogleAuthMutation } from "@/features/auth/hooks/use-google-auth-mutation"
-import type { AuthUser } from "@/features/auth/types"
 
 interface GoogleAuthButtonProps {
   label?: string
-  onSuccess: (user: AuthUser) => void
+  /** Where better-auth redirects the browser after Google completes the OAuth flow. */
+  callbackURL: string
 }
 
 export function GoogleAuthButton({
   label = "Continue with Google",
-  onSuccess,
+  callbackURL,
 }: GoogleAuthButtonProps) {
   const googleAuth = useGoogleAuthMutation()
 
@@ -25,7 +25,7 @@ export function GoogleAuthButton({
       size="lg"
       className="w-full"
       disabled={googleAuth.isPending}
-      onClick={() => googleAuth.mutate(undefined, { onSuccess })}
+      onClick={() => googleAuth.mutate(callbackURL)}
     >
       {googleAuth.isPending ? (
         <Spinner />

@@ -187,10 +187,7 @@ export function SignupForm() {
 
       <AuthDivider />
 
-      <GoogleAuthButton
-        label="Sign up with Google"
-        onSuccess={() => router.push("/onboarding")}
-      />
+      <GoogleAuthButton label="Sign up with Google" callbackURL="/onboarding" />
 
       <p className="text-center text-sm text-muted-foreground">
         Already have an account?{" "}

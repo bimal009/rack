@@ -147,7 +147,7 @@ export function LoginForm() {
 
       <AuthDivider />
 
-      <GoogleAuthButton onSuccess={() => router.push("/")} />
+      <GoogleAuthButton callbackURL="/" />
 
       <p className="text-center text-sm text-muted-foreground">
         Don&apos;t have an account?{" "}

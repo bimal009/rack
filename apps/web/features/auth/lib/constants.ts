@@ -4,7 +4,7 @@ import {
   Flower2,
   Swords,
   UserRound,
-  Sparkles,
+  Ellipsis,
   type LucideIcon,
 } from "lucide-react"
 
@@ -45,7 +45,7 @@ export const BUSINESS_TYPES: Array<BusinessType & { icon: LucideIcon }> = [
     id: "something-else",
     title: "Something else",
     description: "Set up your business your way.",
-    icon: Sparkles,
+    icon: Ellipsis,
   },
 ]
 
