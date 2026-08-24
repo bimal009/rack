@@ -1,4 +1,4 @@
-import { AppResponse } from "./response.js";
+import { AppResponse, RESPONSE_STATUS } from "./response";
 
 export class AppError extends Error {
   constructor(
@@ -30,50 +30,52 @@ export const handleError = (label: string, error: unknown) => {
     "code" in error &&
     (error as { code?: unknown }).code === PG_UNIQUE_VIOLATION
   ) {
-    return AppResponse.conflict("A record with the same unique value already exists.");
+    return {
+      status: RESPONSE_STATUS.conflict,
+      body: AppResponse.conflict("A record with the same unique value already exists."),
+    };
   }
 
   if (error instanceof ValidationError) {
-    return AppResponse.unprocessable(
-      error.details,
-      error.message
-    );
+    return {
+      status: RESPONSE_STATUS.unprocessable,
+      body: AppResponse.unprocessable(error.details, error.message),
+    };
   }
 
   if (error instanceof BadRequestError) {
-    return AppResponse.badRequest(
-      error.details,
-      error.message
-    );
+    return {
+      status: RESPONSE_STATUS.badRequest,
+      body: AppResponse.badRequest(error.details, error.message),
+    };
   }
 
   if (error instanceof ConflictError) {
-    return AppResponse.conflict(error.message);
+    return { status: RESPONSE_STATUS.conflict, body: AppResponse.conflict(error.message) };
   }
 
   if (error instanceof NotFoundError) {
-    return AppResponse.notFound(error.message);
+    return { status: RESPONSE_STATUS.notFound, body: AppResponse.notFound(error.message) };
   }
 
   if (error instanceof UnauthorizedError) {
-    return AppResponse.unauthorized(error.message);
+    return { status: RESPONSE_STATUS.unauthorized, body: AppResponse.unauthorized(error.message) };
   }
 
   if (error instanceof ForbiddenError) {
-    return AppResponse.forbidden(error.message);
+    return { status: RESPONSE_STATUS.forbidden, body: AppResponse.forbidden(error.message) };
   }
 
   if (error instanceof ServiceUnavailableError) {
-    return AppResponse.tooMany(error.message);
+    return { status: RESPONSE_STATUS.tooMany, body: AppResponse.tooMany(error.message) };
   }
 
   if (error instanceof InternalServerError) {
-    return AppResponse.internal(error.message);
+    return { status: RESPONSE_STATUS.internal, body: AppResponse.internal(error.message) };
   }
 
-  return AppResponse.internal(
-    error instanceof Error
-      ? error.message
-      : "Internal Server Error"
-  );
+  return {
+    status: RESPONSE_STATUS.internal,
+    body: AppResponse.internal(error instanceof Error ? error.message : "Internal Server Error"),
+  };
 };

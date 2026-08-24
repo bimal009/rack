@@ -1,12 +1,16 @@
+import type { OnboardingInput } from "@repo/types"
 import { Input } from "@repo/ui/components/ui/input"
 import { Field, FieldGroup, FieldLabel, FieldError } from "@repo/ui/components/ui/field"
 
-import type { OnboardingData } from "@/features/auth/types"
+type BusinessDetailsValue = Pick<
+  OnboardingInput,
+  "businessName" | "address" | "phone" | "email" | "website"
+>
 
 interface BusinessDetailsStepProps {
-  value: OnboardingData
+  value: BusinessDetailsValue
   errors: Record<string, string>
-  onChange: (patch: Partial<OnboardingData>) => void
+  onChange: (patch: Partial<BusinessDetailsValue>) => void
 }
 
 export function BusinessDetailsStep({
@@ -30,7 +34,7 @@ export function BusinessDetailsStep({
           <FieldLabel htmlFor="businessName">Business name</FieldLabel>
           <Input
             id="businessName"
-            placeholder="Yours Multi Fitness Centre"
+            placeholder="Golds Gym"
             value={value.businessName}
             aria-invalid={Boolean(errors.businessName)}
             onChange={(e) => onChange({ businessName: e.target.value })}

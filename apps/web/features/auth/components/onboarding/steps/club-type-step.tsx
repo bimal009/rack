@@ -1,11 +1,12 @@
 import { CheckCircle2 } from "lucide-react"
+import type { OnboardingInput } from "@repo/types"
 
 import { BUSINESS_TYPES } from "@/features/auth/lib/constants"
 
 interface ClubTypeStepProps {
-  value: string | null
+  value: OnboardingInput["businessType"] | null
   error?: string
-  onChange: (id: string) => void
+  onChange: (id: OnboardingInput["businessType"]) => void
 }
 
 export function ClubTypeStep({ value, error, onChange }: ClubTypeStepProps) {

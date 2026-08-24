@@ -24,16 +24,6 @@ export const signupSchema = z
 
 export type SignupInput = z.infer<typeof signupSchema>
 
-export const businessDetailsSchema = z.object({
-  businessName: z.string().trim().min(2, "Enter your business name"),
-  address: z.string().trim().min(3, "Enter your business address"),
-  phone: z.string().trim().min(7, "Enter a valid phone number"),
-  email: z.email("Enter a valid email address"),
-  website: z.union([z.url("Enter a valid URL"), z.literal("")]).optional(),
-})
-
-export type BusinessDetailsInput = z.infer<typeof businessDetailsSchema>
-
 export function fieldErrors<T>(error: z.ZodError<T> | undefined) {
   if (!error) return {} as Record<string, string>
   const flat = error.flatten().fieldErrors as Record<string, string[] | undefined>

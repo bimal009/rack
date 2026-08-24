@@ -7,11 +7,11 @@ import { Checkbox } from "@repo/ui/components/ui/checkbox"
 import { Field, FieldLabel } from "@repo/ui/components/ui/field"
 import { Card, CardContent } from "@repo/ui/components/ui/card"
 
-import type { BusinessType, OnboardingData } from "@/features/auth/types"
+import type { BUSINESS_TYPES } from "@/features/auth/lib/constants"
 
 interface ReviewStepProps {
-  data: OnboardingData
-  businessType?: BusinessType
+  data: { businessName: string; specialties: string[] }
+  businessType?: (typeof BUSINESS_TYPES)[number]
 }
 
 export function ReviewStep({ data, businessType }: ReviewStepProps) {

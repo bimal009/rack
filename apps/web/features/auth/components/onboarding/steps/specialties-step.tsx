@@ -1,6 +1,5 @@
 import { Check } from "lucide-react"
-
-import { SPECIALTY_OPTIONS } from "@/features/auth/lib/constants"
+import { SPECIALTY_OPTIONS } from "@repo/types"
 
 interface SpecialtiesStepProps {
   businessTypeLabel?: string

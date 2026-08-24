@@ -6,6 +6,7 @@ import pinoHttp from "pino-http";
 import { toNodeHandler } from "better-auth/node";
 import { auth } from "./auth";
 import { logger } from "./lib/logger";
+import gymRoutes from "./modules/gym/gym.routes";
 
 const isDev = process.env.NODE_ENV === "development";
 

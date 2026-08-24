@@ -135,17 +135,32 @@ export function SignupForm() {
 
           <Field data-invalid={Boolean(errors.confirmPassword)}>
             <FieldLabel htmlFor="confirmPassword">Confirm password</FieldLabel>
-            <Input
-              id="confirmPassword"
-              type={showPassword ? "text" : "password"}
-              autoComplete="new-password"
-              placeholder="Re-enter your password"
-              value={values.confirmPassword}
-              aria-invalid={Boolean(errors.confirmPassword)}
-              onChange={(e) =>
-                setValues((v) => ({ ...v, confirmPassword: e.target.value }))
-              }
-            />
+            <div className="relative">
+              <Input
+                id="confirmPassword"
+                type={showPassword ? "text" : "password"}
+                autoComplete="new-password"
+                placeholder="Re-enter your password"
+                value={values.confirmPassword}
+                aria-invalid={Boolean(errors.confirmPassword)}
+                onChange={(e) =>
+                  setValues((v) => ({ ...v, confirmPassword: e.target.value }))
+                }
+                className="pr-9"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((s) => !s)}
+                className="absolute inset-y-0 right-0 flex w-9 cursor-pointer items-center justify-center text-muted-foreground hover:text-foreground"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? (
+                  <EyeOff className="size-4" />
+                ) : (
+                  <Eye className="size-4" />
+                )}
+              </button>
+            </div>
             <FieldError>{errors.confirmPassword}</FieldError>
           </Field>
 

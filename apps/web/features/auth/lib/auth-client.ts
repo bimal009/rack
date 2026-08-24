@@ -1,6 +1,10 @@
+import type { OnboardingInput } from "@repo/types"
+
 import { authClient } from "@/auth-client"
-import type { AuthUser, OnboardingData } from "@/features/auth/types"
+import type { AuthUser } from "@/features/auth/types"
 import type { LoginInput, SignupInput } from "@/features/auth/lib/validation"
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"
 
 export class AuthError extends Error {}
 
@@ -28,14 +32,16 @@ export async function continueWithGoogle(callbackURL: string): Promise<void> {
   if (error) throw new AuthError(error.message ?? "Could not sign in with Google.")
 }
 
-// Not backed by better-auth — no onboarding endpoint on the backend yet.
-const NETWORK_DELAY_MS = 700
-function delay<T>(value: T, ms = NETWORK_DELAY_MS) {
-  return new Promise<T>((resolve) => setTimeout(() => resolve(value), ms))
-}
-
-export async function completeOnboarding(
-  input: OnboardingData
-): Promise<{ success: true; businessName: string }> {
-  return delay({ success: true, businessName: input.businessName })
+export async function completeOnboarding(input: OnboardingInput): Promise<{ id: string; slug: string }> {
+  const res = await fetch(`${API_URL}/api/v1/gyms`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  })
+  if (!res.ok) {
+    const body = await res.json().catch(() => null)
+    throw new AuthError(body?.message ?? "Could not complete onboarding.")
+  }
+  return res.json()
 }

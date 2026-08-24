@@ -8,9 +8,16 @@ import {
   type LucideIcon,
 } from "lucide-react"
 
-import type { BusinessType } from "@/features/auth/types"
+import type { OnboardingInput } from "@repo/types"
 
-export const BUSINESS_TYPES: Array<BusinessType & { icon: LucideIcon }> = [
+interface BusinessType {
+  id: OnboardingInput["businessType"]
+  title: string
+  description: string
+  icon: LucideIcon
+}
+
+export const BUSINESS_TYPES: BusinessType[] = [
   {
     id: "gym",
     title: "Gym",
@@ -47,17 +54,4 @@ export const BUSINESS_TYPES: Array<BusinessType & { icon: LucideIcon }> = [
     description: "Set up your business your way.",
     icon: Ellipsis,
   },
-]
-
-export const SPECIALTY_OPTIONS = [
-  "Strength Training",
-  "CrossFit",
-  "HIIT",
-  "Indoor Cycling",
-  "Boxing",
-  "Yoga",
-  "Pilates",
-  "Stretching",
-  "Personal Training",
-  "Group Classes",
 ]
