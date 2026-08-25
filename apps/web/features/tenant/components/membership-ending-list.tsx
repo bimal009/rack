@@ -1,5 +1,6 @@
 import { Avatar, AvatarFallback } from "@repo/ui/components/ui/avatar"
 import { Badge } from "@repo/ui/components/ui/badge"
+import { Button } from "@repo/ui/components/ui/button"
 import { cn } from "@repo/ui/lib/utils"
 
 type Status = "Expiring" | "Renewed" | "Overdue"
@@ -34,12 +35,13 @@ export function MembershipEndingList() {
         <h2 className="text-base font-semibold text-foreground">
           Memberships Ending Soon
         </h2>
-        <button
-          type="button"
-          className="text-xs font-medium text-muted-foreground hover:text-foreground"
+        <Button
+          variant="link"
+          size="sm"
+          className="h-auto p-0 text-xs font-medium text-muted-foreground hover:text-foreground"
         >
           See Details
-        </button>
+        </Button>
       </div>
 
       <div className="mt-4 flex flex-1 flex-col gap-3">

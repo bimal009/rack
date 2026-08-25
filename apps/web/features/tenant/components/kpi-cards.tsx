@@ -7,6 +7,7 @@ import {
   Users,
 } from "lucide-react"
 
+import { Button } from "@repo/ui/components/ui/button"
 import { cn } from "@repo/ui/lib/utils"
 
 type Kpi = {
@@ -116,12 +117,13 @@ export function KpiCards() {
               <kpi.icon className="size-4" />
               {kpi.label}
             </div>
-            <button
-              type="button"
-              className="text-xs font-medium text-muted-foreground hover:text-foreground"
+            <Button
+              variant="link"
+              size="sm"
+              className="h-auto p-0 text-xs font-medium text-muted-foreground hover:text-foreground"
             >
               See Details
-            </button>
+            </Button>
           </div>
 
           <div className="mt-3 flex items-center gap-2">

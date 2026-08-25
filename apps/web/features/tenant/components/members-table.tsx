@@ -1,11 +1,6 @@
-"use client"
-
-import { Download, ListFilter, Search } from "lucide-react"
-
 import { Avatar, AvatarFallback } from "@repo/ui/components/ui/avatar"
 import { Badge } from "@repo/ui/components/ui/badge"
 import { Button } from "@repo/ui/components/ui/button"
-import { Input } from "@repo/ui/components/ui/input"
 import {
   Table,
   TableBody,
@@ -23,11 +18,11 @@ const members: {
   status: MemberStatus
   joined: string
 }[] = [
-  { name: "Honorato Imogene Curry", plan: "Annual Plan", status: "Active", joined: "22 Aug 24" },
-  { name: "Jonathan Ibrahim Sheikh", plan: "Monthly Plan", status: "Expired", joined: "30 Nov 23" },
-  { name: "Maisha Lucy Zamora Gon", plan: "Quarterly Plan", status: "Active", joined: "22 Aug 24" },
-  { name: "Thomas Goodman", plan: "Monthly Plan", status: "On Hold", joined: "14 Jun 24" },
-  { name: "Priya Natarajan", plan: "Annual Plan", status: "Active", joined: "02 Feb 25" },
+  { name: "Priya Natarajan", plan: "Annual Plan", status: "Active", joined: "24 Aug 26" },
+  { name: "Honorato Imogene Curry", plan: "Annual Plan", status: "Active", joined: "22 Aug 26" },
+  { name: "Maisha Lucy Zamora Gon", plan: "Quarterly Plan", status: "Active", joined: "20 Aug 26" },
+  { name: "Thomas Goodman", plan: "Monthly Plan", status: "On Hold", joined: "18 Aug 26" },
+  { name: "Jonathan Ibrahim Sheikh", plan: "Monthly Plan", status: "Expired", joined: "15 Aug 26" },
 ]
 
 function initials(name: string) {
@@ -44,25 +39,20 @@ const statusVariant: Record<MemberStatus, "default" | "secondary" | "destructive
 export function MembersTable() {
   return (
     <div className="flex h-full flex-col rounded-xl border border-border bg-card p-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-base font-semibold text-foreground">Members</h2>
-        <div className="flex items-center gap-2">
-          <div className="relative">
-            <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search"
-              className="h-8 w-40 pl-8 text-sm shadow-none"
-            />
-          </div>
-          <Button variant="outline" size="sm">
-            <ListFilter className="size-3.5" />
-            Filter
-          </Button>
-          <Button size="sm">
-            <Download className="size-3.5" />
-            Export
-          </Button>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-base font-semibold text-foreground">
+            Recent Members
+          </h2>
+          <p className="text-xs text-muted-foreground">Latest sign-ups</p>
         </div>
+        <Button
+          variant="link"
+          size="sm"
+          className="h-auto p-0 text-xs font-medium text-muted-foreground hover:text-foreground"
+        >
+          View All
+        </Button>
       </div>
 
       <div className="mt-4 flex-1">

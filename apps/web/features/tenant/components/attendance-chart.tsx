@@ -1,13 +1,7 @@
 "use client"
 
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts"
-
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-  type ChartConfig,
-} from "@repo/ui/components/ui/chart"
+import { useEffect, useRef, useState } from "react"
+import { Bar, BarChart, CartesianGrid, Tooltip, XAxis, YAxis } from "recharts"
 
 const data = [
   { day: "Mon", checkedIn: 62, missed: 8 },
@@ -19,18 +13,49 @@ const data = [
   { day: "Sun", checkedIn: 58, missed: 3 },
 ]
 
-const chartConfig = {
-  checkedIn: {
-    label: "Checked In",
-    color: "var(--primary)",
-  },
-  missed: {
-    label: "Missed Booking",
-    color: "var(--muted-foreground)",
-  },
-} satisfies ChartConfig
+const CHART_HEIGHT = 256
+
+function AttendanceTooltip({
+  active,
+  payload,
+  label,
+}: {
+  active?: boolean
+  payload?: { name?: string; value?: number }[]
+  label?: string
+}) {
+  if (!active || !payload?.length) return null
+
+  return (
+    <div className="rounded-lg border border-border/50 bg-background px-2.5 py-1.5 text-xs shadow-xl">
+      <p className="font-medium text-foreground">{label}</p>
+      {payload.map((item) => (
+        <p key={item.name} className="text-muted-foreground">
+          {item.name}: <span className="font-medium text-foreground">{item.value}</span>
+        </p>
+      ))}
+    </div>
+  )
+}
 
 export function AttendanceChart() {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [width, setWidth] = useState(0)
+
+  useEffect(() => {
+    const node = containerRef.current
+    if (!node) return
+
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0]
+      if (entry) setWidth(entry.contentRect.width)
+    })
+    observer.observe(node)
+    setWidth(node.getBoundingClientRect().width)
+
+    return () => observer.disconnect()
+  }, [])
+
   return (
     <div className="flex h-full flex-col rounded-xl border border-border bg-card p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -52,21 +77,46 @@ export function AttendanceChart() {
         </div>
       </div>
 
-      <ChartContainer config={chartConfig} className="mt-4 aspect-auto h-64">
-        <BarChart data={data}>
-          <CartesianGrid vertical={false} strokeDasharray="3 3" />
-          <XAxis
-            dataKey="day"
-            tickLine={false}
-            axisLine={false}
-            tickMargin={8}
-          />
-          <YAxis tickLine={false} axisLine={false} tickMargin={8} width={28} />
-          <ChartTooltip content={<ChartTooltipContent />} />
-          <Bar dataKey="checkedIn" fill="var(--color-checkedIn)" radius={4} />
-          <Bar dataKey="missed" fill="var(--color-missed)" radius={4} />
-        </BarChart>
-      </ChartContainer>
+      <div
+        ref={containerRef}
+        className="mt-4"
+        style={{ height: CHART_HEIGHT }}
+      >
+        {width > 0 && (
+          <BarChart width={width} height={CHART_HEIGHT} data={data}>
+            <CartesianGrid
+              vertical={false}
+              strokeDasharray="3 3"
+              stroke="var(--border)"
+            />
+            <XAxis
+              dataKey="day"
+              tickLine={false}
+              axisLine={false}
+              tickMargin={8}
+              tick={{ fill: "var(--muted-foreground)", fontSize: 12 }}
+            />
+            <YAxis
+              tickLine={false}
+              axisLine={false}
+              tickMargin={8}
+              width={28}
+              tick={{ fill: "var(--muted-foreground)", fontSize: 12 }}
+            />
+            <Tooltip
+              content={<AttendanceTooltip />}
+              cursor={{ fill: "var(--muted)" }}
+            />
+            <Bar dataKey="checkedIn" name="Checked In" fill="var(--primary)" radius={4} />
+            <Bar
+              dataKey="missed"
+              name="Missed Booking"
+              fill="var(--muted-foreground)"
+              radius={4}
+            />
+          </BarChart>
+        )}
+      </div>
     </div>
   )
 }

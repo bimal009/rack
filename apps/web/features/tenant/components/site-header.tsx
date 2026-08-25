@@ -1,7 +1,7 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { Bell, LogOut, Mail, Plus, Search, Settings } from "lucide-react"
+import { Bell, LogOut, Mail, Plus, Settings } from "lucide-react"
 
 import { Avatar, AvatarFallback } from "@repo/ui/components/ui/avatar"
 import { Button } from "@repo/ui/components/ui/button"
@@ -13,9 +13,18 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@repo/ui/components/ui/dropdown-menu"
-import { Input } from "@repo/ui/components/ui/input"
 import { SidebarTrigger } from "@repo/ui/components/ui/sidebar"
 import { authClient } from "@/auth-client"
+
+export interface Profile {
+  name?: string | null
+  email?: string | null
+}
+
+interface SiteHeaderProps {
+  title: string
+  profile?: Profile
+}
 
 function initials(name?: string | null) {
   if (!name) return "GM"
@@ -23,9 +32,8 @@ function initials(name?: string | null) {
   return ((parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? "")).toUpperCase() || "GM"
 }
 
-export function SiteHeader() {
+export function SiteHeader({ title, profile }: SiteHeaderProps) {
   const router = useRouter()
-  const { data: session } = authClient.useSession()
 
   async function handleLogOut() {
     await authClient.signOut()
@@ -39,19 +47,11 @@ export function SiteHeader() {
 
         <div className="hidden flex-col leading-tight sm:flex">
           <h1 className="text-base font-semibold text-foreground">
-            Dashboard
+            {title}
           </h1>
           <p className="text-xs text-muted-foreground">
-            Welcome back{session?.user?.name ? `, ${session.user.name}` : ""}
+            Welcome back{profile?.name ? `, ${profile.name}` : ""}
           </p>
-        </div>
-
-        <div className="relative mx-auto hidden w-full max-w-sm md:block">
-          <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search members, classes..."
-            className="rounded-full bg-muted/60 pl-9 shadow-none"
-          />
         </div>
 
         <div className="ml-auto flex items-center gap-1.5">
@@ -84,17 +84,17 @@ export function SiteHeader() {
             <DropdownMenuTrigger className="ml-1 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
               <Avatar size="sm">
                 <AvatarFallback className="bg-primary/10 font-medium text-primary">
-                  {initials(session?.user?.name)}
+                  {initials(profile?.name)}
                 </AvatarFallback>
               </Avatar>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-52">
               <DropdownMenuLabel className="font-normal">
                 <p className="truncate text-sm font-medium text-foreground">
-                  {session?.user?.name ?? "Gym Owner"}
+                  {profile?.name ?? "Gym Owner"}
                 </p>
                 <p className="truncate text-xs text-muted-foreground">
-                  {session?.user?.email}
+                  {profile?.email}
                 </p>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />

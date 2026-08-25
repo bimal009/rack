@@ -1,5 +1,7 @@
 import { Clock3, Dumbbell, Flame, HandFist, PersonStanding } from "lucide-react"
 
+import { Button } from "@repo/ui/components/ui/button"
+
 const schedule = [
   {
     title: "Yoga Flow",
@@ -30,12 +32,13 @@ export function TodaysScheduleList() {
         <h2 className="text-base font-semibold text-foreground">
           Today&apos;s Schedule
         </h2>
-        <button
-          type="button"
-          className="text-xs font-medium text-muted-foreground hover:text-foreground"
+        <Button
+          variant="link"
+          size="sm"
+          className="h-auto p-0 text-xs font-medium text-muted-foreground hover:text-foreground"
         >
           See Details
-        </button>
+        </Button>
       </div>
 
       <div className="mt-4 flex flex-1 flex-col gap-3">
