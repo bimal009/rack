@@ -23,8 +23,11 @@ export async function signupWithCredentials(input: SignupInput): Promise<AuthUse
   return { id: data.user.id, name: data.user.name, email: data.user.email }
 }
 
-export async function continueWithGoogle(callbackURL: string): Promise<void> {
-  const { error } = await authClient.signIn.social({ provider: "google", callbackURL })
+export async function continueWithGoogle(): Promise<void> {
+  const { error } = await authClient.signIn.social({
+    provider: "google",
+    callbackURL: `${window.location.origin}/onboarding`,
+  })
   if (error) throw new AuthError(error.message ?? "Could not sign in with Google.")
 }
 

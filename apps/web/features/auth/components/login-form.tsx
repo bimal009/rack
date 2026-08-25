@@ -147,7 +147,7 @@ export function LoginForm() {
 
       <AuthDivider />
 
-      <GoogleAuthButton callbackURL="/" />
+      <GoogleAuthButton />
 
       <p className="text-center text-sm text-muted-foreground">
         Don&apos;t have an account?{" "}

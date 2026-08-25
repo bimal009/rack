@@ -6,6 +6,6 @@ import { continueWithGoogle } from "@/features/auth/lib/auth-client"
 
 export function useGoogleAuthMutation() {
   return useMutation({
-    mutationFn: (callbackURL: string) => continueWithGoogle(callbackURL),
+    mutationFn: () => continueWithGoogle(),
   })
 }

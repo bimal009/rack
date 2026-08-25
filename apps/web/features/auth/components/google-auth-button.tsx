@@ -8,13 +8,10 @@ import { useGoogleAuthMutation } from "@/features/auth/hooks/use-google-auth-mut
 
 interface GoogleAuthButtonProps {
   label?: string
-  /** Where better-auth redirects the browser after Google completes the OAuth flow. */
-  callbackURL: string
 }
 
 export function GoogleAuthButton({
   label = "Continue with Google",
-  callbackURL,
 }: GoogleAuthButtonProps) {
   const googleAuth = useGoogleAuthMutation()
 
@@ -25,7 +22,7 @@ export function GoogleAuthButton({
       size="lg"
       className="w-full"
       disabled={googleAuth.isPending}
-      onClick={() => googleAuth.mutate(callbackURL)}
+      onClick={() => googleAuth.mutate()}
     >
       {googleAuth.isPending ? (
         <Spinner />

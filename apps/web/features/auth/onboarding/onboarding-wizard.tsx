@@ -101,7 +101,7 @@ export function OnboardingWizard() {
         specialties: data.specialties as OnboardingInput["specialties"],
       },
       {
-        onSuccess: () => router.push("/dashboard"),
+        onSuccess: (result) => router.push(`/s/${result.slug}/dashboard`),
         onError: (error) => toast.error(error.message),
       }
     )
