@@ -1,180 +1,154 @@
 "use client"
 
 import * as React from "react"
+import { useRouter } from "next/navigation"
 import {
-  IconCamera,
-  IconChartBar,
-  IconDashboard,
-  IconDatabase,
-  IconFileAi,
-  IconFileDescription,
-  IconFileWord,
-  IconFolder,
-  IconHelp,
-  IconInnerShadowTop,
-  IconListDetails,
-  IconReport,
-  IconSearch,
-  IconSettings,
-  IconUsers,
-} from "@tabler/icons-react"
+  CalendarClock,
+  CalendarRange,
+  CircleUserRound,
+  ClipboardCheck,
+  Dumbbell,
+  LayoutGrid,
+  LogOut,
+  Rocket,
+  Settings,
+  UserRoundCog,
+  Users,
+} from "lucide-react"
 
-import { NavDocuments } from "@/features/tenant/components/nav-documents"
-import { NavMain } from "@/features/tenant/components/nav-main"
-import { NavSecondary } from "@/features/tenant/components/nav-secondary"
-import { NavUser } from "@/features/tenant/components/nav-user"
+import { Button } from "@repo/ui/components/ui/button"
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
+  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@repo/ui/components/ui/sidebar"
+import { authClient } from "@/auth-client"
 
-const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
-  navMain: [
-    {
-      title: "Dashboard",
-      url: "#",
-      icon: IconDashboard,
-    },
-    {
-      title: "Lifecycle",
-      url: "#",
-      icon: IconListDetails,
-    },
-    {
-      title: "Analytics",
-      url: "#",
-      icon: IconChartBar,
-    },
-    {
-      title: "Projects",
-      url: "#",
-      icon: IconFolder,
-    },
-    {
-      title: "Team",
-      url: "#",
-      icon: IconUsers,
-    },
-  ],
-  navClouds: [
-    {
-      title: "Capture",
-      icon: IconCamera,
-      isActive: true,
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Proposal",
-      icon: IconFileDescription,
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Prompts",
-      icon: IconFileAi,
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
-    },
-  ],
-  navSecondary: [
-    {
-      title: "Settings",
-      url: "#",
-      icon: IconSettings,
-    },
-    {
-      title: "Get Help",
-      url: "#",
-      icon: IconHelp,
-    },
-    {
-      title: "Search",
-      url: "#",
-      icon: IconSearch,
-    },
-  ],
-  documents: [
-    {
-      name: "Data Library",
-      url: "#",
-      icon: IconDatabase,
-    },
-    {
-      name: "Reports",
-      url: "#",
-      icon: IconReport,
-    },
-    {
-      name: "Word Assistant",
-      url: "#",
-      icon: IconFileWord,
-    },
-  ],
-}
+const mainNav = [
+  { title: "Dashboard", icon: LayoutGrid, active: true },
+  { title: "Members", icon: Users },
+  { title: "Attendance", icon: ClipboardCheck },
+  { title: "Classes", icon: CalendarRange },
+  { title: "Trainers", icon: UserRoundCog },
+  { title: "Calendar", icon: CalendarClock, badge: "New" },
+]
+
+const accountNav = [
+  { title: "Information", icon: CircleUserRound },
+  { title: "Settings", icon: Settings },
+]
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const router = useRouter()
+
+  async function handleLogOut() {
+    await authClient.signOut()
+    router.push("/login")
+  }
+
   return (
-    <Sidebar collapsible="offcanvas" {...props}>
-      <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              className="data-[slot=sidebar-menu-button]:p-1.5!"
-            >
-              <a href="#">
-                <IconInnerShadowTop className="size-5!" />
-                <span className="text-base font-semibold">Acme Inc.</span>
-              </a>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+    <Sidebar collapsible="icon" {...props}>
+      <SidebarHeader className="px-3 pt-4 pb-2">
+        <div className="flex items-center gap-2.5 px-1">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+            <Dumbbell className="size-5" />
+          </span>
+          <div className="flex flex-col leading-tight group-data-[collapsible=icon]:hidden">
+            <span className="text-base font-semibold text-foreground">
+              Rackrage
+            </span>
+            <span className="text-xs text-muted-foreground">
+              Gym Dashboard
+            </span>
+          </div>
+        </div>
       </SidebarHeader>
-      <SidebarContent>
-        <NavMain items={data.navMain} />
-        <NavDocuments items={data.documents} />
-        <NavSecondary items={data.navSecondary} className="mt-auto" />
+
+      <SidebarContent className="gap-0 px-1">
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-[0.65rem] font-semibold tracking-wider text-muted-foreground/80 uppercase">
+            Main Menu
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu className="gap-1">
+              {mainNav.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton
+                    isActive={item.active}
+                    className={
+                      item.active
+                        ? "h-10 rounded-xl bg-primary font-medium text-primary-foreground hover:bg-primary hover:text-primary-foreground data-active:bg-primary data-active:text-primary-foreground"
+                        : "h-10 rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground"
+                    }
+                  >
+                    <item.icon className="size-4.5" />
+                    <span>{item.title}</span>
+                  </SidebarMenuButton>
+                  {item.badge && (
+                    <SidebarMenuBadge className="rounded-full bg-primary/10 px-2 text-[0.65rem] font-semibold text-primary">
+                      {item.badge}
+                    </SidebarMenuBadge>
+                  )}
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-[0.65rem] font-semibold tracking-wider text-muted-foreground/80 uppercase">
+            Account
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu className="gap-1">
+              {accountNav.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton className="h-10 rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground">
+                    <item.icon className="size-4.5" />
+                    <span>{item.title}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={handleLogOut}
+                  className="h-10 rounded-xl text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                >
+                  <LogOut className="size-4.5" />
+                  <span>Log Out</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter>
-        <NavUser user={data.user} />
+
+      <SidebarFooter className="p-3 group-data-[collapsible=icon]:hidden">
+        <div className="relative overflow-hidden rounded-2xl bg-linear-to-br from-primary to-primary/70 p-4 text-primary-foreground">
+          <div className="pointer-events-none absolute -top-8 -right-10 size-28 rounded-full bg-primary-foreground/10 blur-2xl" />
+          <div className="pointer-events-none absolute -bottom-10 -left-6 size-24 rounded-full bg-primary-foreground/5 blur-2xl" />
+          <Rocket className="relative size-5 text-primary-foreground/90" />
+          <p className="relative mt-2.5 text-sm font-semibold">
+            Upgrade to Grow
+          </p>
+          <p className="relative mt-1 text-xs leading-relaxed text-primary-foreground/75">
+            Unlock more perks and features to grow your gym.
+          </p>
+          <Button
+            size="sm"
+            className="relative mt-3.5 w-full bg-primary-foreground text-primary hover:bg-primary-foreground/90"
+          >
+            Upgrade Plan
+          </Button>
+        </div>
       </SidebarFooter>
     </Sidebar>
   )

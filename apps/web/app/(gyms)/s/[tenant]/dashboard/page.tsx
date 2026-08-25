@@ -1,26 +1,29 @@
-
-
 import { SiteHeader } from "@/features/tenant/components/site-header"
-import data from "./data.json"
-import { SectionCards } from "@/features/tenant/components/section-cards"
-import { ChartAreaInteractive } from "@/features/tenant/components/chart-area-interactive"
-import { DataTable } from "@/features/tenant/components/data-table"
+import { KpiCards } from "@/features/tenant/components/kpi-cards"
+import { AttendanceChart } from "@/features/tenant/components/attendance-chart"
+import { MembershipEndingList } from "@/features/tenant/components/membership-ending-list"
+import { TodaysScheduleList } from "@/features/tenant/components/todays-schedule-list"
+import { MembersTable } from "@/features/tenant/components/members-table"
 
 export default function Page() {
   return (
     <>
-        <SiteHeader />
-        <div className="flex flex-1 flex-col">
-          <div className="@container/main flex flex-1 flex-col gap-2">
-            <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-              <SectionCards />
-              <div className="px-4 lg:px-6">
-                <ChartAreaInteractive />
-              </div>
-              <DataTable data={data} />
-            </div>
+      <SiteHeader />
+      <div className="flex flex-1 flex-col gap-4 p-4 md:gap-6 md:p-6">
+        <KpiCards />
+        <div className="grid grid-cols-1 gap-4 md:gap-6 xl:grid-cols-3">
+          <div className="xl:col-span-2">
+            <AttendanceChart />
+          </div>
+          <MembershipEndingList />
+        </div>
+        <div className="grid grid-cols-1 gap-4 md:gap-6 xl:grid-cols-3">
+          <TodaysScheduleList />
+          <div className="xl:col-span-2">
+            <MembersTable />
           </div>
         </div>
+      </div>
     </>
   )
 }

@@ -11,9 +11,7 @@
   "dependencies": {
     "@repo/types": "workspace:*",
     "@repo/ui": "workspace:*",
-    "@tabler/icons-react": "^3.46.0",
     "@tanstack/react-query": "^5.102.0",
-    "@tanstack/react-table": "^9.1.2",
     "axios": "^1.19.0",
     "better-auth": "^1.7.1",
     "lucide-react": "^1.33.0",

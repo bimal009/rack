@@ -1,28 +1,114 @@
+"use client"
+
+import { useRouter } from "next/navigation"
+import { Bell, LogOut, Mail, Plus, Search, Settings } from "lucide-react"
+
+import { Avatar, AvatarFallback } from "@repo/ui/components/ui/avatar"
 import { Button } from "@repo/ui/components/ui/button"
-import { Separator } from "@repo/ui/components/ui/separator"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@repo/ui/components/ui/dropdown-menu"
+import { Input } from "@repo/ui/components/ui/input"
 import { SidebarTrigger } from "@repo/ui/components/ui/sidebar"
+import { authClient } from "@/auth-client"
+
+function initials(name?: string | null) {
+  if (!name) return "GM"
+  const parts = name.trim().split(/\s+/)
+  return ((parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? "")).toUpperCase() || "GM"
+}
 
 export function SiteHeader() {
+  const router = useRouter()
+  const { data: session } = authClient.useSession()
+
+  async function handleLogOut() {
+    await authClient.signOut()
+    router.push("/login")
+  }
+
   return (
-    <header className="flex h-(--header-height) shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)">
-      <div className="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
+    <header className="flex h-(--header-height) shrink-0 items-center border-b px-4 lg:px-6">
+      <div className="flex w-full items-center gap-3">
         <SidebarTrigger className="-ml-1" />
-        <Separator
-          orientation="vertical"
-          className="mx-2 data-[orientation=vertical]:h-4"
-        />
-        <h1 className="text-base font-medium">Documents</h1>
-        <div className="ml-auto flex items-center gap-2">
-          <Button variant="ghost" size="sm" className="hidden sm:flex">
-            <a
-              href="https://github.com/shadcn-ui/ui/tree/main/apps/v4/app/(examples)/dashboard"
-              rel="noopener noreferrer"
-              target="_blank"
-              className="dark:text-foreground"
-            >
-              GitHub
-            </a>
+
+        <div className="hidden flex-col leading-tight sm:flex">
+          <h1 className="text-base font-semibold text-foreground">
+            Dashboard
+          </h1>
+          <p className="text-xs text-muted-foreground">
+            Welcome back{session?.user?.name ? `, ${session.user.name}` : ""}
+          </p>
+        </div>
+
+        <div className="relative mx-auto hidden w-full max-w-sm md:block">
+          <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Search members, classes..."
+            className="rounded-full bg-muted/60 pl-9 shadow-none"
+          />
+        </div>
+
+        <div className="ml-auto flex items-center gap-1.5">
+          <Button
+            size="icon-sm"
+            className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
+          >
+            <Plus className="size-4" />
+            <span className="sr-only">Add new</span>
           </Button>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="rounded-full text-muted-foreground"
+          >
+            <Mail className="size-4" />
+            <span className="sr-only">Messages</span>
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="relative rounded-full text-muted-foreground"
+          >
+            <Bell className="size-4" />
+            <span className="absolute top-1.5 right-1.5 size-1.5 rounded-full bg-primary" />
+            <span className="sr-only">Notifications</span>
+          </Button>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger className="ml-1 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
+              <Avatar size="sm">
+                <AvatarFallback className="bg-primary/10 font-medium text-primary">
+                  {initials(session?.user?.name)}
+                </AvatarFallback>
+              </Avatar>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-52">
+              <DropdownMenuLabel className="font-normal">
+                <p className="truncate text-sm font-medium text-foreground">
+                  {session?.user?.name ?? "Gym Owner"}
+                </p>
+                <p className="truncate text-xs text-muted-foreground">
+                  {session?.user?.email}
+                </p>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>
+                <Settings />
+                Settings
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem variant="destructive" onClick={handleLogOut}>
+                <LogOut />
+                Log Out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </header>
