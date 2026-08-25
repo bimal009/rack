@@ -1,7 +1,8 @@
 "use client"
 
 import * as React from "react"
-import { useRouter } from "next/navigation"
+import Link from "next/link"
+import { useParams, usePathname, useRouter } from "next/navigation"
 import {
   CalendarClock,
   CalendarRange,
@@ -33,8 +34,8 @@ import {
 import { authClient } from "@/auth-client"
 
 const mainNav = [
-  { title: "Dashboard", icon: LayoutGrid, active: true },
-  { title: "Members", icon: Users },
+  { title: "Dashboard", icon: LayoutGrid, segment: "dashboard" },
+  { title: "Members", icon: Users, segment: "members" },
   { title: "Attendance", icon: ClipboardCheck },
   { title: "Classes", icon: CalendarRange },
   { title: "Trainers", icon: UserRoundCog },
@@ -48,6 +49,8 @@ const accountNav = [
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const router = useRouter()
+  const pathname = usePathname()
+  const params = useParams<{ tenant: string }>()
 
   async function handleLogOut() {
     await authClient.signOut()
@@ -79,26 +82,45 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu className="gap-1">
-              {mainNav.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton
-                    isActive={item.active}
-                    className={
-                      item.active
-                        ? "h-10 rounded-xl bg-primary font-medium text-primary-foreground hover:bg-primary hover:text-primary-foreground data-active:bg-primary data-active:text-primary-foreground"
-                        : "h-10 rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground"
-                    }
-                  >
-                    <item.icon className="size-4.5" />
-                    <span>{item.title}</span>
-                  </SidebarMenuButton>
-                  {item.badge && (
-                    <SidebarMenuBadge className="rounded-full bg-primary/10 px-2 text-[0.65rem] font-semibold text-primary">
-                      {item.badge}
-                    </SidebarMenuBadge>
-                  )}
-                </SidebarMenuItem>
-              ))}
+              {mainNav.map((item) => {
+                const href = item.segment
+                  ? `/s/${params.tenant}/${item.segment}`
+                  : undefined
+                const active = href ? pathname === href : false
+
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton
+                      isActive={active}
+                      render={
+                        href ? (
+                          <Link href={href}>
+                            <item.icon className="size-4.5" />
+                            <span>{item.title}</span>
+                          </Link>
+                        ) : undefined
+                      }
+                      className={
+                        active
+                          ? "h-10 rounded-xl bg-primary font-medium text-primary-foreground hover:bg-primary hover:text-primary-foreground data-active:bg-primary data-active:text-primary-foreground"
+                          : "h-10 rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground"
+                      }
+                    >
+                      {!href && (
+                        <>
+                          <item.icon className="size-4.5" />
+                          <span>{item.title}</span>
+                        </>
+                      )}
+                    </SidebarMenuButton>
+                    {item.badge && (
+                      <SidebarMenuBadge className="rounded-full bg-primary/10 px-2 text-[0.65rem] font-semibold text-primary">
+                        {item.badge}
+                      </SidebarMenuBadge>
+                    )}
+                  </SidebarMenuItem>
+                )
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
