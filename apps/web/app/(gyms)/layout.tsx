@@ -1,4 +1,4 @@
-import { AppSidebar } from "@/features/tenant/components/app-sidebar"
+import { AppSidebar } from "@/features/tenant/dashboard/components/app-sidebar"
 
 import { SidebarInset, SidebarProvider } from "@repo/ui/components/ui/sidebar"
 

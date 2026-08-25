@@ -1,13 +1,13 @@
 "use client"
 
 import { authClient } from "@/auth-client"
-import { SiteHeader } from "@/features/tenant/components/site-header"
-import { WelcomeBanner } from "@/features/tenant/components/welcome-banner"
-import { KpiCards } from "@/features/tenant/components/kpi-cards"
-import { AttendanceChart } from "@/features/tenant/components/attendance-chart"
-import { MembershipEndingList } from "@/features/tenant/components/membership-ending-list"
-import { TodaysScheduleList } from "@/features/tenant/components/todays-schedule-list"
-import { MembersTable } from "@/features/tenant/components/members-table"
+import { SiteHeader } from "@/features/tenant/dashboard/components/site-header"
+import { WelcomeBanner } from "@/features/tenant/dashboard/components/welcome-banner"
+import { KpiCards } from "@/features/tenant/dashboard/components/kpi-cards"
+import { AttendanceChart } from "@/features/tenant/dashboard/components/attendance-chart"
+import { MembershipEndingList } from "@/features/tenant/dashboard/components/membership-ending-list"
+import { TodaysScheduleList } from "@/features/tenant/dashboard/components/todays-schedule-list"
+import { MembersTable } from "@/features/tenant/dashboard/components/members-table"
 
 export default function Page() {
   const { data: session } = authClient.useSession()

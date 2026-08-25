@@ -1,4 +1,4 @@
-import type { Profile } from "@/features/tenant/components/site-header"
+import type { Profile } from "@/features/tenant/dashboard/components/site-header"
 
 interface WelcomeBannerProps {
   profile?: Profile

@@ -1,8 +1,8 @@
 "use client"
 
 import { authClient } from "@/auth-client"
-import { SiteHeader } from "@/features/tenant/components/site-header"
-import { MembersList } from "@/features/tenant/components/members-list"
+import { SiteHeader } from "@/features/tenant/dashboard/components/site-header"
+import { MembersList } from "@/features/tenant/members/components/members-list"
 
 export default function Page() {
   const { data: session } = authClient.useSession()
