@@ -38,6 +38,7 @@ import {
   SheetTitle,
 } from "@repo/ui/components/ui/sheet"
 
+import { fullName } from "@/features/tenant/members/components/columns"
 import { initialMembers } from "@/features/tenant/members/lib/data"
 import { initialPackages } from "@/features/tenant/revenue/packages/lib/data"
 import { initialProducts } from "@/features/tenant/revenue/products/lib/data"
@@ -127,7 +128,7 @@ function OrderFormBody({ onSubmit, onCancel }: OrderFormBodyProps) {
 
     const order: Order = {
       id: generateOrderId(),
-      memberName: member.name,
+      memberName: fullName(member),
       memberEmail: member.email,
       items: validItems.map((item) => ({
         name: item.name,
@@ -164,7 +165,7 @@ function OrderFormBody({ onSubmit, onCancel }: OrderFormBodyProps) {
                 items={initialMembers.map((m) => m.email)}
                 itemToStringLabel={(email) => {
                   const found = initialMembers.find((m) => m.email === email)
-                  return found ? `${found.name} — ${found.email}` : email
+                  return found ? `${fullName(found)} — ${found.email}` : email
                 }}
                 value={memberEmail}
                 onValueChange={setMemberEmail}
@@ -182,7 +183,7 @@ function OrderFormBody({ onSubmit, onCancel }: OrderFormBodyProps) {
                       )
                       return (
                         <ComboboxItem key={email} value={email}>
-                          {found ? `${found.name} — ${found.email}` : email}
+                          {found ? `${fullName(found)} — ${found.email}` : email}
                         </ComboboxItem>
                       )
                     }}

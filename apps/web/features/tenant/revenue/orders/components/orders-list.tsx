@@ -1,13 +1,14 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { LayoutGrid, List, Plus, SlidersHorizontal } from "lucide-react"
+import { Download, LayoutGrid, List, Plus, SlidersHorizontal } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@repo/ui/components/ui/button"
 import { DataTable } from "@repo/ui/components/ui/data-table"
 
 import { FilterPills } from "@/features/tenant/components/filter-pills"
+import { exportToCsv } from "@/features/tenant/lib/export-csv"
 
 import { initialOrders } from "../lib/data"
 import { orderStatuses, type Order, type OrderStatus } from "../lib/schema"
@@ -45,6 +46,20 @@ export function OrdersList() {
     toast.success(`${order.id} created for ${order.memberName}`)
   }
 
+  function handleExport() {
+    exportToCsv(
+      "orders.csv",
+      visible.map((order) => ({
+        Order: order.id,
+        Member: order.memberName,
+        Email: order.memberEmail,
+        Total: order.total,
+        Status: order.status,
+        Date: order.date,
+      }))
+    )
+  }
+
   const columns = useMemo(
     () => createOrderColumns({ onView: handleView }),
     []
@@ -52,7 +67,13 @@ export function OrdersList() {
 
   return (
     <div className="flex flex-col gap-4">
-      <FilterPills options={filters} value={filter} onChange={setFilter} />
+      <div className="flex items-center justify-between gap-2">
+        <FilterPills options={filters} value={filter} onChange={setFilter} />
+        <Button variant="outline" onClick={handleExport}>
+          <Download className="size-4" />
+          Export
+        </Button>
+      </div>
 
       <DataTable
         columns={columns}

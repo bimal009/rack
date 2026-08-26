@@ -1,15 +1,15 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { LayoutGrid, List, Plus, SlidersHorizontal } from "lucide-react"
+import { Download, LayoutGrid, List, Plus, SlidersHorizontal } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@repo/ui/components/ui/button"
 import { DataTable } from "@repo/ui/components/ui/data-table"
 
+import { DeleteConfirmDialog } from "@/features/tenant/components/delete-confirm-dialog"
 import { FilterPills } from "@/features/tenant/components/filter-pills"
-
-import { DeleteConfirmDialog } from "../../components/delete-confirm-dialog"
+import { exportToCsv } from "@/features/tenant/lib/export-csv"
 import { initialPlans } from "../lib/data"
 import type { Plan, PlanInput } from "../lib/schema"
 import { createPlanColumns } from "./columns"
@@ -68,6 +68,20 @@ export function PlansList() {
     setDeletingPlan(null)
   }
 
+  function handleExport() {
+    exportToCsv(
+      "plans.csv",
+      visible.map((plan) => ({
+        Name: plan.name,
+        Category: plan.category,
+        Price: plan.pricePerPeriod,
+        "Billing Type": plan.billingType,
+        Members: plan.members,
+        Status: plan.active ? "Active" : "Inactive",
+      }))
+    )
+  }
+
   const columns = useMemo(
     () =>
       createPlanColumns({
@@ -79,7 +93,13 @@ export function PlansList() {
 
   return (
     <div className="flex flex-col gap-4">
-      <FilterPills options={filters} value={filter} onChange={setFilter} />
+      <div className="flex items-center justify-between gap-2">
+        <FilterPills options={filters} value={filter} onChange={setFilter} />
+        <Button variant="outline" onClick={handleExport}>
+          <Download className="size-4" />
+          Export
+        </Button>
+      </div>
 
       <DataTable
         columns={columns}

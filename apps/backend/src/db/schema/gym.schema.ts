@@ -27,6 +27,7 @@ export const gyms = pgTable("gyms", {
   email: varchar("email", { length: 255 }).notNull().unique("gyms_email_unique"),
   website: varchar("website", { length: 255 }),
   currency: varchar("currency", { length: 3 }).notNull().default("NPR"),
+  openingHours: jsonb("opening_hours").notNull().default({}),
 
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),

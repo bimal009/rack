@@ -3,18 +3,19 @@
 import { useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-import { onboardingSchema, type OnboardingInput } from "@repo/types"
+import { DEFAULT_OPENING_HOURS, onboardingSchema, type OnboardingInput } from "@repo/types"
 
 import { AuthHeader } from "@/features/auth/components/auth-header"
 import { StepNav } from "@/features/auth/onboarding/step-nav"
 import { ClubTypeStep } from "@/features/auth/onboarding/steps/club-type-step"
 import { SpecialtiesStep } from "@/features/auth/onboarding/steps/specialties-step"
 import { BusinessDetailsStep } from "@/features/auth/onboarding/steps/business-details-step"
+import { OpeningHoursStep } from "@/features/auth/onboarding/steps/opening-hours-step"
 import { useOnboardingMutation } from "@/features/auth/onboarding/hooks/useOnboarding"
 import { fieldErrors } from "@/features/auth/lib/validation"
 import { BUSINESS_TYPES } from "@/features/auth/lib/constants"
 
-const STEP_COUNT = 3
+const STEP_COUNT = 4
 
 type WizardData = Omit<OnboardingInput, "businessType" | "specialties"> & {
   businessType: OnboardingInput["businessType"] | null
@@ -30,6 +31,7 @@ const initialData: WizardData = {
   phone: "",
   email: "",
   website: "",
+  openingHours: DEFAULT_OPENING_HOURS,
 }
 
 function slugify(value: string) {
@@ -80,6 +82,21 @@ export function OnboardingWizard() {
         return
       }
     } else if (step === 2) {
+      const result = onboardingSchema
+        .pick({
+          slug: true,
+          businessName: true,
+          address: true,
+          phone: true,
+          email: true,
+          website: true,
+        })
+        .safeParse(data)
+      if (!result.success) {
+        setErrors(fieldErrors(result.error))
+        return
+      }
+    } else if (step === 3) {
       const result = onboardingSchema.safeParse(data)
       if (!result.success) {
         setErrors(fieldErrors(result.error))
@@ -135,6 +152,12 @@ export function OnboardingWizard() {
               value={data}
               errors={errors}
               onChange={updateData}
+            />
+          )}
+          {step === 3 && (
+            <OpeningHoursStep
+              value={data.openingHours}
+              onChange={(openingHours) => updateData({ openingHours })}
               isSubmitting={onboarding.isPending}
             />
           )}
