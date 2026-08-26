@@ -1,48 +1,44 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { Download, QrCode } from "lucide-react"
+import { CalendarIcon, Download, QrCode, X } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@repo/ui/components/ui/button"
+import { Calendar } from "@repo/ui/components/ui/calendar"
 import { DataTable } from "@repo/ui/components/ui/data-table"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@repo/ui/components/ui/popover"
 
 import { FilterPills } from "@/features/tenant/components/filter-pills"
 import { exportToCsv } from "@/features/tenant/lib/export-csv"
-import { fullName } from "@/features/tenant/members/components/columns"
-import { initialMembers } from "@/features/tenant/members/lib/data"
-import type { Member } from "@/features/tenant/members/lib/schema"
 
-import { generateAttendanceId, initialAttendance } from "../lib/data"
+import { initialAttendance } from "../lib/data"
+import { formatDate, nowTime } from "../lib/time"
 import type { AttendanceRecord } from "../lib/schema"
 import { createAttendanceColumns } from "./columns"
-import { CheckInSheet } from "./check-in-sheet"
+import { CheckInQrDialog } from "./check-in-qr-dialog"
 
 const filters = ["All", "Checked In", "Checked Out"] as const
 
-function nowTime() {
-  return new Date().toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-  })
+interface AttendanceListProps {
+  tenant: string
 }
 
-function today() {
-  const months = [
-    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-  ]
-  const date = new Date()
-  return `${date.getDate()} ${months[date.getMonth()]} ${String(date.getFullYear()).slice(-2)}`
-}
-
-export function AttendanceList() {
+export function AttendanceList({ tenant }: AttendanceListProps) {
   const [records, setRecords] = useState<AttendanceRecord[]>(initialAttendance)
   const [filter, setFilter] = useState<(typeof filters)[number]>("All")
-  const [sheetOpen, setSheetOpen] = useState(false)
+  const [dateFilter, setDateFilter] = useState<Date | undefined>(undefined)
+  const [qrOpen, setQrOpen] = useState(false)
 
-  const visible =
-    filter === "All" ? records : records.filter((r) => r.status === filter)
+  const visible = records.filter(
+    (r) =>
+      (filter === "All" || r.status === filter) &&
+      (!dateFilter || r.date === formatDate(dateFilter))
+  )
 
   function checkOut(record: AttendanceRecord) {
     setRecords((prev) =>
@@ -53,30 +49,6 @@ export function AttendanceList() {
       )
     )
     toast.success(`${record.memberName} checked out`)
-  }
-
-  function handleScan(member: Member, method: AttendanceRecord["method"] = "QR") {
-    const openRecord = records.find(
-      (r) => r.memberId === member.id && r.status === "Checked In"
-    )
-
-    if (openRecord) {
-      checkOut(openRecord)
-      return `${fullName(member)} checked out`
-    }
-
-    const record: AttendanceRecord = {
-      id: generateAttendanceId(),
-      memberId: member.id,
-      memberName: fullName(member),
-      memberEmail: member.email,
-      date: today(),
-      checkInAt: nowTime(),
-      method,
-      status: "Checked In",
-    }
-    setRecords((prev) => [record, ...prev])
-    return `${fullName(member)} checked in`
   }
 
   function handleExport() {
@@ -101,8 +73,40 @@ export function AttendanceList() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between gap-2">
-        <FilterPills options={filters} value={filter} onChange={setFilter} />
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <FilterPills options={filters} value={filter} onChange={setFilter} />
+
+          <Popover>
+            <PopoverTrigger
+              render={
+                <Button variant="outline">
+                  <CalendarIcon className="size-4" />
+                  {dateFilter ? formatDate(dateFilter) : "All dates"}
+                </Button>
+              }
+            />
+            <PopoverContent align="start" className="w-auto p-0">
+              <Calendar
+                mode="single"
+                selected={dateFilter}
+                onSelect={setDateFilter}
+              />
+            </PopoverContent>
+          </Popover>
+
+          {dateFilter && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setDateFilter(undefined)}
+            >
+              <X className="size-4" />
+              <span className="sr-only">Clear date filter</span>
+            </Button>
+          )}
+        </div>
+
         <Button variant="outline" onClick={handleExport}>
           <Download className="size-4" />
           Export
@@ -115,19 +119,14 @@ export function AttendanceList() {
         getRowId={(row) => row.id}
         searchPlaceholder="Search by member name or email..."
         toolbar={
-          <Button onClick={() => setSheetOpen(true)}>
+          <Button onClick={() => setQrOpen(true)}>
             <QrCode className="size-4" />
-            Check In
+            Check-in QR
           </Button>
         }
       />
 
-      <CheckInSheet
-        open={sheetOpen}
-        onOpenChange={setSheetOpen}
-        members={initialMembers}
-        onScan={(member) => handleScan(member)}
-      />
+      <CheckInQrDialog open={qrOpen} onOpenChange={setQrOpen} tenant={tenant} />
     </div>
   )
 }

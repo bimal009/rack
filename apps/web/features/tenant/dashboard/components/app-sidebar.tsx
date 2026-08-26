@@ -4,8 +4,6 @@ import * as React from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import {
-  CalendarClock,
-  CalendarRange,
   CircleUserRound,
   ClipboardCheck,
   Dumbbell,
@@ -28,7 +26,6 @@ import {
   SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
-  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@repo/ui/components/ui/sidebar"
@@ -39,9 +36,7 @@ const mainNav = [
   { title: "Members", icon: Users, segment: "members" },
   { title: "Revenue", icon: Wallet, segment: "revenue/plans", match: "revenue" },
   { title: "Attendance", icon: ClipboardCheck, segment: "attendance" },
-  { title: "Classes", icon: CalendarRange },
-  { title: "Trainers", icon: UserRoundCog },
-  { title: "Calendar", icon: CalendarClock, badge: "New" },
+  { title: "Staff", icon: UserRoundCog, segment: "staff" },
 ]
 
 const accountNav = [
@@ -125,11 +120,6 @@ export function AppSidebar({ tenant, ...props }: AppSidebarProps) {
                         </>
                       )}
                     </SidebarMenuButton>
-                    {item.badge && (
-                      <SidebarMenuBadge className="rounded-full bg-primary/10 px-2 text-[0.65rem] font-semibold text-primary">
-                        {item.badge}
-                      </SidebarMenuBadge>
-                    )}
                   </SidebarMenuItem>
                 )
               })}
