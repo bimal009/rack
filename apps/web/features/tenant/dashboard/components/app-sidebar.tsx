@@ -4,6 +4,7 @@ import * as React from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import {
+  CalendarRange,
   ClipboardCheck,
   Dumbbell,
   LayoutGrid,
@@ -35,6 +36,7 @@ const mainNav = [
   { title: "Members", icon: Users, segment: "members" },
   { title: "Revenue", icon: Wallet, segment: "revenue/plans", match: "revenue" },
   { title: "Attendance", icon: ClipboardCheck, segment: "attendance" },
+  { title: "Schedule", icon: CalendarRange, segment: "schedule" },
   { title: "Staff", icon: UserRoundCog, segment: "staff/directory", match: "staff" },
 ]
 

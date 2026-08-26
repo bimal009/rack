@@ -1,5 +1,3 @@
-"use client"
-
 import { OrganizationDetailsForm } from "./organization-details-form"
 import { OrganizationTabs } from "./organization-tabs"
 
