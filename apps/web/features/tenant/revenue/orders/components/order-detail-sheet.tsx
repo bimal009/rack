@@ -5,7 +5,13 @@ import { useState, type FormEvent } from "react"
 import { Avatar, AvatarFallback } from "@repo/ui/components/ui/avatar"
 import { Badge } from "@repo/ui/components/ui/badge"
 import { Button } from "@repo/ui/components/ui/button"
-import { Field, FieldLabel } from "@repo/ui/components/ui/field"
+import {
+  Field,
+  FieldGroup,
+  FieldLabel,
+  FieldLegend,
+  FieldSet,
+} from "@repo/ui/components/ui/field"
 import {
   Select,
   SelectContent,
@@ -44,7 +50,11 @@ interface OrderDetailBodyProps {
   onClose: () => void
 }
 
-function OrderDetailBody({ order, onStatusChange, onClose }: OrderDetailBodyProps) {
+function OrderDetailBody({
+  order,
+  onStatusChange,
+  onClose,
+}: OrderDetailBodyProps) {
   const [status, setStatus] = useState<OrderStatus>(order.status)
 
   function handleSubmit(event: FormEvent) {
@@ -60,77 +70,85 @@ function OrderDetailBody({ order, onStatusChange, onClose }: OrderDetailBodyProp
         <SheetDescription>Placed on {order.date}</SheetDescription>
       </SheetHeader>
 
-      <SheetBody className="flex flex-col gap-5">
-        <div className="flex items-center gap-2.5">
-          <Avatar size="sm">
-            <AvatarFallback className="bg-muted text-xs font-medium text-muted-foreground">
-              {initials(order.memberName)}
-            </AvatarFallback>
-          </Avatar>
-          <div className="min-w-0">
-            <p className="truncate text-sm font-medium text-foreground">
-              {order.memberName}
-            </p>
-            <p className="truncate text-xs text-muted-foreground">
-              {order.memberEmail}
-            </p>
-          </div>
-          <Badge
-            variant={orderStatusVariant[order.status]}
-            className="ml-auto rounded-full"
-          >
-            {order.status}
-          </Badge>
-        </div>
-
-        <Separator />
-
-        <div className="flex flex-col gap-3">
-          <p className="text-sm font-medium text-foreground">Items</p>
-          <div className="flex flex-col gap-2">
-            {order.items.map((item, index) => (
-              <div
-                key={index}
-                className="flex items-center justify-between text-sm"
-              >
-                <span className="text-foreground">
-                  {item.qty}× {item.name}
-                </span>
-                <span className="text-muted-foreground">
-                  {currency.format(item.price * item.qty)}
-                </span>
+      <SheetBody className="flex flex-col gap-6">
+        <FieldSet>
+          <FieldLegend>Member</FieldLegend>
+          <FieldGroup>
+            <div className="flex items-center gap-2.5">
+              <Avatar size="sm">
+                <AvatarFallback className="bg-muted text-xs font-medium text-muted-foreground">
+                  {initials(order.memberName)}
+                </AvatarFallback>
+              </Avatar>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium text-foreground">
+                  {order.memberName}
+                </p>
+                <p className="truncate text-xs text-muted-foreground">
+                  {order.memberEmail}
+                </p>
               </div>
-            ))}
-          </div>
-          <Separator />
-          <div className="flex items-center justify-between text-sm font-semibold">
-            <span className="text-foreground">Total</span>
-            <span className="text-foreground">
-              {currency.format(order.total)}
-            </span>
-          </div>
-        </div>
+              <Badge
+                variant={orderStatusVariant[order.status]}
+                className="ml-auto rounded-full"
+              >
+                {order.status}
+              </Badge>
+            </div>
+          </FieldGroup>
+        </FieldSet>
 
-        <Separator />
-
-        <Field>
-          <FieldLabel htmlFor="order-status">Order status</FieldLabel>
-          <Select
-            value={status}
-            onValueChange={(value) => setStatus(value as OrderStatus)}
-          >
-            <SelectTrigger id="order-status" className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {orderStatuses.map((s) => (
-                <SelectItem key={s} value={s}>
-                  {s}
-                </SelectItem>
+        <FieldSet>
+          <FieldLegend>Items</FieldLegend>
+          <FieldGroup>
+            <div className="flex flex-col gap-2">
+              {order.items.map((item, index) => (
+                <div
+                  key={index}
+                  className="flex items-center justify-between text-sm"
+                >
+                  <span className="text-foreground">
+                    {item.qty}× {item.name}
+                  </span>
+                  <span className="text-muted-foreground">
+                    {currency.format(item.price * item.qty)}
+                  </span>
+                </div>
               ))}
-            </SelectContent>
-          </Select>
-        </Field>
+            </div>
+            <Separator />
+            <div className="flex items-center justify-between text-sm font-semibold">
+              <span className="text-foreground">Total</span>
+              <span className="text-foreground">
+                {currency.format(order.total)}
+              </span>
+            </div>
+          </FieldGroup>
+        </FieldSet>
+
+        <FieldSet>
+          <FieldLegend>Status</FieldLegend>
+          <FieldGroup>
+            <Field>
+              <FieldLabel htmlFor="order-status">Order status</FieldLabel>
+              <Select
+                value={status}
+                onValueChange={(value) => setStatus(value as OrderStatus)}
+              >
+                <SelectTrigger id="order-status" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {orderStatuses.map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {s}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+          </FieldGroup>
+        </FieldSet>
       </SheetBody>
 
       <SheetFooter>
@@ -160,7 +178,7 @@ export function OrderDetailSheet({
 }: OrderDetailSheetProps) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent>
+      <SheetContent className="sm:max-w-lg">
         {open && order && (
           <OrderDetailBody
             key={order.id}

@@ -18,7 +18,7 @@ export function OrdersPage({ tenant }: OrdersPageProps) {
       <SiteHeader title="Orders" profile={session?.user} />
       <div className="flex flex-1 flex-col gap-4 p-4 md:gap-6 md:p-6">
         <RevenueNav tenant={tenant} />
-        <OrdersList tenant={tenant} />
+        <OrdersList />
       </div>
     </>
   )

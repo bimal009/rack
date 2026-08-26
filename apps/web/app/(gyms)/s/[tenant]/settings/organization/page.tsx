@@ -1,9 +1,9 @@
 import type { Metadata } from "next"
 
-import { PosPage } from "@/features/tenant/revenue/orders/components/pos/pos-page"
+import { OrganizationPage } from "@/features/tenant/settings/organization/components/organization-page"
 
 export const metadata: Metadata = {
-  title: "New Sale",
+  title: "Organization",
 }
 
 export default async function Page({
@@ -12,5 +12,5 @@ export default async function Page({
   params: Promise<{ tenant: string }>
 }) {
   const { tenant } = await params
-  return <PosPage tenant={tenant} />
+  return <OrganizationPage tenant={tenant} />
 }

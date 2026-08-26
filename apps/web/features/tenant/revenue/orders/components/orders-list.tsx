@@ -1,7 +1,6 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import Link from "next/link"
 import { LayoutGrid, List, Plus, SlidersHorizontal } from "lucide-react"
 import { toast } from "sonner"
 
@@ -14,26 +13,24 @@ import { initialOrders } from "../lib/data"
 import { orderStatuses, type Order, type OrderStatus } from "../lib/schema"
 import { createOrderColumns } from "./columns"
 import { OrderDetailSheet } from "./order-detail-sheet"
+import { OrderFormSheet } from "./order-form-sheet"
 
 const filters = ["All", ...orderStatuses] as const
 
-interface OrdersListProps {
-  tenant: string
-}
-
-export function OrdersList({ tenant }: OrdersListProps) {
+export function OrdersList() {
   const [orders, setOrders] = useState<Order[]>(initialOrders)
   const [filter, setFilter] = useState<(typeof filters)[number]>("All")
   const [view, setView] = useState<"list" | "grid">("list")
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
-  const [sheetOpen, setSheetOpen] = useState(false)
+  const [detailOpen, setDetailOpen] = useState(false)
+  const [newSaleOpen, setNewSaleOpen] = useState(false)
 
   const visible =
     filter === "All" ? orders : orders.filter((o) => o.status === filter)
 
   function handleView(order: Order) {
     setSelectedOrder(order)
-    setSheetOpen(true)
+    setDetailOpen(true)
   }
 
   function handleStatusChange(order: Order, status: OrderStatus) {
@@ -41,6 +38,11 @@ export function OrdersList({ tenant }: OrdersListProps) {
       prev.map((o) => (o.id === order.id ? { ...o, status } : o))
     )
     toast.success(`${order.id} marked as ${status}`)
+  }
+
+  function handleCreateOrder(order: Order) {
+    setOrders((prev) => [order, ...prev])
+    toast.success(`${order.id} created for ${order.memberName}`)
   }
 
   const columns = useMemo(
@@ -80,10 +82,7 @@ export function OrdersList({ tenant }: OrdersListProps) {
                 <LayoutGrid className="size-4" />
               </Button>
             </div>
-            <Button
-              nativeButton={false}
-              render={<Link href={`/s/${tenant}/revenue/orders/pos`} />}
-            >
+            <Button onClick={() => setNewSaleOpen(true)}>
               <Plus className="size-4" />
               New Sale
             </Button>
@@ -92,10 +91,16 @@ export function OrdersList({ tenant }: OrdersListProps) {
       />
 
       <OrderDetailSheet
-        open={sheetOpen}
-        onOpenChange={setSheetOpen}
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
         order={selectedOrder}
         onStatusChange={handleStatusChange}
+      />
+
+      <OrderFormSheet
+        open={newSaleOpen}
+        onOpenChange={setNewSaleOpen}
+        onCreate={handleCreateOrder}
       />
     </div>
   )

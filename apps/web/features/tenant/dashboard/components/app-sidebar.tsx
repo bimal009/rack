@@ -46,7 +46,7 @@ const mainNav = [
 
 const accountNav = [
   { title: "Information", icon: CircleUserRound },
-  { title: "Settings", icon: Settings },
+  { title: "Settings", icon: Settings, segment: "settings" },
 ]
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
@@ -143,14 +143,42 @@ export function AppSidebar({ tenant, ...props }: AppSidebarProps) {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu className="gap-1">
-              {accountNav.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton className="h-10 rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground">
-                    <item.icon className="size-4.5" />
-                    <span>{item.title}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {accountNav.map((item) => {
+                const href = item.segment
+                  ? `/s/${tenant}/${item.segment}`
+                  : undefined
+                const active = href
+                  ? pathname === href || pathname?.startsWith(`${href}/`)
+                  : false
+
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton
+                      isActive={active}
+                      render={
+                        href ? (
+                          <Link href={href}>
+                            <item.icon className="size-4.5" />
+                            <span>{item.title}</span>
+                          </Link>
+                        ) : undefined
+                      }
+                      className={
+                        active
+                          ? "h-10 rounded-xl bg-muted font-medium text-foreground"
+                          : "h-10 rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground"
+                      }
+                    >
+                      {!href && (
+                        <>
+                          <item.icon className="size-4.5" />
+                          <span>{item.title}</span>
+                        </>
+                      )}
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )
+              })}
               <SidebarMenuItem>
                 <SidebarMenuButton
                   onClick={handleLogOut}

@@ -67,12 +67,3 @@ export function generateOrderId() {
   const next = 1043 + Math.floor(Math.random() * 900)
   return `ORD-${next}`
 }
-
-/**
- * Prepends a new order to the shared mock dataset so it shows up next time
- * the orders list mounts. There's no backend here, so this in-place mutation
- * is the simplest way for the POS flow to hand off to the orders list.
- */
-export function addOrder(order: Order) {
-  initialOrders.unshift(order)
-}
