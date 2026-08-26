@@ -5,6 +5,9 @@ export const HOURS = Array.from(
   (_, i) => START_HOUR + i
 )
 export const ROW_HEIGHT = 64
+export const HOUR_WIDTH = 120
+export const TIMELINE_ROW_HEIGHT = 60
+export const TIMELINE_LABEL_WIDTH = 180
 
 export function startOfWeek(date: Date) {
   const d = new Date(date)
@@ -76,6 +79,22 @@ export function eventHeightPx(startTime: string, endTime: string) {
 
 export function minutesFromOffsetY(offsetY: number) {
   const fraction = offsetY / (HOURS.length * ROW_HEIGHT)
+  const minutes = gridStartMinutes + fraction * gridTotalMinutes
+  return snapToHalfHour(minutes)
+}
+
+export function eventLeftPx(startTime: string) {
+  const offset = timeToMinutes(startTime) - gridStartMinutes
+  return (offset / gridTotalMinutes) * (HOURS.length * HOUR_WIDTH)
+}
+
+export function eventWidthPx(startTime: string, endTime: string) {
+  const duration = timeToMinutes(endTime) - timeToMinutes(startTime)
+  return Math.max(56, (duration / gridTotalMinutes) * (HOURS.length * HOUR_WIDTH))
+}
+
+export function minutesFromOffsetX(offsetX: number) {
+  const fraction = offsetX / (HOURS.length * HOUR_WIDTH)
   const minutes = gridStartMinutes + fraction * gridTotalMinutes
   return snapToHalfHour(minutes)
 }
