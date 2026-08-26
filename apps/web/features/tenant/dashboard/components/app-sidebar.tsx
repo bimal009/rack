@@ -38,7 +38,7 @@ const mainNav = [
   { title: "Dashboard", icon: LayoutGrid, segment: "dashboard" },
   { title: "Members", icon: Users, segment: "members" },
   { title: "Revenue", icon: Wallet, segment: "revenue/plans", match: "revenue" },
-  { title: "Attendance", icon: ClipboardCheck },
+  { title: "Attendance", icon: ClipboardCheck, segment: "attendance" },
   { title: "Classes", icon: CalendarRange },
   { title: "Trainers", icon: UserRoundCog },
   { title: "Calendar", icon: CalendarClock, badge: "New" },

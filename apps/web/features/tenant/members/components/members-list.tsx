@@ -15,6 +15,7 @@ import { initialMembers } from "../lib/data"
 import type { Member, MemberInput } from "../lib/schema"
 import { createMemberColumns, fullName } from "./columns"
 import { MemberFormSheet } from "./member-form-sheet"
+import { MemberQrDialog } from "./member-qr-dialog"
 
 const filters = ["All", "Active", "On Hold", "Expired"] as const
 
@@ -38,6 +39,7 @@ export function MembersList() {
   const [sheetOpen, setSheetOpen] = useState(false)
   const [editingMember, setEditingMember] = useState<Member | null>(null)
   const [deletingMember, setDeletingMember] = useState<Member | null>(null)
+  const [qrMember, setQrMember] = useState<Member | null>(null)
 
   const visible =
     filter === "All" ? members : members.filter((m) => m.status === filter)
@@ -105,6 +107,7 @@ export function MembersList() {
       createMemberColumns({
         onEdit: handleEdit,
         onDelete: setDeletingMember,
+        onShowQr: setQrMember,
       }),
     []
   )
@@ -171,6 +174,11 @@ export function MembersList() {
             : ""
         }
         onConfirm={handleDelete}
+      />
+
+      <MemberQrDialog
+        member={qrMember}
+        onOpenChange={(open) => !open && setQrMember(null)}
       />
     </div>
   )

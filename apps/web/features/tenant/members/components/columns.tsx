@@ -1,6 +1,6 @@
 "use client"
 
-import { MoreHorizontal, PenSquare, Trash2 } from "lucide-react"
+import { MoreHorizontal, PenSquare, QrCode, Trash2 } from "lucide-react"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/components/ui/avatar"
 import { Badge } from "@repo/ui/components/ui/badge"
@@ -41,9 +41,14 @@ export function initials(member: Pick<Member, "firstName" | "lastName">) {
 interface MemberColumnActions {
   onEdit: (member: Member) => void
   onDelete: (member: Member) => void
+  onShowQr: (member: Member) => void
 }
 
-export function createMemberColumns({ onEdit, onDelete }: MemberColumnActions) {
+export function createMemberColumns({
+  onEdit,
+  onDelete,
+  onShowQr,
+}: MemberColumnActions) {
   const columnHelper = createDataTableColumnHelper<Member>()
 
   return columnHelper.columns([
@@ -128,6 +133,10 @@ export function createMemberColumns({ onEdit, onDelete }: MemberColumnActions) {
             <DropdownMenuItem onClick={() => onEdit(row.original)}>
               <PenSquare />
               Edit Member
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onShowQr(row.original)}>
+              <QrCode />
+              Show QR Code
             </DropdownMenuItem>
             <DropdownMenuItem
               variant="destructive"

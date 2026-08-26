@@ -49,6 +49,7 @@ export function OnboardingWizard() {
   const [step, setStep] = useState(0)
   const [data, setData] = useState<WizardData>(initialData)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [isRedirecting, setIsRedirecting] = useState(false)
 
   const selectedType = BUSINESS_TYPES.find((t) => t.id === data.businessType)
   const slugTouched = useRef(false)
@@ -91,7 +92,14 @@ export function OnboardingWizard() {
           email: true,
           website: true,
         })
-        .safeParse(data)
+        .safeParse({
+          slug: data.slug,
+          businessName: data.businessName,
+          address: data.address,
+          phone: data.phone,
+          email: data.email,
+          website: data.website,
+        })
       if (!result.success) {
         setErrors(fieldErrors(result.error))
         return
@@ -111,6 +119,8 @@ export function OnboardingWizard() {
       return
     }
 
+    setIsRedirecting(true)
+
     onboarding.mutate(
       {
         ...data,
@@ -119,7 +129,10 @@ export function OnboardingWizard() {
       },
       {
         onSuccess: (result) => router.push(`/s/${result.slug}/dashboard`),
-        onError: (error) => toast.error(error.message),
+        onError: (error) => {
+          setIsRedirecting(false)
+          toast.error(error.message)
+        },
       }
     )
   }
@@ -158,7 +171,7 @@ export function OnboardingWizard() {
             <OpeningHoursStep
               value={data.openingHours}
               onChange={(openingHours) => updateData({ openingHours })}
-              isSubmitting={onboarding.isPending}
+              isSubmitting={isRedirecting}
             />
           )}
         </div>
@@ -171,7 +184,7 @@ export function OnboardingWizard() {
           onBack={handleBack}
           onNext={handleContinue}
           nextLabel={step === STEP_COUNT - 1 ? "Create" : "Continue"}
-          isSubmitting={onboarding.isPending}
+          isSubmitting={onboarding.isPending || isRedirecting}
         />
       </div>
     </div>

@@ -4,8 +4,47 @@ import { Plus, Trash2 } from "lucide-react"
 import { WEEKDAYS, type DaySchedule, type OpeningHours, type Weekday } from "@repo/types"
 
 import { Button } from "@repo/ui/components/ui/button"
-import { Input } from "@repo/ui/components/ui/input"
 import { Switch } from "@repo/ui/components/ui/switch"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@repo/ui/components/ui/select"
+
+const TIME_OPTIONS = Array.from({ length: 48 }, (_, i) => {
+  const hours = Math.floor(i / 2)
+  const minutes = i % 2 === 0 ? "00" : "30"
+  const value = `${String(hours).padStart(2, "0")}:${minutes}`
+  const period = hours < 12 ? "AM" : "PM"
+  const hour12 = hours % 12 === 0 ? 12 : hours % 12
+  const label = `${hour12}:${minutes} ${period}`
+  return { value, label }
+})
+
+function TimeSelect({
+  value,
+  onChange,
+}: {
+  value: string
+  onChange: (value: string) => void
+}) {
+  return (
+    <Select value={value} onValueChange={(v) => onChange(v ?? "")}>
+      <SelectTrigger className="w-full">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        {TIME_OPTIONS.map((option) => (
+          <SelectItem key={option.value} value={option.value}>
+            {option.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  )
+}
 
 interface DayScheduleEditorProps {
   day: Weekday
@@ -62,16 +101,14 @@ export function DayScheduleEditor({
         <div className="flex flex-1 flex-col gap-2">
           {schedule.ranges.map((range, index) => (
             <div key={index} className="flex items-center gap-2">
-              <Input
-                type="time"
+              <TimeSelect
                 value={range.open}
-                onChange={(e) => updateRange(index, { open: e.target.value })}
+                onChange={(open) => updateRange(index, { open })}
               />
-              <span className="text-muted-foreground">–</span>
-              <Input
-                type="time"
+              <span className="shrink-0 text-muted-foreground">–</span>
+              <TimeSelect
                 value={range.close}
-                onChange={(e) => updateRange(index, { close: e.target.value })}
+                onChange={(close) => updateRange(index, { close })}
               />
               <Button
                 type="button"
