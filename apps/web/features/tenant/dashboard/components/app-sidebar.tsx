@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { useParams, usePathname, useRouter } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import {
   CalendarClock,
   CalendarRange,
@@ -15,6 +15,7 @@ import {
   Settings,
   UserRoundCog,
   Users,
+  Wallet,
 } from "lucide-react"
 
 import { Button } from "@repo/ui/components/ui/button"
@@ -36,6 +37,7 @@ import { authClient } from "@/auth-client"
 const mainNav = [
   { title: "Dashboard", icon: LayoutGrid, segment: "dashboard" },
   { title: "Members", icon: Users, segment: "members" },
+  { title: "Revenue", icon: Wallet, segment: "revenue/plans", match: "revenue" },
   { title: "Attendance", icon: ClipboardCheck },
   { title: "Classes", icon: CalendarRange },
   { title: "Trainers", icon: UserRoundCog },
@@ -47,10 +49,13 @@ const accountNav = [
   { title: "Settings", icon: Settings },
 ]
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
+  tenant: string
+}
+
+export function AppSidebar({ tenant, ...props }: AppSidebarProps) {
   const router = useRouter()
   const pathname = usePathname()
-  const params = useParams<{ tenant: string }>()
 
   async function handleLogOut() {
     await authClient.signOut()
@@ -84,9 +89,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarMenu className="gap-1">
               {mainNav.map((item) => {
                 const href = item.segment
-                  ? `/s/${params.tenant}/${item.segment}`
+                  ? `/s/${tenant}/${item.segment}`
                   : undefined
-                const active = href ? pathname === href : false
+                const matchSegment = item.match ?? item.segment
+                const matchHref = matchSegment
+                  ? `/s/${tenant}/${matchSegment}`
+                  : undefined
+                const active = matchHref
+                  ? pathname === matchHref ||
+                    pathname?.startsWith(`${matchHref}/`)
+                  : false
 
                 return (
                   <SidebarMenuItem key={item.title}>

@@ -2,10 +2,17 @@ import { AppSidebar } from "@/features/tenant/dashboard/components/app-sidebar"
 
 import { SidebarInset, SidebarProvider } from "@repo/ui/components/ui/sidebar"
 
-const DashboardLayout = ({children}:{children:React.ReactNode}) => {
+export default async function TenantLayout({
+  children,
+  params,
+}: {
+  children: React.ReactNode
+  params: Promise<{ tenant: string }>
+}) {
+  const { tenant } = await params
 
   return (
-  <SidebarProvider
+    <SidebarProvider
       style={
         {
           "--sidebar-width": "calc(var(--spacing) * 72)",
@@ -13,12 +20,8 @@ const DashboardLayout = ({children}:{children:React.ReactNode}) => {
         } as React.CSSProperties
       }
     >
-      <AppSidebar variant="inset" />
-      <SidebarInset>
-{children}
-      </SidebarInset>
+      <AppSidebar variant="inset" tenant={tenant} />
+      <SidebarInset>{children}</SidebarInset>
     </SidebarProvider>
   )
 }
-
-export default DashboardLayout

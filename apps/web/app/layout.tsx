@@ -17,7 +17,10 @@ const jakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Rackrage",
+  title: {
+    default: "Rackrage",
+    template: "%s · Rackrage",
+  },
   description: "Run your gym, studio, or club from one place.",
 };
 

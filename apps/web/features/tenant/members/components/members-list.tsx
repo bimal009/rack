@@ -1,45 +1,13 @@
 "use client"
 
 import { useState } from "react"
-import {
-  LayoutGrid,
-  List,
-  MoreHorizontal,
-  Plus,
-  Search,
-  SlidersHorizontal,
-} from "lucide-react"
+import { LayoutGrid, List, Plus, SlidersHorizontal } from "lucide-react"
 
-import { Avatar, AvatarFallback } from "@repo/ui/components/ui/avatar"
-import { Badge } from "@repo/ui/components/ui/badge"
 import { Button } from "@repo/ui/components/ui/button"
-import { Checkbox } from "@repo/ui/components/ui/checkbox"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@repo/ui/components/ui/dropdown-menu"
-import { Input } from "@repo/ui/components/ui/input"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@repo/ui/components/ui/table"
+import { DataTable } from "@repo/ui/components/ui/data-table"
 import { cn } from "@repo/ui/lib/utils"
 
-type MemberStatus = "Active" | "On Hold" | "Expired"
-
-interface Member {
-  name: string
-  email: string
-  plan: string
-  joined: string
-  status: MemberStatus
-}
+import { memberColumns, type Member } from "./columns"
 
 const members: Member[] = [
   { name: "Savannah Nguyen", email: "savannah@234.com", plan: "Annual Plan", joined: "1 Feb 26", status: "Active" },
@@ -56,17 +24,6 @@ const members: Member[] = [
 ]
 
 const filters = ["All", "Active", "On Hold", "Expired"] as const
-
-const statusVariant: Record<MemberStatus, "default" | "secondary" | "destructive"> = {
-  Active: "default",
-  "On Hold": "secondary",
-  Expired: "destructive",
-}
-
-function initials(name: string) {
-  const parts = name.trim().split(/\s+/)
-  return ((parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? "")).toUpperCase()
-}
 
 export function MembersList() {
   const [filter, setFilter] = useState<(typeof filters)[number]>("All")
@@ -95,118 +52,40 @@ export function MembersList() {
         ))}
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="relative flex-1 min-w-48">
-          <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search by name or email..."
-            className="rounded-full pl-9 shadow-none"
-          />
-        </div>
-        <Button variant="outline" size="icon">
-          <SlidersHorizontal className="size-4" />
-        </Button>
-        <div className="flex items-center rounded-lg border border-border p-1">
-          <Button
-            variant={view === "list" ? "secondary" : "ghost"}
-            size="icon-sm"
-            onClick={() => setView("list")}
-          >
-            <List className="size-4" />
-          </Button>
-          <Button
-            variant={view === "grid" ? "secondary" : "ghost"}
-            size="icon-sm"
-            onClick={() => setView("grid")}
-          >
-            <LayoutGrid className="size-4" />
-          </Button>
-        </div>
-        <Button>
-          <Plus className="size-4" />
-          Add Member
-        </Button>
-      </div>
-
-      <div className="rounded-xl border border-border bg-card">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-10">
-                <Checkbox />
-              </TableHead>
-              <TableHead className="w-14">#No</TableHead>
-              <TableHead>Member</TableHead>
-              <TableHead>Plan</TableHead>
-              <TableHead>Join Date</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="w-10" />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {visible.map((m, i) => (
-              <TableRow key={m.email}>
-                <TableCell>
-                  <Checkbox />
-                </TableCell>
-                <TableCell className="text-muted-foreground">
-                  #{String(i + 1).padStart(2, "0")}
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2.5">
-                    <Avatar size="sm">
-                      <AvatarFallback className="bg-muted text-xs font-medium text-muted-foreground">
-                        {initials(m.name)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-foreground">
-                        {m.name}
-                      </p>
-                      <p className="truncate text-xs text-muted-foreground">
-                        {m.email}
-                      </p>
-                    </div>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <Badge variant="outline" className="rounded-full font-normal">
-                    {m.plan}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-muted-foreground">
-                  {m.joined}
-                </TableCell>
-                <TableCell>
-                  <Badge
-                    variant={statusVariant[m.status]}
-                    className={cn(
-                      "rounded-full",
-                      m.status === "On Hold" && "bg-muted text-foreground"
-                    )}
-                  >
-                    {m.status}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger className="flex size-7 items-center justify-center rounded-md text-muted-foreground outline-none hover:bg-muted hover:text-foreground">
-                      <MoreHorizontal className="size-4" />
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem>View Profile</DropdownMenuItem>
-                      <DropdownMenuItem>Edit Member</DropdownMenuItem>
-                      <DropdownMenuItem variant="destructive">
-                        Remove Member
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+      <DataTable
+        columns={memberColumns}
+        data={visible}
+        getRowId={(row) => row.email}
+        enableRowSelection
+        searchPlaceholder="Search by name or email..."
+        toolbar={
+          <>
+            <Button variant="outline" size="icon">
+              <SlidersHorizontal className="size-4" />
+            </Button>
+            <div className="flex items-center rounded-lg border border-border p-1">
+              <Button
+                variant={view === "list" ? "secondary" : "ghost"}
+                size="icon-sm"
+                onClick={() => setView("list")}
+              >
+                <List className="size-4" />
+              </Button>
+              <Button
+                variant={view === "grid" ? "secondary" : "ghost"}
+                size="icon-sm"
+                onClick={() => setView("grid")}
+              >
+                <LayoutGrid className="size-4" />
+              </Button>
+            </div>
+            <Button>
+              <Plus className="size-4" />
+              Add Member
+            </Button>
+          </>
+        }
+      />
     </div>
   )
 }
