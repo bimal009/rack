@@ -6,22 +6,16 @@ import { toast } from "sonner"
 
 import { Button } from "@repo/ui/components/ui/button"
 import { DataTable } from "@repo/ui/components/ui/data-table"
-import { cn } from "@repo/ui/lib/utils"
+
+import { FilterPills } from "@/features/tenant/components/filter-pills"
 
 import { DeleteConfirmDialog } from "../../components/delete-confirm-dialog"
+import { initialPackages } from "../lib/data"
 import type { Package, PackageInput } from "../lib/schema"
 import { createPackageColumns } from "./columns"
 import { PackageFormSheet } from "./package-form-sheet"
 
-const initialPackages: Package[] = [
-  { id: "pkg_1", name: "5 Session Pack", sessions: 5, price: 89, validityDays: 45, status: "Active" },
-  { id: "pkg_2", name: "10 Session Pack", sessions: 10, price: 159, validityDays: 90, status: "Active" },
-  { id: "pkg_3", name: "20 Session Pack", sessions: 20, price: 289, validityDays: 180, status: "Active" },
-  { id: "pkg_4", name: "Personal Training x4", sessions: 4, price: 220, validityDays: 30, status: "Active" },
-  { id: "pkg_5", name: "Trial Pack", sessions: 2, price: 29, validityDays: 14, status: "Draft" },
-]
-
-const filters = ["All", "Active", "Draft", "Archived"] as const
+const filters = ["All", "Active", "Inactive"] as const
 
 function generateId() {
   return `pkg_${Math.random().toString(36).slice(2, 10)}`
@@ -38,7 +32,7 @@ export function PackagesList() {
   const visible =
     filter === "All"
       ? packages
-      : packages.filter((p) => p.status === filter)
+      : packages.filter((p) => (filter === "Active" ? p.active : !p.active))
 
   function handleAdd() {
     setEditingPackage(null)
@@ -82,23 +76,7 @@ export function PackagesList() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex w-fit items-center gap-1 rounded-full border border-border bg-card p-1">
-        {filters.map((f) => (
-          <button
-            key={f}
-            type="button"
-            onClick={() => setFilter(f)}
-            className={cn(
-              "rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors",
-              filter === f
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            {f}
-          </button>
-        ))}
-      </div>
+      <FilterPills options={filters} value={filter} onChange={setFilter} />
 
       <DataTable
         columns={columns}

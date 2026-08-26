@@ -6,111 +6,14 @@ import { toast } from "sonner"
 
 import { Button } from "@repo/ui/components/ui/button"
 import { DataTable } from "@repo/ui/components/ui/data-table"
-import { cn } from "@repo/ui/lib/utils"
+
+import { FilterPills } from "@/features/tenant/components/filter-pills"
 
 import { DeleteConfirmDialog } from "../../components/delete-confirm-dialog"
+import { initialProducts } from "../lib/data"
 import type { Product, ProductInput } from "../lib/schema"
 import { createProductColumns } from "./columns"
 import { ProductFormSheet } from "./product-form-sheet"
-
-const initialProducts: Product[] = [
-  {
-    id: "prod_1",
-    name: "Whey Protein 1kg",
-    category: "Supplements",
-    brand: "Optimum Nutrition",
-    barcode: "",
-    sku: "WP-1KG",
-    visibility: "Public",
-    active: true,
-    price: 3499,
-    costPrice: 2400,
-    revenueAccount: "Supplement Sales",
-    taxRate: "13%",
-    description: "",
-    features: "Best Seller",
-  },
-  {
-    id: "prod_2",
-    name: "Creatine Monohydrate 500g",
-    category: "Supplements",
-    brand: "MyProtein",
-    barcode: "",
-    sku: "CM-500",
-    visibility: "Public",
-    active: true,
-    price: 1999,
-    costPrice: 1200,
-    revenueAccount: "Supplement Sales",
-    taxRate: "13%",
-    description: "",
-    features: "",
-  },
-  {
-    id: "prod_3",
-    name: "Gym Tank Top",
-    category: "Apparel",
-    brand: "Gymshark",
-    barcode: "",
-    sku: "GTT-BLK",
-    visibility: "Public",
-    active: true,
-    price: 2200,
-    costPrice: 900,
-    revenueAccount: "Apparel Sales",
-    taxRate: "13%",
-    description: "",
-    features: "New Arrival",
-  },
-  {
-    id: "prod_4",
-    name: "Lifting Straps",
-    category: "Accessories",
-    brand: "Generic",
-    barcode: "",
-    sku: "LS-01",
-    visibility: "Public",
-    active: true,
-    price: 1450,
-    costPrice: 600,
-    revenueAccount: "Retail Revenue",
-    taxRate: "13%",
-    description: "",
-    features: "",
-  },
-  {
-    id: "prod_5",
-    name: "Adjustable Dumbbell Set",
-    category: "Equipment",
-    brand: "Generic",
-    barcode: "",
-    sku: "ADS-20",
-    visibility: "Public",
-    active: true,
-    price: 18900,
-    costPrice: 14000,
-    revenueAccount: "Retail Revenue",
-    taxRate: "13%",
-    description: "",
-    features: "",
-  },
-  {
-    id: "prod_6",
-    name: "Shaker Bottle",
-    category: "Accessories",
-    brand: "Generic",
-    barcode: "",
-    sku: "SB-700",
-    visibility: "Private",
-    active: false,
-    price: 999,
-    costPrice: 400,
-    revenueAccount: "Retail Revenue",
-    taxRate: "13%",
-    description: "",
-    features: "",
-  },
-]
 
 const filters = ["All", "Active", "Inactive"] as const
 
@@ -177,23 +80,7 @@ export function ProductsList() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex w-fit items-center gap-1 rounded-full border border-border bg-card p-1">
-        {filters.map((f) => (
-          <button
-            key={f}
-            type="button"
-            onClick={() => setFilter(f)}
-            className={cn(
-              "rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors",
-              filter === f
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            {f}
-          </button>
-        ))}
-      </div>
+      <FilterPills options={filters} value={filter} onChange={setFilter} />
 
       <DataTable
         columns={columns}

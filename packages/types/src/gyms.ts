@@ -39,3 +39,33 @@ export const onboardingSchema = z.object({
 }).strict();
 
 export type OnboardingInput = z.infer<typeof onboardingSchema>;
+
+export const CURRENCY_OPTIONS = ["NPR", "USD", "INR", "EUR", "GBP"] as const;
+export type Currency = (typeof CURRENCY_OPTIONS)[number];
+
+export const updateGymSchema = z.object({
+  businessName: z.string().min(1, "Business name is required"),
+  address: z.string().min(1, "Address is required"),
+  phone: z
+    .string()
+    .regex(/^(98|97)\d{8}$/, "Phone number must be 10 digits starting with 98 or 97"),
+  email: z.string().email("Valid email required"),
+  website: z.string().url().optional().or(z.literal("")),
+  currency: z.enum(CURRENCY_OPTIONS),
+}).strict();
+
+export type UpdateGymInput = z.infer<typeof updateGymSchema>;
+
+export interface GymRecord {
+  id: string;
+  slug: string;
+  businessType: string;
+  businessName: string;
+  address: string;
+  phone: string;
+  email: string;
+  website: string | null;
+  currency: Currency;
+  createdAt: string;
+  updatedAt: string;
+}

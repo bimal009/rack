@@ -6,105 +6,14 @@ import { toast } from "sonner"
 
 import { Button } from "@repo/ui/components/ui/button"
 import { DataTable } from "@repo/ui/components/ui/data-table"
-import { cn } from "@repo/ui/lib/utils"
+
+import { FilterPills } from "@/features/tenant/components/filter-pills"
 
 import { DeleteConfirmDialog } from "../../components/delete-confirm-dialog"
+import { initialPlans } from "../lib/data"
 import type { Plan, PlanInput } from "../lib/schema"
 import { createPlanColumns } from "./columns"
 import { PlanFormSheet } from "./plan-form-sheet"
-
-const initialPlans: Plan[] = [
-  {
-    id: "plan_1",
-    name: "Gold Membership",
-    category: "Individual",
-    barcode: "",
-    visibility: "Public",
-    description: "Full access to all classes, equipment, and locker rooms.",
-    active: true,
-    pricePerPeriod: 7900,
-    billingType: "Monthly",
-    signupFee: 1000,
-    requirePaymentUpfront: true,
-    coverage: "Full facility access",
-    sessions: "",
-    features: "Personal Training",
-    sports: "",
-    members: 112,
-  },
-  {
-    id: "plan_2",
-    name: "Silver Membership",
-    category: "Individual",
-    barcode: "",
-    visibility: "Public",
-    description: "Access to gym floor and open classes.",
-    active: true,
-    pricePerPeriod: 4900,
-    billingType: "Monthly",
-    signupFee: 0,
-    requirePaymentUpfront: true,
-    coverage: "General plan",
-    sessions: "",
-    features: "Group Classes",
-    sports: "",
-    members: 86,
-  },
-  {
-    id: "plan_3",
-    name: "Annual Elite",
-    category: "Individual",
-    barcode: "",
-    visibility: "Public",
-    description: "Best value plan with personal training sessions included.",
-    active: true,
-    pricePerPeriod: 72000,
-    billingType: "Annual",
-    signupFee: 0,
-    requirePaymentUpfront: true,
-    coverage: "Full facility access",
-    sessions: "",
-    features: "Personal Training",
-    sports: "",
-    members: 34,
-  },
-  {
-    id: "plan_4",
-    name: "Student Quarterly",
-    category: "Student",
-    barcode: "",
-    visibility: "Public",
-    description: "Discounted plan for verified students.",
-    active: false,
-    pricePerPeriod: 9900,
-    billingType: "Quarterly",
-    signupFee: 0,
-    requirePaymentUpfront: true,
-    coverage: "General plan",
-    sessions: "",
-    features: "",
-    sports: "",
-    members: 0,
-  },
-  {
-    id: "plan_5",
-    name: "Family Pack",
-    category: "Family",
-    barcode: "",
-    visibility: "Private",
-    description: "Shared plan for up to 4 family members.",
-    active: true,
-    pricePerPeriod: 15900,
-    billingType: "Monthly",
-    signupFee: 1500,
-    requirePaymentUpfront: false,
-    coverage: "Full facility access",
-    sessions: "",
-    features: "Locker",
-    sports: "",
-    members: 16,
-  },
-]
 
 const filters = ["All", "Active", "Inactive"] as const
 
@@ -170,23 +79,7 @@ export function PlansList() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex w-fit items-center gap-1 rounded-full border border-border bg-card p-1">
-        {filters.map((f) => (
-          <button
-            key={f}
-            type="button"
-            onClick={() => setFilter(f)}
-            className={cn(
-              "rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors",
-              filter === f
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            {f}
-          </button>
-        ))}
-      </div>
+      <FilterPills options={filters} value={filter} onChange={setFilter} />
 
       <DataTable
         columns={columns}

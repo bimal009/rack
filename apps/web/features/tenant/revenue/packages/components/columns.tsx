@@ -15,20 +15,12 @@ import {
   DropdownMenuTrigger,
 } from "@repo/ui/components/ui/dropdown-menu"
 
-import type { Package, PackageStatus } from "../lib/schema"
-
-export const packageStatusVariant: Record<
-  PackageStatus,
-  "default" | "secondary" | "outline"
-> = {
-  Active: "default",
-  Draft: "secondary",
-  Archived: "outline",
-}
+import type { Package } from "../lib/schema"
 
 const currency = new Intl.NumberFormat("en-US", {
   style: "currency",
-  currency: "USD",
+  currency: "NPR",
+  currencyDisplay: "code",
 })
 
 interface PackageColumnActions {
@@ -48,16 +40,27 @@ export function createPackageColumns({
     columnHelper.accessor("name", {
       header: "Package",
       cell: ({ row }) => (
-        <p className="truncate text-sm font-medium text-foreground">
-          {row.original.name}
-        </p>
+        <div className="min-w-0">
+          <p className="truncate text-sm font-medium text-foreground">
+            {row.original.name}
+          </p>
+          {row.original.description ? (
+            <p className="truncate text-xs text-muted-foreground">
+              {row.original.description}
+            </p>
+          ) : null}
+        </div>
       ),
     }),
-    columnHelper.accessor("sessions", {
-      header: "Sessions",
+    columnHelper.accessor((row) => row.items.length, {
+      id: "items",
+      header: "Items",
       enableGlobalFilter: false,
-      cell: ({ getValue }) => (
-        <span className="text-muted-foreground">{getValue()} credits</span>
+      cell: ({ row }) => (
+        <span className="text-muted-foreground">
+          {row.original.items.length}{" "}
+          {row.original.items.length === 1 ? "item" : "items"}
+        </span>
       ),
     }),
     columnHelper.accessor("price", {
@@ -69,22 +72,15 @@ export function createPackageColumns({
         </span>
       ),
     }),
-    columnHelper.accessor("validityDays", {
-      header: "Validity",
-      enableGlobalFilter: false,
-      cell: ({ getValue }) => (
-        <span className="text-muted-foreground">{getValue()} days</span>
-      ),
-    }),
-    columnHelper.accessor("status", {
+    columnHelper.accessor("active", {
       header: "Status",
       enableGlobalFilter: false,
       cell: ({ getValue }) => (
         <Badge
-          variant={packageStatusVariant[getValue()]}
+          variant={getValue() ? "default" : "secondary"}
           className="rounded-full"
         >
-          {getValue()}
+          {getValue() ? "Active" : "Inactive"}
         </Badge>
       ),
     }),

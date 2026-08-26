@@ -1,0 +1,55 @@
+import type { Package } from "./schema"
+
+export const initialPackages: Package[] = [
+  {
+    id: "pkg_1",
+    name: "5 Session Pack",
+    price: 8900,
+    visibility: "Public",
+    active: true,
+    description: "Five personal training sessions bundled at a discount.",
+    useSingleQuantity: false,
+    bookable: true,
+    items: [{ type: "plan", refId: "plan_2", name: "Silver Membership", quantity: 1 }],
+  },
+  {
+    id: "pkg_2",
+    name: "10 Session Pack",
+    price: 15900,
+    visibility: "Public",
+    active: true,
+    description: "Ten personal training sessions plus a protein starter kit.",
+    useSingleQuantity: false,
+    bookable: true,
+    items: [
+      { type: "plan", refId: "plan_1", name: "Gold Membership", quantity: 1 },
+      { type: "product", refId: "prod_1", name: "Whey Protein 1kg", quantity: 1 },
+    ],
+  },
+  {
+    id: "pkg_3",
+    name: "Starter Bundle",
+    price: 28900,
+    visibility: "Public",
+    active: true,
+    description: "Everything a new member needs to get going.",
+    useSingleQuantity: true,
+    bookable: false,
+    items: [
+      { type: "plan", refId: "plan_3", name: "Annual Elite", quantity: 1 },
+      { type: "product", refId: "prod_3", name: "Gym Tank Top", quantity: 1 },
+      { type: "product", refId: "prod_6", name: "Shaker Bottle", quantity: 1 },
+    ],
+  },
+  {
+    id: "pkg_4",
+    name: "Trial Pack",
+    price: 2900,
+    visibility: "Private",
+    active: false,
+    description: "Two-week trial pass for prospective members.",
+    useSingleQuantity: false,
+    bookable: false,
+    items: [{ type: "plan", refId: "plan_4", name: "Student Quarterly", quantity: 1 }],
+  },
+]

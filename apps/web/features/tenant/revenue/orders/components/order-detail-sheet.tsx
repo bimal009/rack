@@ -34,7 +34,8 @@ function initials(name: string) {
 
 const currency = new Intl.NumberFormat("en-US", {
   style: "currency",
-  currency: "USD",
+  currency: "NPR",
+  currencyDisplay: "code",
 })
 
 interface OrderDetailBodyProps {

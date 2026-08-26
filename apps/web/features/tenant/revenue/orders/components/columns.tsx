@@ -25,7 +25,8 @@ export const orderStatusVariant: Record<
 
 const currency = new Intl.NumberFormat("en-US", {
   style: "currency",
-  currency: "USD",
+  currency: "NPR",
+  currencyDisplay: "code",
 })
 
 function initials(name: string) {

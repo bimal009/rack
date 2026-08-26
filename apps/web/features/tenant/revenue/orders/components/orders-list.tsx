@@ -1,12 +1,14 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { LayoutGrid, List, SlidersHorizontal } from "lucide-react"
+import Link from "next/link"
+import { LayoutGrid, List, Plus, SlidersHorizontal } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@repo/ui/components/ui/button"
 import { DataTable } from "@repo/ui/components/ui/data-table"
-import { cn } from "@repo/ui/lib/utils"
+
+import { FilterPills } from "@/features/tenant/components/filter-pills"
 
 import { initialOrders } from "../lib/data"
 import { orderStatuses, type Order, type OrderStatus } from "../lib/schema"
@@ -15,7 +17,11 @@ import { OrderDetailSheet } from "./order-detail-sheet"
 
 const filters = ["All", ...orderStatuses] as const
 
-export function OrdersList() {
+interface OrdersListProps {
+  tenant: string
+}
+
+export function OrdersList({ tenant }: OrdersListProps) {
   const [orders, setOrders] = useState<Order[]>(initialOrders)
   const [filter, setFilter] = useState<(typeof filters)[number]>("All")
   const [view, setView] = useState<"list" | "grid">("list")
@@ -44,23 +50,7 @@ export function OrdersList() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex w-fit items-center gap-1 rounded-full border border-border bg-card p-1">
-        {filters.map((f) => (
-          <button
-            key={f}
-            type="button"
-            onClick={() => setFilter(f)}
-            className={cn(
-              "rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors",
-              filter === f
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            {f}
-          </button>
-        ))}
-      </div>
+      <FilterPills options={filters} value={filter} onChange={setFilter} />
 
       <DataTable
         columns={columns}
@@ -90,6 +80,13 @@ export function OrdersList() {
                 <LayoutGrid className="size-4" />
               </Button>
             </div>
+            <Button
+              nativeButton={false}
+              render={<Link href={`/s/${tenant}/revenue/orders/pos`} />}
+            >
+              <Plus className="size-4" />
+              New Sale
+            </Button>
           </>
         }
       />

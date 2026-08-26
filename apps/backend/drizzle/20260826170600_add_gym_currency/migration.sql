@@ -1,0 +1,1 @@
+ALTER TABLE "gyms" ADD COLUMN "currency" varchar(3) DEFAULT 'NPR' NOT NULL;

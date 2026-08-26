@@ -49,9 +49,7 @@ export function SiteHeader({ title, profile }: SiteHeaderProps) {
           <h1 className="text-base font-semibold text-foreground">
             {title}
           </h1>
-          <p className="text-xs text-muted-foreground">
-            Welcome back{profile?.name ? `, ${profile.name}` : ""}
-          </p>
+
         </div>
 
         <div className="ml-auto flex items-center gap-1.5">
