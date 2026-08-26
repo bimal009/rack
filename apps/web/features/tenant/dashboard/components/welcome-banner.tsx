@@ -1,7 +1,5 @@
-import type { Profile } from "@/features/tenant/dashboard/components/site-header"
-
 interface WelcomeBannerProps {
-  profile?: Profile
+  profile?: { name?: string | null }
 }
 
 export function WelcomeBanner({ profile }: WelcomeBannerProps) {

@@ -104,8 +104,6 @@ export const initialTaxRates: SimpleType[] = [
   { id: "tax_5", name: "Luxury", rate: 18 },
 ]
 
-let idCounter = 0
 export function generateTypeId(prefix: string) {
-  idCounter += 1
-  return `${prefix}_${Date.now().toString(36)}${idCounter}`
+  return `${prefix}_${Math.random().toString(36).slice(2, 10)}`
 }

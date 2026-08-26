@@ -39,8 +39,6 @@ export const initialPayRatePolicies: PayRatePolicy[] = [
   },
 ]
 
-let idCounter = 0
 export function generatePayRateId() {
-  idCounter += 1
-  return `pay_${Date.now().toString(36)}${idCounter}`
+  return `pay_${Math.random().toString(36).slice(2, 10)}`
 }

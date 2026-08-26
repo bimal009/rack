@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { BadgeDollarSign, Dumbbell, Users } from "lucide-react"
+import { BadgeDollarSign, Dumbbell, Percent, Users } from "lucide-react"
 
 import { cn } from "@repo/ui/lib/utils"
 
@@ -11,6 +11,7 @@ const navItems = [
   { label: "Staff", segment: "directory", icon: Users },
   { label: "Instructors", segment: "instructors", icon: Dumbbell },
   { label: "Payroll", segment: "payroll", icon: BadgeDollarSign },
+  { label: "Pay Rates", segment: "pay-rates", icon: Percent },
 ]
 
 interface StaffNavProps {

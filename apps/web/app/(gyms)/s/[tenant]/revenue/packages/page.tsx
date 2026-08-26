@@ -1,16 +1,11 @@
 import type { Metadata } from "next"
 
-import { PackagesPage } from "@/features/tenant/revenue/packages/components/packages-page"
+import { PackagesList } from "@/features/tenant/revenue/packages/components/packages-list"
 
 export const metadata: Metadata = {
   title: "Packages",
 }
 
-export default async function Page({
-  params,
-}: {
-  params: Promise<{ tenant: string }>
-}) {
-  const { tenant } = await params
-  return <PackagesPage tenant={tenant} />
+export default function Page() {
+  return <PackagesList />
 }

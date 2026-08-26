@@ -58,9 +58,6 @@ export interface ClassType extends ClassTypeInput {
   id: string
 }
 
-export const simpleTypeKinds = ["Brand", "Category", "Tax Rate"] as const
-export type SimpleTypeKind = (typeof simpleTypeKinds)[number]
-
 export const simpleTypeSchema = z.object({
   name: z.string().trim().min(1, "Enter a name"),
   slug: z

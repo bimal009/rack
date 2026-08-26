@@ -1,16 +1,11 @@
 import type { Metadata } from "next"
 
-import { OrdersPage } from "@/features/tenant/revenue/orders/components/orders-page"
+import { OrdersList } from "@/features/tenant/revenue/orders/components/orders-list"
 
 export const metadata: Metadata = {
   title: "Orders",
 }
 
-export default async function Page({
-  params,
-}: {
-  params: Promise<{ tenant: string }>
-}) {
-  const { tenant } = await params
-  return <OrdersPage tenant={tenant} />
+export default function Page() {
+  return <OrdersList />
 }
