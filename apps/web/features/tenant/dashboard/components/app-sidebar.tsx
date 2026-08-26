@@ -36,7 +36,7 @@ const mainNav = [
   { title: "Members", icon: Users, segment: "members" },
   { title: "Revenue", icon: Wallet, segment: "revenue/plans", match: "revenue" },
   { title: "Attendance", icon: ClipboardCheck, segment: "attendance" },
-  { title: "Staff", icon: UserRoundCog, segment: "staff" },
+  { title: "Staff", icon: UserRoundCog, segment: "staff/directory", match: "staff" },
 ]
 
 const accountNav = [

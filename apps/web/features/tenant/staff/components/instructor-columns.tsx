@@ -7,7 +7,6 @@ import { Badge } from "@repo/ui/components/ui/badge"
 import {
   createDataTableColumnHelper,
   createIndexColumn,
-  createSelectionColumn,
 } from "@repo/ui/components/ui/data-table"
 import {
   DropdownMenu,
@@ -17,55 +16,25 @@ import {
 } from "@repo/ui/components/ui/dropdown-menu"
 import { cn } from "@repo/ui/lib/utils"
 
-import type { StaffMember, StaffStatus } from "../lib/schema"
+import type { StaffMember } from "../lib/schema"
+import { fullName, initials, payCurrency } from "./columns"
 
-export const staffStatusVariant: Record<
-  StaffStatus,
-  "default" | "secondary"
-> = {
-  Active: "default",
-  Inactive: "secondary",
-}
-
-export const payCurrency = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "NPR",
-  currencyDisplay: "code",
-})
-
-export function fullName(staff: Pick<StaffMember, "firstName" | "lastName">) {
-  return `${staff.firstName} ${staff.lastName}`.trim()
-}
-
-export function initials(staff: Pick<StaffMember, "firstName" | "lastName">) {
-  return ((staff.firstName[0] ?? "") + (staff.lastName[0] ?? "")).toUpperCase()
-}
-
-function formatPayRate(staff: StaffMember) {
-  const rate = payCurrency.format(staff.payRate)
-  const suffix =
-    staff.payType === "Hourly"
-      ? "/hr"
-      : staff.payType === "Per Class"
-        ? "/class"
-        : "/mo"
-  return `${rate}${suffix}`
-}
-
-interface StaffColumnActions {
+interface InstructorColumnActions {
   onEdit: (staff: StaffMember) => void
   onDelete: (staff: StaffMember) => void
 }
 
-export function createStaffColumns({ onEdit, onDelete }: StaffColumnActions) {
+export function createInstructorColumns({
+  onEdit,
+  onDelete,
+}: InstructorColumnActions) {
   const columnHelper = createDataTableColumnHelper<StaffMember>()
 
   return columnHelper.columns([
-    createSelectionColumn(columnHelper),
     createIndexColumn(columnHelper),
     columnHelper.accessor((row) => `${fullName(row)} ${row.email}`, {
-      id: "staff",
-      header: "Staff",
+      id: "instructor",
+      header: "Instructor",
       cell: ({ row }) => (
         <div className="flex items-center gap-2.5">
           <Avatar size="sm">
@@ -76,7 +45,7 @@ export function createStaffColumns({ onEdit, onDelete }: StaffColumnActions) {
           </Avatar>
           <div className="min-w-0">
             <p className="truncate text-sm font-medium text-foreground">
-              {fullName(row.original)}
+              {row.original.displayName || fullName(row.original)}
             </p>
             <p className="truncate text-xs text-muted-foreground">
               {row.original.email}
@@ -85,54 +54,59 @@ export function createStaffColumns({ onEdit, onDelete }: StaffColumnActions) {
         </div>
       ),
     }),
-    columnHelper.accessor("role", {
-      header: "Role",
+    columnHelper.accessor("instructorType", {
+      header: "Type",
       enableGlobalFilter: false,
-      cell: ({ row }) => (
-        <div>
-          <Badge variant="outline" className="rounded-full font-normal">
-            {row.original.role}
-          </Badge>
-          {row.original.role === "Instructor" &&
-            row.original.instructorType !== "None" && (
-              <p className="mt-1 truncate text-xs text-muted-foreground">
-                {row.original.instructorType}
-              </p>
-            )}
-        </div>
+      cell: ({ getValue }) => (
+        <Badge variant="outline" className="rounded-full font-normal">
+          {getValue()}
+        </Badge>
+      ),
+    }),
+    columnHelper.accessor("sports", {
+      header: "Sports",
+      enableGlobalFilter: false,
+      cell: ({ getValue }) => getValue() || (
+        <span className="text-muted-foreground">—</span>
       ),
     }),
     columnHelper.accessor("payRate", {
-      header: "Pay Rate",
+      header: "Rate",
       enableGlobalFilter: false,
       cell: ({ row }) => (
-        <span className="text-foreground">{formatPayRate(row.original)}</span>
+        <span className="text-foreground">
+          {payCurrency.format(row.original.payRate)}
+          {row.original.payType === "Hourly"
+            ? "/hr"
+            : row.original.payType === "Per Class"
+              ? "/class"
+              : "/mo"}
+        </span>
       ),
     }),
-    columnHelper.accessor("joined", {
-      header: "Joined",
+    columnHelper.accessor("canBeBooked", {
+      header: "Bookable",
       enableGlobalFilter: false,
       cell: ({ getValue }) => (
-        <span className="text-muted-foreground">{getValue()}</span>
+        <Badge
+          variant={getValue() ? "default" : "secondary"}
+          className="rounded-full"
+        >
+          {getValue() ? "Yes" : "No"}
+        </Badge>
       ),
     }),
-    columnHelper.accessor("status", {
+    columnHelper.accessor("activeInstructor", {
       header: "Status",
       enableGlobalFilter: false,
-      cell: ({ getValue }) => {
-        const status = getValue()
-        return (
-          <Badge
-            variant={staffStatusVariant[status]}
-            className={cn(
-              "rounded-full",
-              status === "Inactive" && "bg-muted text-foreground"
-            )}
-          >
-            {status}
-          </Badge>
-        )
-      },
+      cell: ({ getValue }) => (
+        <Badge
+          variant={getValue() ? "default" : "secondary"}
+          className={cn("rounded-full", !getValue() && "bg-muted text-foreground")}
+        >
+          {getValue() ? "Active" : "Inactive"}
+        </Badge>
+      ),
     }),
     columnHelper.display({
       id: "actions",
@@ -144,14 +118,14 @@ export function createStaffColumns({ onEdit, onDelete }: StaffColumnActions) {
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={() => onEdit(row.original)}>
               <PenSquare />
-              Edit Staff
+              Edit Instructor
             </DropdownMenuItem>
             <DropdownMenuItem
               variant="destructive"
               onClick={() => onDelete(row.original)}
             >
               <Trash2 />
-              Remove Staff
+              Remove Instructor
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

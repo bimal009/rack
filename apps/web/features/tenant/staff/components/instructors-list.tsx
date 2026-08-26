@@ -12,11 +12,12 @@ import { FilterPills } from "@/features/tenant/components/filter-pills"
 import { exportToCsv } from "@/features/tenant/lib/export-csv"
 
 import { generateStaffId, initialStaff } from "../lib/data"
-import { staffRoles, type StaffInput, type StaffMember } from "../lib/schema"
-import { createStaffColumns, fullName } from "./columns"
+import type { StaffInput, StaffMember } from "../lib/schema"
+import { fullName } from "./columns"
+import { createInstructorColumns } from "./instructor-columns"
 import { StaffFormSheet } from "./staff-form-sheet"
 
-const filters = ["All", ...staffRoles] as const
+const filters = ["All", "Active", "Inactive"] as const
 
 function today() {
   const months = [
@@ -27,15 +28,20 @@ function today() {
   return `${date.getDate()} ${months[date.getMonth()]} ${String(date.getFullYear()).slice(-2)}`
 }
 
-export function StaffList() {
+export function InstructorsList() {
   const [staff, setStaff] = useState<StaffMember[]>(initialStaff)
   const [filter, setFilter] = useState<(typeof filters)[number]>("All")
   const [sheetOpen, setSheetOpen] = useState(false)
   const [editingStaff, setEditingStaff] = useState<StaffMember | null>(null)
   const [deletingStaff, setDeletingStaff] = useState<StaffMember | null>(null)
 
+  const instructors = staff.filter((s) => s.role === "Instructor")
   const visible =
-    filter === "All" ? staff : staff.filter((s) => s.role === filter)
+    filter === "All"
+      ? instructors
+      : instructors.filter((s) =>
+          filter === "Active" ? s.activeInstructor : !s.activeInstructor
+        )
 
   function handleAdd() {
     setEditingStaff(null)
@@ -78,25 +84,24 @@ export function StaffList() {
 
   function handleExport() {
     exportToCsv(
-      "staff.csv",
+      "instructors.csv",
       visible.map((member) => ({
-        Name: fullName(member),
+        Name: member.displayName || fullName(member),
         Email: member.email,
-        Phone: member.phone,
-        Role: member.role,
-        "Instructor Type":
-          member.role === "Instructor" ? member.instructorType : "",
+        Type: member.instructorType,
+        Sports: member.sports ?? "",
         "Pay Type": member.payType,
         "Pay Rate": member.payRate,
-        Joined: member.joined,
-        Status: member.status,
+        Bookable: member.canBeBooked ? "Yes" : "No",
+        Visibility: member.visibility,
+        Status: member.activeInstructor ? "Active" : "Inactive",
       }))
     )
   }
 
   const columns = useMemo(
     () =>
-      createStaffColumns({
+      createInstructorColumns({
         onEdit: handleEdit,
         onDelete: setDeletingStaff,
       }),
@@ -117,12 +122,11 @@ export function StaffList() {
         columns={columns}
         data={visible}
         getRowId={(row) => row.id}
-        enableRowSelection
         searchPlaceholder="Search by name or email..."
         toolbar={
           <Button onClick={handleAdd}>
             <Plus className="size-4" />
-            Add Staff
+            Add Instructor
           </Button>
         }
       />
@@ -131,13 +135,14 @@ export function StaffList() {
         open={sheetOpen}
         onOpenChange={setSheetOpen}
         staff={editingStaff}
+        defaultRole="Instructor"
         onSubmit={handleSubmit}
       />
 
       <DeleteConfirmDialog
         open={Boolean(deletingStaff)}
         onOpenChange={(open) => !open && setDeletingStaff(null)}
-        title="Remove staff member?"
+        title="Remove instructor?"
         description={
           deletingStaff
             ? `"${fullName(deletingStaff)}" will be removed from your staff list.`

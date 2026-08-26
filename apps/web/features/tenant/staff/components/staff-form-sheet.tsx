@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/components/ui/avat
 import { Button } from "@repo/ui/components/ui/button"
 import {
   Field,
+  FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
@@ -35,67 +36,120 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@repo/ui/components/ui/sheet"
+import { Switch } from "@repo/ui/components/ui/switch"
 
 import { fieldErrors } from "../lib/validation"
 import {
+  instructorTypes,
   payTypes,
+  staffGenders,
   staffRoles,
   staffSchema,
+  staffVisibilities,
+  type InstructorType,
   type PayType,
+  type StaffGender,
   type StaffInput,
   type StaffMember,
   type StaffRole,
+  type StaffVisibility,
 } from "../lib/schema"
 import { initials } from "./columns"
 
 interface StaffFormValues {
+  allowAdminAccess: boolean
   firstName: string
   lastName: string
   email: string
   phone: string
+  dateOfBirth: string
+  gender: StaffGender | ""
+  address: string
   role: StaffRole | ""
-  specialty: string
   payType: PayType | ""
   payRate: string
+  displayName: string
+  instructorType: InstructorType
+  sports: string
+  experience: string
+  certifications: string
+  canBeBooked: boolean
+  visibility: StaffVisibility
+  maxConcurrentBookings: string
+  activeInstructor: boolean
 }
 
-function toFormValues(staff?: StaffMember | null): StaffFormValues {
+function toFormValues(
+  staff?: StaffMember | null,
+  defaultRole?: StaffRole
+): StaffFormValues {
   if (!staff) {
     return {
+      allowAdminAccess: false,
       firstName: "",
       lastName: "",
       email: "",
       phone: "",
-      role: "",
-      specialty: "",
+      dateOfBirth: "",
+      gender: "",
+      address: "",
+      role: defaultRole ?? "",
       payType: "",
       payRate: "",
+      displayName: "",
+      instructorType: "None",
+      sports: "",
+      experience: "",
+      certifications: "",
+      canBeBooked: false,
+      visibility: "Public",
+      maxConcurrentBookings: "1",
+      activeInstructor: true,
     }
   }
   return {
+    allowAdminAccess: staff.allowAdminAccess,
     firstName: staff.firstName,
     lastName: staff.lastName,
     email: staff.email,
     phone: staff.phone,
+    dateOfBirth: staff.dateOfBirth ?? "",
+    gender: staff.gender ?? "",
+    address: staff.address ?? "",
     role: staff.role,
-    specialty: staff.specialty ?? "",
     payType: staff.payType,
     payRate: String(staff.payRate),
+    displayName: staff.displayName ?? "",
+    instructorType: staff.instructorType,
+    sports: staff.sports ?? "",
+    experience: staff.experience ?? "",
+    certifications: staff.certifications ?? "",
+    canBeBooked: staff.canBeBooked,
+    visibility: staff.visibility,
+    maxConcurrentBookings: String(staff.maxConcurrentBookings),
+    activeInstructor: staff.activeInstructor,
   }
 }
 
 interface StaffFormBodyProps {
   staff?: StaffMember | null
+  defaultRole?: StaffRole
   onSubmit: (values: StaffInput) => void
   onCancel: () => void
 }
 
-function StaffFormBody({ staff, onSubmit, onCancel }: StaffFormBodyProps) {
+function StaffFormBody({
+  staff,
+  defaultRole,
+  onSubmit,
+  onCancel,
+}: StaffFormBodyProps) {
   const [values, setValues] = useState<StaffFormValues>(() =>
-    toFormValues(staff)
+    toFormValues(staff, defaultRole)
   )
   const [errors, setErrors] = useState<Record<string, string>>({})
   const isEdit = Boolean(staff)
+  const isInstructor = values.role === "Instructor"
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault()
@@ -105,6 +159,7 @@ function StaffFormBody({ staff, onSubmit, onCancel }: StaffFormBodyProps) {
       role: values.role || undefined,
       payType: values.payType || undefined,
       payRate: Number(values.payRate),
+      maxConcurrentBookings: Number(values.maxConcurrentBookings),
     })
 
     if (!result.success) {
@@ -124,7 +179,7 @@ function StaffFormBody({ staff, onSubmit, onCancel }: StaffFormBodyProps) {
   return (
     <form onSubmit={handleSubmit} className="flex h-full flex-col">
       <SheetHeader>
-        <SheetTitle>{isEdit ? "Edit staff" : "Add Staff"}</SheetTitle>
+        <SheetTitle>{isEdit ? "Edit staff" : "Add staff member"}</SheetTitle>
         <SheetDescription>
           {isEdit
             ? "Update this staff member's details and pay rate."
@@ -133,6 +188,30 @@ function StaffFormBody({ staff, onSubmit, onCancel }: StaffFormBodyProps) {
       </SheetHeader>
 
       <SheetBody className="flex flex-col gap-6">
+        <FieldSet>
+          <FieldLegend>User Information</FieldLegend>
+          <FieldGroup>
+            <Field orientation="horizontal">
+              <Switch
+                id="staff-admin-access"
+                checked={values.allowAdminAccess}
+                onCheckedChange={(checked) =>
+                  setValues((v) => ({ ...v, allowAdminAccess: checked }))
+                }
+              />
+              <div>
+                <FieldLabel htmlFor="staff-admin-access">
+                  Allow Admin Portal Access
+                </FieldLabel>
+                <FieldDescription>
+                  Lets this person sign in to the admin dashboard. Off keeps
+                  them as a bookable resource only (no login).
+                </FieldDescription>
+              </div>
+            </Field>
+          </FieldGroup>
+        </FieldSet>
+
         <FieldSet>
           <FieldLegend>Basic Information</FieldLegend>
           <FieldGroup>
@@ -216,7 +295,64 @@ function StaffFormBody({ staff, onSubmit, onCancel }: StaffFormBodyProps) {
         </FieldSet>
 
         <FieldSet>
-          <FieldLegend>Role</FieldLegend>
+          <FieldLegend>Additional Information</FieldLegend>
+          <FieldGroup>
+            <div className="grid grid-cols-2 gap-4">
+              <Field>
+                <FieldLabel htmlFor="staff-dob">Date of Birth</FieldLabel>
+                <Input
+                  id="staff-dob"
+                  type="date"
+                  value={values.dateOfBirth}
+                  onChange={(e) =>
+                    setValues((v) => ({ ...v, dateOfBirth: e.target.value }))
+                  }
+                />
+              </Field>
+
+              <Field>
+                <FieldLabel htmlFor="staff-gender">Gender</FieldLabel>
+                <Select
+                  value={values.gender}
+                  onValueChange={(value) =>
+                    setValues((v) => ({ ...v, gender: value as StaffGender }))
+                  }
+                >
+                  <SelectTrigger id="staff-gender" className="w-full">
+                    <SelectValue placeholder="Select gender" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {staffGenders.map((gender) => (
+                      <SelectItem key={gender} value={gender}>
+                        {gender}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+            </div>
+          </FieldGroup>
+        </FieldSet>
+
+        <FieldSet>
+          <FieldLegend>Address</FieldLegend>
+          <FieldGroup>
+            <Field>
+              <FieldLabel htmlFor="staff-address">Address</FieldLabel>
+              <Input
+                id="staff-address"
+                placeholder="Street, city, postcode"
+                value={values.address}
+                onChange={(e) =>
+                  setValues((v) => ({ ...v, address: e.target.value }))
+                }
+              />
+            </Field>
+          </FieldGroup>
+        </FieldSet>
+
+        <FieldSet>
+          <FieldLegend>Role & Pay</FieldLegend>
           <FieldGroup>
             <div className="grid grid-cols-2 gap-4">
               <Field data-invalid={Boolean(errors.role)}>
@@ -247,27 +383,6 @@ function StaffFormBody({ staff, onSubmit, onCancel }: StaffFormBodyProps) {
                 <FieldError>{errors.role}</FieldError>
               </Field>
 
-              <Field>
-                <FieldLabel htmlFor="staff-specialty">
-                  Specialty <span className="text-muted-foreground">(optional)</span>
-                </FieldLabel>
-                <Input
-                  id="staff-specialty"
-                  placeholder="Yoga, Strength Training..."
-                  value={values.specialty}
-                  onChange={(e) =>
-                    setValues((v) => ({ ...v, specialty: e.target.value }))
-                  }
-                />
-              </Field>
-            </div>
-          </FieldGroup>
-        </FieldSet>
-
-        <FieldSet>
-          <FieldLegend>Pay</FieldLegend>
-          <FieldGroup>
-            <div className="grid grid-cols-2 gap-4">
               <Field data-invalid={Boolean(errors.payType)}>
                 <FieldLabel htmlFor="staff-pay-type">
                   Pay Type <span className="text-destructive">*</span>
@@ -295,33 +410,218 @@ function StaffFormBody({ staff, onSubmit, onCancel }: StaffFormBodyProps) {
                 </Select>
                 <FieldError>{errors.payType}</FieldError>
               </Field>
-
-              <Field data-invalid={Boolean(errors.payRate)}>
-                <FieldLabel htmlFor="staff-pay-rate">
-                  Pay Rate <span className="text-destructive">*</span>
-                </FieldLabel>
-                <InputGroup>
-                  <InputGroupAddon>
-                    <InputGroupText>NPR</InputGroupText>
-                  </InputGroupAddon>
-                  <InputGroupInput
-                    id="staff-pay-rate"
-                    type="number"
-                    inputMode="decimal"
-                    min="0"
-                    step="1"
-                    value={values.payRate}
-                    aria-invalid={Boolean(errors.payRate)}
-                    onChange={(e) =>
-                      setValues((v) => ({ ...v, payRate: e.target.value }))
-                    }
-                  />
-                </InputGroup>
-                <FieldError>{errors.payRate}</FieldError>
-              </Field>
             </div>
+
+            <Field data-invalid={Boolean(errors.payRate)}>
+              <FieldLabel htmlFor="staff-pay-rate">
+                Pay Rate <span className="text-destructive">*</span>
+              </FieldLabel>
+              <InputGroup>
+                <InputGroupAddon>
+                  <InputGroupText>NPR</InputGroupText>
+                </InputGroupAddon>
+                <InputGroupInput
+                  id="staff-pay-rate"
+                  type="number"
+                  inputMode="decimal"
+                  min="0"
+                  step="1"
+                  value={values.payRate}
+                  aria-invalid={Boolean(errors.payRate)}
+                  onChange={(e) =>
+                    setValues((v) => ({ ...v, payRate: e.target.value }))
+                  }
+                />
+              </InputGroup>
+              <FieldError>{errors.payRate}</FieldError>
+            </Field>
           </FieldGroup>
         </FieldSet>
+
+        {isInstructor && (
+          <FieldSet>
+            <FieldLegend>Instructor Information</FieldLegend>
+            <FieldGroup>
+              <div className="grid grid-cols-2 gap-4">
+                <Field>
+                  <FieldLabel htmlFor="staff-display-name">
+                    Display name
+                  </FieldLabel>
+                  <Input
+                    id="staff-display-name"
+                    placeholder="Shown on the schedule"
+                    value={values.displayName}
+                    onChange={(e) =>
+                      setValues((v) => ({ ...v, displayName: e.target.value }))
+                    }
+                  />
+                  <FieldDescription>
+                    Shown on the schedule instead of the full name.
+                  </FieldDescription>
+                </Field>
+
+                <Field>
+                  <FieldLabel htmlFor="staff-instructor-type">
+                    Instructor Type
+                  </FieldLabel>
+                  <Select
+                    value={values.instructorType}
+                    onValueChange={(value) =>
+                      setValues((v) => ({
+                        ...v,
+                        instructorType: value as InstructorType,
+                      }))
+                    }
+                  >
+                    <SelectTrigger id="staff-instructor-type" className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {instructorTypes.map((type) => (
+                        <SelectItem key={type} value={type}>
+                          {type}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Field>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <Field>
+                  <FieldLabel htmlFor="staff-sports">Sports</FieldLabel>
+                  <Input
+                    id="staff-sports"
+                    placeholder="Boxing, Yoga..."
+                    value={values.sports}
+                    onChange={(e) =>
+                      setValues((v) => ({ ...v, sports: e.target.value }))
+                    }
+                  />
+                </Field>
+
+                <Field>
+                  <FieldLabel htmlFor="staff-experience">Experience</FieldLabel>
+                  <Input
+                    id="staff-experience"
+                    placeholder="5 years"
+                    value={values.experience}
+                    onChange={(e) =>
+                      setValues((v) => ({ ...v, experience: e.target.value }))
+                    }
+                  />
+                </Field>
+              </div>
+
+              <Field>
+                <FieldLabel htmlFor="staff-certifications">
+                  Certifications
+                </FieldLabel>
+                <Input
+                  id="staff-certifications"
+                  placeholder="NASM-CPT, Yoga Alliance 200hr..."
+                  value={values.certifications}
+                  onChange={(e) =>
+                    setValues((v) => ({
+                      ...v,
+                      certifications: e.target.value,
+                    }))
+                  }
+                />
+              </Field>
+
+              <Field orientation="horizontal">
+                <Switch
+                  id="staff-can-be-booked"
+                  checked={values.canBeBooked}
+                  onCheckedChange={(checked) =>
+                    setValues((v) => ({ ...v, canBeBooked: checked }))
+                  }
+                />
+                <div>
+                  <FieldLabel htmlFor="staff-can-be-booked">
+                    Can be Booked
+                  </FieldLabel>
+                  <FieldDescription>
+                    Members can book one-to-one sessions with this instructor.
+                  </FieldDescription>
+                </div>
+              </Field>
+
+              <div className="grid grid-cols-2 gap-4">
+                <Field>
+                  <FieldLabel htmlFor="staff-visibility">
+                    Visibility
+                  </FieldLabel>
+                  <Select
+                    value={values.visibility}
+                    onValueChange={(value) =>
+                      setValues((v) => ({
+                        ...v,
+                        visibility: value as StaffVisibility,
+                      }))
+                    }
+                  >
+                    <SelectTrigger id="staff-visibility" className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {staffVisibilities.map((option) => (
+                        <SelectItem key={option} value={option}>
+                          {option}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FieldDescription>
+                    Private keeps them bookable but hidden from members.
+                  </FieldDescription>
+                </Field>
+
+                <Field data-invalid={Boolean(errors.maxConcurrentBookings)}>
+                  <FieldLabel htmlFor="staff-max-bookings">
+                    Max Concurrent Bookings
+                  </FieldLabel>
+                  <Input
+                    id="staff-max-bookings"
+                    type="number"
+                    inputMode="numeric"
+                    min="1"
+                    step="1"
+                    value={values.maxConcurrentBookings}
+                    aria-invalid={Boolean(errors.maxConcurrentBookings)}
+                    onChange={(e) =>
+                      setValues((v) => ({
+                        ...v,
+                        maxConcurrentBookings: e.target.value,
+                      }))
+                    }
+                  />
+                  <FieldError>{errors.maxConcurrentBookings}</FieldError>
+                </Field>
+              </div>
+
+              <Field orientation="horizontal">
+                <Switch
+                  id="staff-active-instructor"
+                  checked={values.activeInstructor}
+                  onCheckedChange={(checked) =>
+                    setValues((v) => ({ ...v, activeInstructor: checked }))
+                  }
+                />
+                <div>
+                  <FieldLabel htmlFor="staff-active-instructor">
+                    Active Instructor
+                  </FieldLabel>
+                  <FieldDescription>
+                    Inactive instructors stay on past bookings but cannot be
+                    assigned.
+                  </FieldDescription>
+                </div>
+              </Field>
+            </FieldGroup>
+          </FieldSet>
+        )}
       </SheetBody>
 
       <SheetFooter>
@@ -338,6 +638,7 @@ interface StaffFormSheetProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   staff?: StaffMember | null
+  defaultRole?: StaffRole
   onSubmit: (values: StaffInput) => void
 }
 
@@ -345,6 +646,7 @@ export function StaffFormSheet({
   open,
   onOpenChange,
   staff,
+  defaultRole,
   onSubmit,
 }: StaffFormSheetProps) {
   return (
@@ -354,6 +656,7 @@ export function StaffFormSheet({
           <StaffFormBody
             key={staff?.id ?? "new"}
             staff={staff}
+            defaultRole={defaultRole}
             onSubmit={(values) => {
               onSubmit(values)
               onOpenChange(false)
