@@ -6,11 +6,6 @@ export const metadata: Metadata = {
   title: "Organization",
 }
 
-export default async function Page({
-  params,
-}: {
-  params: Promise<{ tenant: string }>
-}) {
-  const { tenant } = await params
-  return <OrganizationPage tenant={tenant} />
+export default function Page() {
+  return <OrganizationPage />
 }

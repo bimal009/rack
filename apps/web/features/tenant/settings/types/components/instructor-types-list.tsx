@@ -82,13 +82,6 @@ export function InstructorTypesList() {
         header: "Max Concurrent Bookings",
         enableGlobalFilter: false,
       }),
-      columnHelper.accessor("revenueAccount", {
-        header: "Revenue Account",
-        enableGlobalFilter: false,
-        cell: ({ getValue }) => getValue() || (
-          <span className="text-muted-foreground">—</span>
-        ),
-      }),
       columnHelper.display({
         id: "actions",
         cell: ({ row }) => (

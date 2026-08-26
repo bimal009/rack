@@ -20,13 +20,6 @@ import {
   InputGroupText,
 } from "@repo/ui/components/ui/input-group"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@repo/ui/components/ui/select"
-import {
   Sheet,
   SheetBody,
   SheetContent,
@@ -41,7 +34,6 @@ import { Textarea } from "@repo/ui/components/ui/textarea"
 import { fieldErrors } from "../lib/validation"
 import {
   classTypeSchema,
-  revenueAccounts,
   type ClassType,
   type ClassTypeInput,
 } from "../lib/schema"
@@ -55,7 +47,6 @@ interface ClassTypeFormValues {
   pricePerClass: string
   maxParticipants: string
   maxConcurrentBookings: string
-  revenueAccount: string
 }
 
 function slugify(value: string) {
@@ -77,7 +68,6 @@ function toFormValues(cls?: ClassType | null): ClassTypeFormValues {
       pricePerClass: "0",
       maxParticipants: "1",
       maxConcurrentBookings: "1",
-      revenueAccount: "",
     }
   }
   return {
@@ -89,7 +79,6 @@ function toFormValues(cls?: ClassType | null): ClassTypeFormValues {
     pricePerClass: String(cls.pricePerClass),
     maxParticipants: String(cls.maxParticipants),
     maxConcurrentBookings: String(cls.maxConcurrentBookings),
-    revenueAccount: cls.revenueAccount ?? "",
   }
 }
 
@@ -291,29 +280,6 @@ function ClassTypeFormBody({ cls, onSubmit, onCancel }: ClassTypeFormBodyProps) 
                   }))
                 }
               />
-            </Field>
-
-            <Field>
-              <FieldLabel htmlFor="class-revenue-account">
-                Revenue Account
-              </FieldLabel>
-              <Select
-                value={values.revenueAccount}
-                onValueChange={(value) =>
-                  setValues((v) => ({ ...v, revenueAccount: value ?? "" }))
-                }
-              >
-                <SelectTrigger id="class-revenue-account" className="w-full">
-                  <SelectValue placeholder="Select account" />
-                </SelectTrigger>
-                <SelectContent>
-                  {revenueAccounts.map((account) => (
-                    <SelectItem key={account} value={account}>
-                      {account}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
             </Field>
           </FieldGroup>
         </FieldSet>

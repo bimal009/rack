@@ -9,17 +9,9 @@ import {
   FieldError,
   FieldGroup,
   FieldLabel,
-  FieldLegend,
   FieldSet,
 } from "@repo/ui/components/ui/field"
 import { Input } from "@repo/ui/components/ui/input"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@repo/ui/components/ui/select"
 import {
   Sheet,
   SheetBody,
@@ -34,7 +26,6 @@ import { Textarea } from "@repo/ui/components/ui/textarea"
 import { fieldErrors } from "../lib/validation"
 import {
   instructorTypeSchema,
-  revenueAccounts,
   type InstructorTypeInput,
   type InstructorTypeRecord,
 } from "../lib/schema"
@@ -44,7 +35,6 @@ interface InstructorTypeFormValues {
   slug: string
   description: string
   maxConcurrentBookings: string
-  revenueAccount: string
 }
 
 function slugify(value: string) {
@@ -64,7 +54,6 @@ function toFormValues(
       slug: "",
       description: "",
       maxConcurrentBookings: "1",
-      revenueAccount: "",
     }
   }
   return {
@@ -72,7 +61,6 @@ function toFormValues(
     slug: type.slug,
     description: type.description ?? "",
     maxConcurrentBookings: String(type.maxConcurrentBookings),
-    revenueAccount: type.revenueAccount ?? "",
   }
 }
 
@@ -177,53 +165,25 @@ function InstructorTypeFormBody({
               />
             </Field>
 
-            <div className="grid grid-cols-2 gap-4">
-              <Field>
-                <FieldLabel htmlFor="inst-type-max-bookings">
-                  Max Concurrent Bookings
-                </FieldLabel>
-                <Input
-                  id="inst-type-max-bookings"
-                  type="number"
-                  inputMode="numeric"
-                  min="1"
-                  step="1"
-                  value={values.maxConcurrentBookings}
-                  onChange={(e) =>
-                    setValues((v) => ({
-                      ...v,
-                      maxConcurrentBookings: e.target.value,
-                    }))
-                  }
-                />
-              </Field>
-
-              <Field>
-                <FieldLabel htmlFor="inst-type-revenue-account">
-                  Revenue Account
-                </FieldLabel>
-                <Select
-                  value={values.revenueAccount}
-                  onValueChange={(value) =>
-                    setValues((v) => ({ ...v, revenueAccount: value ?? "" }))
-                  }
-                >
-                  <SelectTrigger
-                    id="inst-type-revenue-account"
-                    className="w-full"
-                  >
-                    <SelectValue placeholder="Select account" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {revenueAccounts.map((account) => (
-                      <SelectItem key={account} value={account}>
-                        {account}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </Field>
-            </div>
+            <Field>
+              <FieldLabel htmlFor="inst-type-max-bookings">
+                Max Concurrent Bookings
+              </FieldLabel>
+              <Input
+                id="inst-type-max-bookings"
+                type="number"
+                inputMode="numeric"
+                min="1"
+                step="1"
+                value={values.maxConcurrentBookings}
+                onChange={(e) =>
+                  setValues((v) => ({
+                    ...v,
+                    maxConcurrentBookings: e.target.value,
+                  }))
+                }
+              />
+            </Field>
             <FieldDescription>
               How many bookings an instructor of this type can hold in the
               same time slot (e.g. 3 for a personal trainer with small

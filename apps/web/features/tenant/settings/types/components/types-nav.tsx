@@ -3,14 +3,7 @@
 import { useEffect, useRef } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import {
-  BadgeDollarSign,
-  Dumbbell,
-  LayoutGrid,
-  Percent,
-  Tag,
-  Users,
-} from "lucide-react"
+import { Dumbbell, LayoutGrid, Percent, Tag, Users } from "lucide-react"
 
 import { cn } from "@repo/ui/lib/utils"
 
@@ -21,7 +14,6 @@ const navItems = [
   { label: "Brands", segment: "brands", icon: Tag },
   { label: "Tax Rates", segment: "tax-rates", icon: Percent },
   { label: "Categories", segment: "categories", icon: LayoutGrid },
-  { label: "Pay Rates", segment: "pay-rates", icon: BadgeDollarSign },
 ]
 
 interface TypesNavProps {

@@ -1,0 +1,46 @@
+import { initialClassTypes } from "@/features/tenant/settings/types/lib/data"
+
+import type { PayRatePolicy } from "./pay-rate-schema"
+
+export const classScopeOptions = [
+  "All classes",
+  ...initialClassTypes.map((c) => c.name),
+]
+
+export const initialPayRatePolicies: PayRatePolicy[] = [
+  {
+    id: "pay_1",
+    mode: "Individual Training",
+    policyName: "Standard Instructor Rate",
+    perSessionRate: 800,
+    compensateUnpaidBookings: false,
+    appliesToRole: "Instructor",
+    entranceMethod: "All entrance methods",
+  },
+  {
+    id: "pay_2",
+    mode: "Individual Training",
+    policyName: "Personal Training Revenue Share",
+    revenueSharePercent: 40,
+    compensateUnpaidBookings: true,
+    appliesToRole: "Instructor",
+    entranceMethod: "All entrance methods",
+  },
+  {
+    id: "pay_3",
+    mode: "Class",
+    policyName: "Group Class Standard",
+    perClassRate: 700,
+    perPersonRate: 20,
+    classScope: "All classes",
+    compensateUnpaidBookings: false,
+    appliesToRole: "Instructor",
+    entranceMethod: "All entrance methods",
+  },
+]
+
+let idCounter = 0
+export function generatePayRateId() {
+  idCounter += 1
+  return `pay_${Date.now().toString(36)}${idCounter}`
+}

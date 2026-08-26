@@ -40,7 +40,6 @@ const mainNav = [
 ]
 
 const accountNav = [
-  { title: "Information", icon: CircleUserRound },
   { title: "Settings", icon: Settings, segment: "settings" },
 ]
 

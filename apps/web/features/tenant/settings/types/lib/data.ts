@@ -2,7 +2,6 @@ import type {
   AreaType,
   ClassType,
   InstructorTypeRecord,
-  PayRatePolicy,
   SimpleType,
 } from "./schema"
 
@@ -17,7 +16,6 @@ export const initialAreaTypes: AreaType[] = [
     pricePerHour: 0,
     maxPlayers: 20,
     maxConcurrentBookings: 1,
-    revenueAccount: "General Revenue",
   },
   {
     id: "area_2",
@@ -29,7 +27,6 @@ export const initialAreaTypes: AreaType[] = [
     pricePerHour: 0,
     maxPlayers: 12,
     maxConcurrentBookings: 1,
-    revenueAccount: "General Revenue",
   },
 ]
 
@@ -40,7 +37,6 @@ export const initialInstructorTypes: InstructorTypeRecord[] = [
     slug: "personal-trainer",
     description: "1:1 training sessions.",
     maxConcurrentBookings: 1,
-    revenueAccount: "General Revenue",
   },
   {
     id: "inst_2",
@@ -48,7 +44,6 @@ export const initialInstructorTypes: InstructorTypeRecord[] = [
     slug: "group-fitness-instructor",
     description: "Leads scheduled group classes.",
     maxConcurrentBookings: 20,
-    revenueAccount: "General Revenue",
   },
   {
     id: "inst_3",
@@ -56,7 +51,6 @@ export const initialInstructorTypes: InstructorTypeRecord[] = [
     slug: "boxing-coach",
     description: "Boxing and combat sport coaching.",
     maxConcurrentBookings: 3,
-    revenueAccount: "General Revenue",
   },
 ]
 
@@ -71,7 +65,6 @@ export const initialClassTypes: ClassType[] = [
     pricePerClass: 500,
     maxParticipants: 20,
     maxConcurrentBookings: 1,
-    revenueAccount: "General Revenue",
   },
   {
     id: "class_2",
@@ -83,7 +76,6 @@ export const initialClassTypes: ClassType[] = [
     pricePerClass: 700,
     maxParticipants: 15,
     maxConcurrentBookings: 1,
-    revenueAccount: "General Revenue",
   },
 ]
 
@@ -110,27 +102,6 @@ export const initialTaxRates: SimpleType[] = [
   { id: "tax_3", name: "Standard", rate: 10 },
   { id: "tax_4", name: "VAT", rate: 13 },
   { id: "tax_5", name: "Luxury", rate: 18 },
-]
-
-export const initialPayRatePolicies: PayRatePolicy[] = [
-  {
-    id: "pay_1",
-    policyName: "Standard Instructor Rate",
-    perSessionRate: 800,
-    revenueSharePercent: undefined,
-    compensateUnpaidBookings: false,
-    appliesTo: "Instructor",
-    entranceMethod: "All entrance methods",
-  },
-  {
-    id: "pay_2",
-    policyName: "Personal Training Revenue Share",
-    perSessionRate: undefined,
-    revenueSharePercent: 40,
-    compensateUnpaidBookings: true,
-    appliesTo: "Instructor",
-    entranceMethod: "All entrance methods",
-  },
 ]
 
 let idCounter = 0

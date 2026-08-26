@@ -20,13 +20,6 @@ import {
   InputGroupText,
 } from "@repo/ui/components/ui/input-group"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@repo/ui/components/ui/select"
-import {
   Sheet,
   SheetBody,
   SheetContent,
@@ -41,7 +34,6 @@ import { Textarea } from "@repo/ui/components/ui/textarea"
 import { fieldErrors } from "../lib/validation"
 import {
   areaTypeSchema,
-  revenueAccounts,
   type AreaType,
   type AreaTypeInput,
 } from "../lib/schema"
@@ -55,7 +47,6 @@ interface AreaTypeFormValues {
   pricePerHour: string
   maxPlayers: string
   maxConcurrentBookings: string
-  revenueAccount: string
 }
 
 function slugify(value: string) {
@@ -77,7 +68,6 @@ function toFormValues(area?: AreaType | null): AreaTypeFormValues {
       pricePerHour: "0",
       maxPlayers: "1",
       maxConcurrentBookings: "1",
-      revenueAccount: "",
     }
   }
   return {
@@ -89,7 +79,6 @@ function toFormValues(area?: AreaType | null): AreaTypeFormValues {
     pricePerHour: String(area.pricePerHour),
     maxPlayers: String(area.maxPlayers),
     maxConcurrentBookings: String(area.maxConcurrentBookings),
-    revenueAccount: area.revenueAccount ?? "",
   }
 }
 
@@ -293,29 +282,6 @@ function AreaTypeFormBody({ area, onSubmit, onCancel }: AreaTypeFormBodyProps) {
                 this type (e.g. 3 for a small-group room). Defaults to 1
                 (exclusive).
               </FieldDescription>
-            </Field>
-
-            <Field>
-              <FieldLabel htmlFor="area-revenue-account">
-                Revenue Account
-              </FieldLabel>
-              <Select
-                value={values.revenueAccount}
-                onValueChange={(value) =>
-                  setValues((v) => ({ ...v, revenueAccount: value ?? "" }))
-                }
-              >
-                <SelectTrigger id="area-revenue-account" className="w-full">
-                  <SelectValue placeholder="Select account" />
-                </SelectTrigger>
-                <SelectContent>
-                  {revenueAccounts.map((account) => (
-                    <SelectItem key={account} value={account}>
-                      {account}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
             </Field>
           </FieldGroup>
         </FieldSet>

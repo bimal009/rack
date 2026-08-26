@@ -8,12 +8,12 @@ import {
   CircleUserRound,
   CreditCard,
   Database,
-  Dumbbell,
   MessageSquare,
   Plug,
   Settings2,
   ShieldCheck,
   Smartphone,
+  Tags,
   Users2,
 } from "lucide-react"
 
@@ -22,7 +22,7 @@ import { cn } from "@repo/ui/lib/utils"
 const categories = [
   { label: "Personal", icon: CircleUserRound },
   { label: "Organization", icon: Building2, segment: "organization" },
-  { label: "Clubs", icon: Dumbbell },
+  { label: "Types", icon: Tags, segment: "types" },
   { label: "Access Control", icon: ShieldCheck },
   { label: "CRM", icon: Users2 },
   { label: "Operations", icon: Settings2 },

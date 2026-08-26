@@ -77,34 +77,30 @@ export function SimpleTypeList({
 
   const columns = useMemo(() => {
     const columnHelper = createDataTableColumnHelper<SimpleType>()
-    const cols = [
+    return columnHelper.columns([
       createIndexColumn(columnHelper),
       columnHelper.accessor("name", { header: "Name" }),
-    ]
-
-    if (hasSlug) {
-      cols.push(
-        columnHelper.accessor("slug", {
-          header: "Slug",
-          enableGlobalFilter: false,
-          cell: ({ getValue }) => (
-            <span className="text-muted-foreground">{getValue()}</span>
-          ),
-        })
-      )
-    }
-
-    if (hasRate) {
-      cols.push(
-        columnHelper.accessor("rate", {
-          header: "Rate",
-          enableGlobalFilter: false,
-          cell: ({ getValue }) => `${getValue() ?? 0}%`,
-        })
-      )
-    }
-
-    cols.push(
+      ...(hasSlug
+        ? [
+            columnHelper.accessor("slug", {
+              header: "Slug",
+              enableGlobalFilter: false,
+              cell: ({ getValue }: { getValue: () => string | undefined }) => (
+                <span className="text-muted-foreground">{getValue()}</span>
+              ),
+            }),
+          ]
+        : []),
+      ...(hasRate
+        ? [
+            columnHelper.accessor("rate", {
+              header: "Rate",
+              enableGlobalFilter: false,
+              cell: ({ getValue }: { getValue: () => number | undefined }) =>
+                `${getValue() ?? 0}%`,
+            }),
+          ]
+        : []),
       columnHelper.display({
         id: "actions",
         cell: ({ row }) => (
@@ -127,10 +123,8 @@ export function SimpleTypeList({
             </DropdownMenuContent>
           </DropdownMenu>
         ),
-      })
-    )
-
-    return columnHelper.columns(cols)
+      }),
+    ])
   }, [hasSlug, hasRate])
 
   return (

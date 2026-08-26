@@ -1,11 +1,5 @@
 import { z } from "zod"
 
-import { productRevenueAccounts } from "@/features/tenant/revenue/products/lib/schema"
-import { attendanceMethods } from "@/features/tenant/attendance/lib/schema"
-import { staffRoles } from "@/features/tenant/staff/lib/schema"
-
-export const revenueAccounts = productRevenueAccounts
-
 const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 
 export const areaTypeSchema = z.object({
@@ -21,7 +15,6 @@ export const areaTypeSchema = z.object({
   pricePerHour: z.number().nonnegative(),
   maxPlayers: z.number().int().positive(),
   maxConcurrentBookings: z.number().int().positive(),
-  revenueAccount: z.string().trim().optional().or(z.literal("")),
 })
 
 export type AreaTypeInput = z.infer<typeof areaTypeSchema>
@@ -38,7 +31,6 @@ export const instructorTypeSchema = z.object({
     .regex(slugRegex, "Lowercase letters, numbers, and hyphens only"),
   description: z.string().trim().optional().or(z.literal("")),
   maxConcurrentBookings: z.number().int().positive(),
-  revenueAccount: z.string().trim().optional().or(z.literal("")),
 })
 
 export type InstructorTypeInput = z.infer<typeof instructorTypeSchema>
@@ -59,7 +51,6 @@ export const classTypeSchema = z.object({
   pricePerClass: z.number().nonnegative(),
   maxParticipants: z.number().int().positive(),
   maxConcurrentBookings: z.number().int().positive(),
-  revenueAccount: z.string().trim().optional().or(z.literal("")),
 })
 
 export type ClassTypeInput = z.infer<typeof classTypeSchema>
@@ -83,28 +74,5 @@ export const simpleTypeSchema = z.object({
 
 export type SimpleTypeInput = z.infer<typeof simpleTypeSchema>
 export interface SimpleType extends SimpleTypeInput {
-  id: string
-}
-
-export const payRateAppliesTo = ["All Roles", ...staffRoles] as const
-export type PayRateAppliesTo = (typeof payRateAppliesTo)[number]
-
-export const payRateEntranceMethods = [
-  "All entrance methods",
-  ...attendanceMethods,
-] as const
-export type PayRateEntranceMethod = (typeof payRateEntranceMethods)[number]
-
-export const payRatePolicySchema = z.object({
-  policyName: z.string().trim().min(1, "Enter a policy name"),
-  perSessionRate: z.number().nonnegative().optional(),
-  revenueSharePercent: z.number().min(0).max(100).optional(),
-  compensateUnpaidBookings: z.boolean(),
-  appliesTo: z.enum(payRateAppliesTo),
-  entranceMethod: z.enum(payRateEntranceMethods),
-})
-
-export type PayRatePolicyInput = z.infer<typeof payRatePolicySchema>
-export interface PayRatePolicy extends PayRatePolicyInput {
   id: string
 }
