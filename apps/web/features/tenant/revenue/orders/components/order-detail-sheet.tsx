@@ -1,17 +1,12 @@
 "use client"
 
 import { useState, type FormEvent } from "react"
+import { CircleCheck, Receipt, ShoppingCart, UserRound } from "lucide-react"
 
 import { Avatar, AvatarFallback } from "@repo/ui/components/ui/avatar"
 import { Badge } from "@repo/ui/components/ui/badge"
 import { Button } from "@repo/ui/components/ui/button"
-import {
-  Field,
-  FieldGroup,
-  FieldLabel,
-  FieldLegend,
-  FieldSet,
-} from "@repo/ui/components/ui/field"
+import { Field, FieldLabel } from "@repo/ui/components/ui/field"
 import {
   Select,
   SelectContent,
@@ -24,11 +19,11 @@ import {
   Sheet,
   SheetBody,
   SheetContent,
-  SheetDescription,
   SheetFooter,
   SheetHeader,
-  SheetTitle,
 } from "@repo/ui/components/ui/sheet"
+
+import { FormSection, FormSheetHeader } from "@/features/tenant/components/form-section"
 
 import { orderStatusVariant } from "./columns"
 import { orderStatuses, type Order, type OrderStatus } from "../lib/schema"
@@ -66,89 +61,83 @@ function OrderDetailBody({
   return (
     <form onSubmit={handleSubmit} className="flex h-full flex-col">
       <SheetHeader>
-        <SheetTitle className="font-mono">{order.id}</SheetTitle>
-        <SheetDescription>Placed on {order.date}</SheetDescription>
+        <FormSheetHeader
+          icon={Receipt}
+          title={order.id}
+          description={`Placed on ${order.date}`}
+        />
       </SheetHeader>
 
-      <SheetBody className="flex flex-col gap-6">
-        <FieldSet>
-          <FieldLegend>Member</FieldLegend>
-          <FieldGroup>
-            <div className="flex items-center gap-2.5">
-              <Avatar size="sm">
-                <AvatarFallback className="bg-muted text-xs font-medium text-muted-foreground">
-                  {initials(order.memberName)}
-                </AvatarFallback>
-              </Avatar>
-              <div className="min-w-0">
-                <p className="truncate text-sm font-medium text-foreground">
-                  {order.memberName}
-                </p>
-                <p className="truncate text-xs text-muted-foreground">
-                  {order.memberEmail}
-                </p>
+      <SheetBody className="flex flex-col gap-7">
+        <FormSection icon={UserRound} title="Member">
+          <div className="flex items-center gap-2.5">
+            <Avatar size="sm">
+              <AvatarFallback className="bg-muted text-xs font-medium text-muted-foreground">
+                {initials(order.memberName)}
+              </AvatarFallback>
+            </Avatar>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium text-foreground">
+                {order.memberName}
+              </p>
+              <p className="truncate text-xs text-muted-foreground">
+                {order.memberEmail}
+              </p>
+            </div>
+            <Badge
+              variant={orderStatusVariant[order.status]}
+              className="ml-auto rounded-full"
+            >
+              {order.status}
+            </Badge>
+          </div>
+        </FormSection>
+
+        <FormSection icon={ShoppingCart} title="Items">
+          <div className="flex flex-col gap-2">
+            {order.items.map((item, index) => (
+              <div
+                key={index}
+                className="flex items-center justify-between text-sm"
+              >
+                <span className="text-foreground">
+                  {item.qty}× {item.name}
+                </span>
+                <span className="text-muted-foreground">
+                  {currency.format(item.price * item.qty)}
+                </span>
               </div>
-              <Badge
-                variant={orderStatusVariant[order.status]}
-                className="ml-auto rounded-full"
-              >
-                {order.status}
-              </Badge>
-            </div>
-          </FieldGroup>
-        </FieldSet>
+            ))}
+          </div>
+          <Separator />
+          <div className="flex items-center justify-between text-sm font-semibold">
+            <span className="text-foreground">Total</span>
+            <span className="text-foreground">
+              {currency.format(order.total)}
+            </span>
+          </div>
+        </FormSection>
 
-        <FieldSet>
-          <FieldLegend>Items</FieldLegend>
-          <FieldGroup>
-            <div className="flex flex-col gap-2">
-              {order.items.map((item, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between text-sm"
-                >
-                  <span className="text-foreground">
-                    {item.qty}× {item.name}
-                  </span>
-                  <span className="text-muted-foreground">
-                    {currency.format(item.price * item.qty)}
-                  </span>
-                </div>
-              ))}
-            </div>
-            <Separator />
-            <div className="flex items-center justify-between text-sm font-semibold">
-              <span className="text-foreground">Total</span>
-              <span className="text-foreground">
-                {currency.format(order.total)}
-              </span>
-            </div>
-          </FieldGroup>
-        </FieldSet>
-
-        <FieldSet>
-          <FieldLegend>Status</FieldLegend>
-          <FieldGroup>
-            <Field>
-              <FieldLabel htmlFor="order-status">Order status</FieldLabel>
-              <Select
-                value={status}
-                onValueChange={(value) => setStatus(value as OrderStatus)}
-              >
-                <SelectTrigger id="order-status" className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {orderStatuses.map((s) => (
-                    <SelectItem key={s} value={s}>
-                      {s}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </Field>
-          </FieldGroup>
-        </FieldSet>
+        <FormSection icon={CircleCheck} title="Status">
+          <Field>
+            <FieldLabel htmlFor="order-status">Order status</FieldLabel>
+            <Select
+              value={status}
+              onValueChange={(value) => setStatus(value as OrderStatus)}
+            >
+              <SelectTrigger id="order-status" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {orderStatuses.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {s}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+        </FormSection>
       </SheetBody>
 
       <SheetFooter>

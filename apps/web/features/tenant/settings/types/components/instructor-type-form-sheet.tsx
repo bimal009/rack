@@ -1,27 +1,26 @@
 "use client"
 
 import { useState, type FormEvent } from "react"
+import { IdCard } from "lucide-react"
 
 import { Button } from "@repo/ui/components/ui/button"
 import {
   Field,
   FieldDescription,
   FieldError,
-  FieldGroup,
   FieldLabel,
-  FieldSet,
 } from "@repo/ui/components/ui/field"
 import { Input } from "@repo/ui/components/ui/input"
 import {
   Sheet,
   SheetBody,
   SheetContent,
-  SheetDescription,
   SheetFooter,
   SheetHeader,
-  SheetTitle,
 } from "@repo/ui/components/ui/sheet"
 import { Textarea } from "@repo/ui/components/ui/textarea"
+
+import { FormSection, FormSheetHeader } from "@/features/tenant/components/form-section"
 
 import { fieldErrors } from "../lib/validation"
 import {
@@ -102,95 +101,92 @@ function InstructorTypeFormBody({
   return (
     <form onSubmit={handleSubmit} className="flex h-full flex-col">
       <SheetHeader>
-        <SheetTitle>
-          {isEdit ? "Edit Instructor Type" : "Add Instructor Type"}
-        </SheetTitle>
-        <SheetDescription>
-          Define a role instructors can be assigned, like Personal Trainer.
-        </SheetDescription>
+        <FormSheetHeader
+          icon={IdCard}
+          title={isEdit ? "Edit instructor type" : "Add instructor type"}
+          description="Define a role instructors can be assigned, like Personal Trainer."
+        />
       </SheetHeader>
 
-      <SheetBody className="flex flex-col gap-6">
-        <FieldSet>
-          <FieldGroup>
-            <Field data-invalid={Boolean(errors.name)}>
-              <FieldLabel htmlFor="inst-type-name">
-                Name <span className="text-destructive">*</span>
-              </FieldLabel>
-              <Input
-                id="inst-type-name"
-                value={values.name}
-                aria-invalid={Boolean(errors.name)}
-                onChange={(e) => {
-                  const name = e.target.value
-                  setValues((v) => ({
-                    ...v,
-                    name,
-                    slug: slugTouched ? v.slug : slugify(name),
-                  }))
-                }}
-              />
-              <FieldError>{errors.name}</FieldError>
-            </Field>
+      <SheetBody className="flex flex-col gap-7">
+        <FormSection icon={IdCard} title="Details">
+          <Field data-invalid={Boolean(errors.name)}>
+            <FieldLabel htmlFor="inst-type-name">
+              Name <span className="text-destructive">*</span>
+            </FieldLabel>
+            <Input
+              id="inst-type-name"
+              value={values.name}
+              aria-invalid={Boolean(errors.name)}
+              onChange={(e) => {
+                const name = e.target.value
+                setValues((v) => ({
+                  ...v,
+                  name,
+                  slug: slugTouched ? v.slug : slugify(name),
+                }))
+              }}
+            />
+            <FieldError>{errors.name}</FieldError>
+          </Field>
 
-            <Field data-invalid={Boolean(errors.slug)}>
-              <FieldLabel htmlFor="inst-type-slug">
-                Slug <span className="text-destructive">*</span>
-              </FieldLabel>
-              <Input
-                id="inst-type-slug"
-                value={values.slug}
-                aria-invalid={Boolean(errors.slug)}
-                onChange={(e) => {
-                  setSlugTouched(true)
-                  setValues((v) => ({ ...v, slug: e.target.value }))
-                }}
-              />
-              <FieldDescription>
-                Lowercase letters, numbers, and hyphens only.
-              </FieldDescription>
-              <FieldError>{errors.slug}</FieldError>
-            </Field>
+          <Field data-invalid={Boolean(errors.slug)}>
+            <FieldLabel htmlFor="inst-type-slug">
+              Slug <span className="text-destructive">*</span>
+            </FieldLabel>
+            <Input
+              id="inst-type-slug"
+              value={values.slug}
+              aria-invalid={Boolean(errors.slug)}
+              onChange={(e) => {
+                setSlugTouched(true)
+                setValues((v) => ({ ...v, slug: e.target.value }))
+              }}
+            />
+            <FieldDescription>
+              Lowercase letters, numbers, and hyphens only.
+            </FieldDescription>
+            <FieldError>{errors.slug}</FieldError>
+          </Field>
 
-            <Field>
-              <FieldLabel htmlFor="inst-type-description">
-                Description
-              </FieldLabel>
-              <Textarea
-                id="inst-type-description"
-                value={values.description}
-                onChange={(e) =>
-                  setValues((v) => ({ ...v, description: e.target.value }))
-                }
-              />
-            </Field>
+          <Field>
+            <FieldLabel htmlFor="inst-type-description">
+              Description
+            </FieldLabel>
+            <Textarea
+              id="inst-type-description"
+              value={values.description}
+              onChange={(e) =>
+                setValues((v) => ({ ...v, description: e.target.value }))
+              }
+            />
+          </Field>
 
-            <Field>
-              <FieldLabel htmlFor="inst-type-max-bookings">
-                Max Concurrent Bookings
-              </FieldLabel>
-              <Input
-                id="inst-type-max-bookings"
-                type="number"
-                inputMode="numeric"
-                min="1"
-                step="1"
-                value={values.maxConcurrentBookings}
-                onChange={(e) =>
-                  setValues((v) => ({
-                    ...v,
-                    maxConcurrentBookings: e.target.value,
-                  }))
-                }
-              />
-            </Field>
+          <Field>
+            <FieldLabel htmlFor="inst-type-max-bookings">
+              Max Concurrent Bookings
+            </FieldLabel>
+            <Input
+              id="inst-type-max-bookings"
+              type="number"
+              inputMode="numeric"
+              min="1"
+              step="1"
+              value={values.maxConcurrentBookings}
+              onChange={(e) =>
+                setValues((v) => ({
+                  ...v,
+                  maxConcurrentBookings: e.target.value,
+                }))
+              }
+            />
             <FieldDescription>
               How many bookings an instructor of this type can hold in the
               same time slot (e.g. 3 for a personal trainer with small
               groups). Defaults to 1.
             </FieldDescription>
-          </FieldGroup>
-        </FieldSet>
+          </Field>
+        </FormSection>
       </SheetBody>
 
       <SheetFooter>

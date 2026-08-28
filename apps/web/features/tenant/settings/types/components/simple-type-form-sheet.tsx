@@ -1,14 +1,13 @@
 "use client"
 
 import { useState, type FormEvent } from "react"
+import type { LucideIcon } from "lucide-react"
 
 import { Button } from "@repo/ui/components/ui/button"
 import {
   Field,
   FieldDescription,
   FieldError,
-  FieldGroup,
-  FieldSet,
   FieldLabel,
 } from "@repo/ui/components/ui/field"
 import { Input } from "@repo/ui/components/ui/input"
@@ -22,11 +21,11 @@ import {
   Sheet,
   SheetBody,
   SheetContent,
-  SheetDescription,
   SheetFooter,
   SheetHeader,
-  SheetTitle,
 } from "@repo/ui/components/ui/sheet"
+
+import { FormSection, FormSheetHeader } from "@/features/tenant/components/form-section"
 
 import { fieldErrors } from "../lib/validation"
 import { simpleTypeSchema, type SimpleType, type SimpleTypeInput } from "../lib/schema"
@@ -54,6 +53,7 @@ function toFormValues(item?: SimpleType | null): SimpleTypeFormValues {
 }
 
 interface SimpleTypeFormBodyProps {
+  icon: LucideIcon
   label: string
   hasSlug: boolean
   hasRate: boolean
@@ -63,6 +63,7 @@ interface SimpleTypeFormBodyProps {
 }
 
 function SimpleTypeFormBody({
+  icon,
   label,
   hasSlug,
   hasRate,
@@ -98,84 +99,83 @@ function SimpleTypeFormBody({
   return (
     <form onSubmit={handleSubmit} className="flex h-full flex-col">
       <SheetHeader>
-        <SheetTitle>
-          {isEdit ? `Edit ${label}` : `Add ${label}`}
-        </SheetTitle>
-        <SheetDescription>
-          {isEdit
-            ? `Update this ${label.toLowerCase()}.`
-            : `Add a new ${label.toLowerCase()} for your gym.`}
-        </SheetDescription>
+        <FormSheetHeader
+          icon={icon}
+          title={isEdit ? `Edit ${label}` : `Add ${label}`}
+          description={
+            isEdit
+              ? `Update this ${label.toLowerCase()}.`
+              : `Add a new ${label.toLowerCase()} for your gym.`
+          }
+        />
       </SheetHeader>
 
-      <SheetBody className="flex flex-col gap-6">
-        <FieldSet>
-          <FieldGroup>
-            <Field data-invalid={Boolean(errors.name)}>
-              <FieldLabel htmlFor="simple-type-name">
-                Name <span className="text-destructive">*</span>
-              </FieldLabel>
+      <SheetBody className="flex flex-col gap-7">
+        <FormSection icon={icon} title="Details">
+          <Field data-invalid={Boolean(errors.name)}>
+            <FieldLabel htmlFor="simple-type-name">
+              Name <span className="text-destructive">*</span>
+            </FieldLabel>
+            <Input
+              id="simple-type-name"
+              value={values.name}
+              aria-invalid={Boolean(errors.name)}
+              onChange={(e) => {
+                const name = e.target.value
+                setValues((v) => ({
+                  ...v,
+                  name,
+                  slug: slugTouched ? v.slug : slugify(name),
+                }))
+              }}
+            />
+            <FieldError>{errors.name}</FieldError>
+          </Field>
+
+          {hasSlug && (
+            <Field data-invalid={Boolean(errors.slug)}>
+              <FieldLabel htmlFor="simple-type-slug">Slug</FieldLabel>
               <Input
-                id="simple-type-name"
-                value={values.name}
-                aria-invalid={Boolean(errors.name)}
+                id="simple-type-slug"
+                value={values.slug}
+                aria-invalid={Boolean(errors.slug)}
                 onChange={(e) => {
-                  const name = e.target.value
-                  setValues((v) => ({
-                    ...v,
-                    name,
-                    slug: slugTouched ? v.slug : slugify(name),
-                  }))
+                  setSlugTouched(true)
+                  setValues((v) => ({ ...v, slug: e.target.value }))
                 }}
               />
-              <FieldError>{errors.name}</FieldError>
+              <FieldDescription>
+                Lowercase letters, numbers, and hyphens only.
+              </FieldDescription>
+              <FieldError>{errors.slug}</FieldError>
             </Field>
+          )}
 
-            {hasSlug && (
-              <Field data-invalid={Boolean(errors.slug)}>
-                <FieldLabel htmlFor="simple-type-slug">Slug</FieldLabel>
-                <Input
-                  id="simple-type-slug"
-                  value={values.slug}
-                  aria-invalid={Boolean(errors.slug)}
-                  onChange={(e) => {
-                    setSlugTouched(true)
-                    setValues((v) => ({ ...v, slug: e.target.value }))
-                  }}
+          {hasRate && (
+            <Field data-invalid={Boolean(errors.rate)}>
+              <FieldLabel htmlFor="simple-type-rate">Rate</FieldLabel>
+              <InputGroup>
+                <InputGroupInput
+                  id="simple-type-rate"
+                  type="number"
+                  inputMode="decimal"
+                  min="0"
+                  max="100"
+                  step="0.1"
+                  value={values.rate}
+                  aria-invalid={Boolean(errors.rate)}
+                  onChange={(e) =>
+                    setValues((v) => ({ ...v, rate: e.target.value }))
+                  }
                 />
-                <FieldDescription>
-                  Lowercase letters, numbers, and hyphens only.
-                </FieldDescription>
-                <FieldError>{errors.slug}</FieldError>
-              </Field>
-            )}
-
-            {hasRate && (
-              <Field data-invalid={Boolean(errors.rate)}>
-                <FieldLabel htmlFor="simple-type-rate">Rate</FieldLabel>
-                <InputGroup>
-                  <InputGroupInput
-                    id="simple-type-rate"
-                    type="number"
-                    inputMode="decimal"
-                    min="0"
-                    max="100"
-                    step="0.1"
-                    value={values.rate}
-                    aria-invalid={Boolean(errors.rate)}
-                    onChange={(e) =>
-                      setValues((v) => ({ ...v, rate: e.target.value }))
-                    }
-                  />
-                  <InputGroupAddon align="inline-end">
-                    <InputGroupText>%</InputGroupText>
-                  </InputGroupAddon>
-                </InputGroup>
-                <FieldError>{errors.rate}</FieldError>
-              </Field>
-            )}
-          </FieldGroup>
-        </FieldSet>
+                <InputGroupAddon align="inline-end">
+                  <InputGroupText>%</InputGroupText>
+                </InputGroupAddon>
+              </InputGroup>
+              <FieldError>{errors.rate}</FieldError>
+            </Field>
+          )}
+        </FormSection>
       </SheetBody>
 
       <SheetFooter>
@@ -191,6 +191,7 @@ function SimpleTypeFormBody({
 interface SimpleTypeFormSheetProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  icon: LucideIcon
   label: string
   hasSlug: boolean
   hasRate: boolean
@@ -201,6 +202,7 @@ interface SimpleTypeFormSheetProps {
 export function SimpleTypeFormSheet({
   open,
   onOpenChange,
+  icon,
   label,
   hasSlug,
   hasRate,
@@ -213,6 +215,7 @@ export function SimpleTypeFormSheet({
         {open && (
           <SimpleTypeFormBody
             key={item?.id ?? "new"}
+            icon={icon}
             label={label}
             hasSlug={hasSlug}
             hasRate={hasRate}

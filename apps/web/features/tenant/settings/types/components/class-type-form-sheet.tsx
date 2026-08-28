@@ -1,16 +1,14 @@
 "use client"
 
 import { useState, type FormEvent } from "react"
+import { Banknote, Dumbbell, Info } from "lucide-react"
 
 import { Button } from "@repo/ui/components/ui/button"
 import {
   Field,
   FieldDescription,
   FieldError,
-  FieldGroup,
   FieldLabel,
-  FieldLegend,
-  FieldSet,
 } from "@repo/ui/components/ui/field"
 import { Input } from "@repo/ui/components/ui/input"
 import {
@@ -23,13 +21,13 @@ import {
   Sheet,
   SheetBody,
   SheetContent,
-  SheetDescription,
   SheetFooter,
   SheetHeader,
-  SheetTitle,
 } from "@repo/ui/components/ui/sheet"
 import { Switch } from "@repo/ui/components/ui/switch"
 import { Textarea } from "@repo/ui/components/ui/textarea"
+
+import { FormSection, FormSheetHeader } from "@/features/tenant/components/form-section"
 
 import { fieldErrors } from "../lib/validation"
 import {
@@ -118,171 +116,166 @@ function ClassTypeFormBody({ cls, onSubmit, onCancel }: ClassTypeFormBodyProps) 
   return (
     <form onSubmit={handleSubmit} className="flex h-full flex-col">
       <SheetHeader>
-        <SheetTitle>{isEdit ? "Edit Class Type" : "Add Class Type"}</SheetTitle>
-        <SheetDescription>
-          Define a class, its pricing, and capacity.
-        </SheetDescription>
+        <FormSheetHeader
+          icon={Dumbbell}
+          title={isEdit ? "Edit class type" : "Add class type"}
+          description="Define a class, its pricing, and capacity."
+        />
       </SheetHeader>
 
-      <SheetBody className="flex flex-col gap-6">
-        <FieldSet>
-          <FieldLegend>Basic Information</FieldLegend>
-          <FieldGroup>
-            <div className="grid grid-cols-2 gap-4">
-              <Field data-invalid={Boolean(errors.name)}>
-                <FieldLabel htmlFor="class-name">
-                  Name <span className="text-destructive">*</span>
-                </FieldLabel>
-                <Input
-                  id="class-name"
-                  value={values.name}
-                  aria-invalid={Boolean(errors.name)}
-                  onChange={(e) => {
-                    const name = e.target.value
-                    setValues((v) => ({
-                      ...v,
-                      name,
-                      slug: slugTouched ? v.slug : slugify(name),
-                    }))
-                  }}
-                />
-                <FieldError>{errors.name}</FieldError>
-              </Field>
-
-              <Field data-invalid={Boolean(errors.slug)}>
-                <FieldLabel htmlFor="class-slug">
-                  Slug <span className="text-destructive">*</span>
-                </FieldLabel>
-                <Input
-                  id="class-slug"
-                  value={values.slug}
-                  aria-invalid={Boolean(errors.slug)}
-                  onChange={(e) => {
-                    setSlugTouched(true)
-                    setValues((v) => ({ ...v, slug: e.target.value }))
-                  }}
-                />
-                <FieldDescription>
-                  Lowercase letters, numbers, and hyphens only.
-                </FieldDescription>
-                <FieldError>{errors.slug}</FieldError>
-              </Field>
-            </div>
-
-            <Field>
-              <FieldLabel htmlFor="class-description">Description</FieldLabel>
-              <Textarea
-                id="class-description"
-                value={values.description}
-                onChange={(e) =>
-                  setValues((v) => ({ ...v, description: e.target.value }))
-                }
-              />
-            </Field>
-
-            <Field>
-              <FieldLabel htmlFor="class-sports">Sports</FieldLabel>
+      <SheetBody className="flex flex-col gap-7">
+        <FormSection icon={Info} title="Basic information">
+          <div className="grid grid-cols-2 gap-4">
+            <Field data-invalid={Boolean(errors.name)}>
+              <FieldLabel htmlFor="class-name">
+                Name <span className="text-destructive">*</span>
+              </FieldLabel>
               <Input
-                id="class-sports"
-                placeholder="Yoga, CrossFit..."
-                value={values.sports}
-                onChange={(e) =>
-                  setValues((v) => ({ ...v, sports: e.target.value }))
-                }
+                id="class-name"
+                value={values.name}
+                aria-invalid={Boolean(errors.name)}
+                onChange={(e) => {
+                  const name = e.target.value
+                  setValues((v) => ({
+                    ...v,
+                    name,
+                    slug: slugTouched ? v.slug : slugify(name),
+                  }))
+                }}
               />
-            </Field>
-          </FieldGroup>
-        </FieldSet>
-
-        <FieldSet>
-          <FieldLegend>Booking & Pricing</FieldLegend>
-          <FieldGroup>
-            <Field orientation="horizontal">
-              <Switch
-                id="class-available"
-                checked={values.availableForBooking}
-                onCheckedChange={(checked) =>
-                  setValues((v) => ({ ...v, availableForBooking: checked }))
-                }
-              />
-              <div>
-                <FieldLabel htmlFor="class-available">
-                  Available for booking
-                </FieldLabel>
-                <FieldDescription>
-                  Classes of this type can be booked by members.
-                </FieldDescription>
-              </div>
+              <FieldError>{errors.name}</FieldError>
             </Field>
 
-            <div className="grid grid-cols-2 gap-4">
-              <Field>
-                <FieldLabel htmlFor="class-price">
-                  Default Price per Class
-                </FieldLabel>
-                <InputGroup>
-                  <InputGroupAddon>
-                    <InputGroupText>NPR</InputGroupText>
-                  </InputGroupAddon>
-                  <InputGroupInput
-                    id="class-price"
-                    type="number"
-                    inputMode="decimal"
-                    min="0"
-                    step="1"
-                    value={values.pricePerClass}
-                    onChange={(e) =>
-                      setValues((v) => ({
-                        ...v,
-                        pricePerClass: e.target.value,
-                      }))
-                    }
-                  />
-                </InputGroup>
-              </Field>
+            <Field data-invalid={Boolean(errors.slug)}>
+              <FieldLabel htmlFor="class-slug">
+                Slug <span className="text-destructive">*</span>
+              </FieldLabel>
+              <Input
+                id="class-slug"
+                value={values.slug}
+                aria-invalid={Boolean(errors.slug)}
+                onChange={(e) => {
+                  setSlugTouched(true)
+                  setValues((v) => ({ ...v, slug: e.target.value }))
+                }}
+              />
+              <FieldDescription>
+                Lowercase letters, numbers, and hyphens only.
+              </FieldDescription>
+              <FieldError>{errors.slug}</FieldError>
+            </Field>
+          </div>
 
-              <Field>
-                <FieldLabel htmlFor="class-max-participants">
-                  Default Max Participants
-                </FieldLabel>
-                <Input
-                  id="class-max-participants"
+          <Field>
+            <FieldLabel htmlFor="class-description">Description</FieldLabel>
+            <Textarea
+              id="class-description"
+              value={values.description}
+              onChange={(e) =>
+                setValues((v) => ({ ...v, description: e.target.value }))
+              }
+            />
+          </Field>
+
+          <Field>
+            <FieldLabel htmlFor="class-sports">Sports</FieldLabel>
+            <Input
+              id="class-sports"
+              placeholder="Yoga, CrossFit..."
+              value={values.sports}
+              onChange={(e) =>
+                setValues((v) => ({ ...v, sports: e.target.value }))
+              }
+            />
+          </Field>
+        </FormSection>
+
+        <FormSection icon={Banknote} title="Booking & pricing">
+          <Field orientation="horizontal">
+            <Switch
+              id="class-available"
+              checked={values.availableForBooking}
+              onCheckedChange={(checked) =>
+                setValues((v) => ({ ...v, availableForBooking: checked }))
+              }
+            />
+            <div>
+              <FieldLabel htmlFor="class-available">
+                Available for booking
+              </FieldLabel>
+              <FieldDescription>
+                Classes of this type can be booked by members.
+              </FieldDescription>
+            </div>
+          </Field>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Field>
+              <FieldLabel htmlFor="class-price">
+                Default Price per Class
+              </FieldLabel>
+              <InputGroup>
+                <InputGroupAddon>
+                  <InputGroupText>NPR</InputGroupText>
+                </InputGroupAddon>
+                <InputGroupInput
+                  id="class-price"
                   type="number"
-                  inputMode="numeric"
-                  min="1"
+                  inputMode="decimal"
+                  min="0"
                   step="1"
-                  value={values.maxParticipants}
+                  value={values.pricePerClass}
                   onChange={(e) =>
                     setValues((v) => ({
                       ...v,
-                      maxParticipants: e.target.value,
+                      pricePerClass: e.target.value,
                     }))
                   }
                 />
-              </Field>
-            </div>
+              </InputGroup>
+            </Field>
 
             <Field>
-              <FieldLabel htmlFor="class-max-bookings">
-                Max Concurrent Bookings
+              <FieldLabel htmlFor="class-max-participants">
+                Default Max Participants
               </FieldLabel>
               <Input
-                id="class-max-bookings"
+                id="class-max-participants"
                 type="number"
                 inputMode="numeric"
                 min="1"
                 step="1"
-                value={values.maxConcurrentBookings}
+                value={values.maxParticipants}
                 onChange={(e) =>
                   setValues((v) => ({
                     ...v,
-                    maxConcurrentBookings: e.target.value,
+                    maxParticipants: e.target.value,
                   }))
                 }
               />
             </Field>
-          </FieldGroup>
-        </FieldSet>
+          </div>
+
+          <Field>
+            <FieldLabel htmlFor="class-max-bookings">
+              Max Concurrent Bookings
+            </FieldLabel>
+            <Input
+              id="class-max-bookings"
+              type="number"
+              inputMode="numeric"
+              min="1"
+              step="1"
+              value={values.maxConcurrentBookings}
+              onChange={(e) =>
+                setValues((v) => ({
+                  ...v,
+                  maxConcurrentBookings: e.target.value,
+                }))
+              }
+            />
+          </Field>
+        </FormSection>
       </SheetBody>
 
       <SheetFooter>

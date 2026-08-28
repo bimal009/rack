@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, type FormEvent } from "react"
-import { Plus, Trash2 } from "lucide-react"
+import { Banknote, Plus, Receipt, ShoppingCart, Trash2, UserRound } from "lucide-react"
 
 import { Button } from "@repo/ui/components/ui/button"
 import {
@@ -12,14 +12,7 @@ import {
   ComboboxItem,
   ComboboxList,
 } from "@repo/ui/components/ui/combobox"
-import {
-  Field,
-  FieldError,
-  FieldGroup,
-  FieldLabel,
-  FieldLegend,
-  FieldSet,
-} from "@repo/ui/components/ui/field"
+import { Field, FieldError, FieldLabel } from "@repo/ui/components/ui/field"
 import { Input } from "@repo/ui/components/ui/input"
 import {
   Select,
@@ -32,12 +25,11 @@ import {
   Sheet,
   SheetBody,
   SheetContent,
-  SheetDescription,
   SheetFooter,
   SheetHeader,
-  SheetTitle,
 } from "@repo/ui/components/ui/sheet"
 
+import { FormSection, FormSheetHeader } from "@/features/tenant/components/form-section"
 import { fullName } from "@/features/tenant/members/components/columns"
 import { initialMembers } from "@/features/tenant/members/lib/data"
 import { initialPackages } from "@/features/tenant/revenue/packages/lib/data"
@@ -149,175 +141,167 @@ function OrderFormBody({ onSubmit, onCancel }: OrderFormBodyProps) {
   return (
     <form onSubmit={handleSubmit} className="flex h-full flex-col">
       <SheetHeader>
-        <SheetTitle>New Sale</SheetTitle>
-        <SheetDescription>
-          Sell products and packages to a member.
-        </SheetDescription>
+        <FormSheetHeader
+          icon={Receipt}
+          title="New sale"
+          description="Sell products and packages to a member."
+        />
       </SheetHeader>
 
-      <SheetBody className="flex flex-col gap-6">
-        <FieldSet>
-          <FieldLegend>Member</FieldLegend>
-          <FieldGroup>
-            <Field>
-              <FieldLabel htmlFor="order-member">Member</FieldLabel>
-              <Combobox
-                items={initialMembers.map((m) => m.email)}
-                itemToStringLabel={(email) => {
-                  const found = initialMembers.find((m) => m.email === email)
-                  return found ? `${fullName(found)} — ${found.email}` : email
-                }}
-                value={memberEmail}
-                onValueChange={setMemberEmail}
-              >
-                <ComboboxInput
-                  id="order-member"
-                  placeholder="Search member..."
-                />
-                <ComboboxContent>
-                  <ComboboxEmpty>No members found.</ComboboxEmpty>
-                  <ComboboxList>
-                    {(email: string) => {
-                      const found = initialMembers.find(
-                        (m) => m.email === email
+      <SheetBody className="flex flex-col gap-7">
+        <FormSection icon={UserRound} title="Member">
+          <Field>
+            <FieldLabel htmlFor="order-member">Member</FieldLabel>
+            <Combobox
+              items={initialMembers.map((m) => m.email)}
+              itemToStringLabel={(email) => {
+                const found = initialMembers.find((m) => m.email === email)
+                return found ? `${fullName(found)} — ${found.email}` : email
+              }}
+              value={memberEmail}
+              onValueChange={setMemberEmail}
+            >
+              <ComboboxInput
+                id="order-member"
+                placeholder="Search member..."
+              />
+              <ComboboxContent>
+                <ComboboxEmpty>No members found.</ComboboxEmpty>
+                <ComboboxList>
+                  {(email: string) => {
+                    const found = initialMembers.find(
+                      (m) => m.email === email
+                    )
+                    return (
+                      <ComboboxItem key={email} value={email}>
+                        {found ? `${fullName(found)} — ${found.email}` : email}
+                      </ComboboxItem>
+                    )
+                  }}
+                </ComboboxList>
+              </ComboboxContent>
+            </Combobox>
+          </Field>
+        </FormSection>
+
+        <FormSection icon={ShoppingCart} title="Items">
+          {items.length > 0 && (
+            <div className="flex flex-col gap-2">
+              {items.map((item, index) => (
+                <div key={index} className="flex items-end gap-2">
+                  <Select
+                    value={item.refId}
+                    onValueChange={(refId) => {
+                      const option = pickableOptions(item.type).find(
+                        (o) => o.refId === refId
                       )
-                      return (
-                        <ComboboxItem key={email} value={email}>
-                          {found ? `${fullName(found)} — ${found.email}` : email}
-                        </ComboboxItem>
-                      )
+                      updateItem(index, {
+                        refId: refId ?? "",
+                        name: option?.name ?? "",
+                        price: option?.price ?? 0,
+                      })
                     }}
-                  </ComboboxList>
-                </ComboboxContent>
-              </Combobox>
-            </Field>
-          </FieldGroup>
-        </FieldSet>
-
-        <FieldSet>
-          <FieldLegend>Items</FieldLegend>
-          <FieldGroup>
-            {items.length > 0 && (
-              <div className="flex flex-col gap-2">
-                {items.map((item, index) => (
-                  <div key={index} className="flex items-end gap-2">
-                    <Select
-                      value={item.refId}
-                      onValueChange={(refId) => {
-                        const option = pickableOptions(item.type).find(
-                          (o) => o.refId === refId
-                        )
-                        updateItem(index, {
-                          refId: refId ?? "",
-                          name: option?.name ?? "",
-                          price: option?.price ?? 0,
-                        })
-                      }}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue
-                          placeholder={
-                            item.type === "product" ? "Product" : "Package"
-                          }
-                        />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {pickableOptions(item.type).map((option) => (
-                          <SelectItem key={option.refId} value={option.refId}>
-                            {option.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-
-                    <Field className="w-20 shrink-0">
-                      <FieldLabel
-                        htmlFor={`order-item-qty-${index}`}
-                        className="text-xs font-normal text-muted-foreground"
-                      >
-                        Qty
-                      </FieldLabel>
-                      <Input
-                        id={`order-item-qty-${index}`}
-                        type="number"
-                        inputMode="numeric"
-                        min="1"
-                        step="1"
-                        value={item.quantity}
-                        onChange={(e) =>
-                          updateItem(index, {
-                            quantity: Number(e.target.value) || 1,
-                          })
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue
+                        placeholder={
+                          item.type === "product" ? "Product" : "Package"
                         }
                       />
-                    </Field>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {pickableOptions(item.type).map((option) => (
+                        <SelectItem key={option.refId} value={option.refId}>
+                          {option.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
 
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon-sm"
-                      className="shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                      onClick={() => removeItem(index)}
+                  <Field className="w-20 shrink-0">
+                    <FieldLabel
+                      htmlFor={`order-item-qty-${index}`}
+                      className="text-xs font-normal text-muted-foreground"
                     >
-                      <Trash2 className="size-4" />
-                      <span className="sr-only">Remove item</span>
-                    </Button>
-                  </div>
+                      Qty
+                    </FieldLabel>
+                    <Input
+                      id={`order-item-qty-${index}`}
+                      type="number"
+                      inputMode="numeric"
+                      min="1"
+                      step="1"
+                      value={item.quantity}
+                      onChange={(e) =>
+                        updateItem(index, {
+                          quantity: Number(e.target.value) || 1,
+                        })
+                      }
+                    />
+                  </Field>
+
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    className="shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                    onClick={() => removeItem(index)}
+                  >
+                    <Trash2 className="size-4" />
+                    <span className="sr-only">Remove item</span>
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <FieldError>{error}</FieldError>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => addItem("product")}
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-dashed border-border py-2 text-sm font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
+            >
+              <Plus className="size-3.5" />
+              Add Product
+            </button>
+            <button
+              type="button"
+              onClick={() => addItem("package")}
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-dashed border-border py-2 text-sm font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
+            >
+              <Plus className="size-3.5" />
+              Add Package
+            </button>
+          </div>
+        </FormSection>
+
+        <FormSection icon={Banknote} title="Payment">
+          <Field>
+            <FieldLabel htmlFor="order-status">Payment status</FieldLabel>
+            <Select
+              value={status}
+              onValueChange={(value) => setStatus(value as OrderStatus)}
+            >
+              <SelectTrigger id="order-status" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {orderStatuses.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {s}
+                  </SelectItem>
                 ))}
-              </div>
-            )}
+              </SelectContent>
+            </Select>
+          </Field>
 
-            <FieldError>{error}</FieldError>
-
-            <div className="flex items-center gap-4">
-              <button
-                type="button"
-                onClick={() => addItem("product")}
-                className="flex items-center gap-1 text-sm font-medium text-primary hover:underline"
-              >
-                <Plus className="size-3.5" />
-                Add Product
-              </button>
-              <button
-                type="button"
-                onClick={() => addItem("package")}
-                className="flex items-center gap-1 text-sm font-medium text-primary hover:underline"
-              >
-                <Plus className="size-3.5" />
-                Add Package
-              </button>
-            </div>
-          </FieldGroup>
-        </FieldSet>
-
-        <FieldSet>
-          <FieldLegend>Payment</FieldLegend>
-          <FieldGroup>
-            <Field>
-              <FieldLabel htmlFor="order-status">Payment status</FieldLabel>
-              <Select
-                value={status}
-                onValueChange={(value) => setStatus(value as OrderStatus)}
-              >
-                <SelectTrigger id="order-status" className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {orderStatuses.map((s) => (
-                    <SelectItem key={s} value={s}>
-                      {s}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </Field>
-
-            <div className="flex items-center justify-between text-sm font-semibold">
-              <span className="text-foreground">Total</span>
-              <span className="text-foreground">{currency.format(total)}</span>
-            </div>
-          </FieldGroup>
-        </FieldSet>
+          <div className="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2.5 text-sm font-semibold">
+            <span className="text-foreground">Total</span>
+            <span className="text-foreground">{currency.format(total)}</span>
+          </div>
+        </FormSection>
       </SheetBody>
 
       <SheetFooter>

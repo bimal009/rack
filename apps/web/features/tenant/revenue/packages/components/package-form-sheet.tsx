@@ -7,14 +7,13 @@ import {
   type ChangeEvent,
   type FormEvent,
 } from "react"
-import { Info, Plus, Trash2, X } from "lucide-react"
+import { CalendarCheck, Info, Layers, ListChecks, Plus, Sliders, Trash2, X } from "lucide-react"
 
 import { Button } from "@repo/ui/components/ui/button"
 import {
   Field,
   FieldDescription,
   FieldError,
-  FieldGroup,
   FieldLabel,
 } from "@repo/ui/components/ui/field"
 import { Input } from "@repo/ui/components/ui/input"
@@ -32,18 +31,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@repo/ui/components/ui/select"
-import { Separator } from "@repo/ui/components/ui/separator"
 import {
   Sheet,
   SheetBody,
   SheetContent,
-  SheetDescription,
   SheetFooter,
   SheetHeader,
-  SheetTitle,
 } from "@repo/ui/components/ui/sheet"
 import { Switch } from "@repo/ui/components/ui/switch"
 import { Textarea } from "@repo/ui/components/ui/textarea"
+
+import { FormSection, FormSheetHeader } from "@/features/tenant/components/form-section"
 
 import { initialPlans } from "../../plans/lib/data"
 import { initialProducts } from "../../products/lib/data"
@@ -181,16 +179,19 @@ function PackageFormBody({ pkg, onSubmit, onCancel }: PackageFormBodyProps) {
   return (
     <form onSubmit={handleSubmit} className="flex h-full flex-col">
       <SheetHeader>
-        <SheetTitle>{isEdit ? "Edit package" : "Add Package"}</SheetTitle>
-        <SheetDescription>
-          {isEdit
-            ? "Update this package's price and included items."
-            : "Bundle plans and products together at one fixed price."}
-        </SheetDescription>
+        <FormSheetHeader
+          icon={Layers}
+          title={isEdit ? "Edit package" : "Add package"}
+          description={
+            isEdit
+              ? "Update this package's price and included items."
+              : "Bundle plans and products together at one fixed price."
+          }
+        />
       </SheetHeader>
 
-      <SheetBody className="flex flex-col gap-6">
-        <FieldGroup>
+      <SheetBody className="flex flex-col gap-7">
+        <FormSection icon={Info} title="Basic details">
           <div className="grid grid-cols-2 gap-4">
             <Field data-invalid={Boolean(errors.name)}>
               <FieldLabel htmlFor="package-name">Name</FieldLabel>
@@ -321,11 +322,13 @@ function PackageFormBody({ pkg, onSubmit, onCancel }: PackageFormBodyProps) {
               </label>
             )}
           </Field>
-        </FieldGroup>
+        </FormSection>
 
-        <Separator />
-
-        <div className="flex flex-col gap-1.5">
+        <FormSection
+          icon={Sliders}
+          title="Package options"
+          description="The buyer picks one quantity that applies to every item."
+        >
           <div className="flex items-center gap-2.5">
             <Switch
               id="package-single-quantity"
@@ -334,35 +337,17 @@ function PackageFormBody({ pkg, onSubmit, onCancel }: PackageFormBodyProps) {
                 setValues((v) => ({ ...v, useSingleQuantity: checked }))
               }
             />
-            <Label
-              htmlFor="package-single-quantity"
-              className="flex items-center gap-1.5"
-            >
+            <Label htmlFor="package-single-quantity">
               Use a single quantity for the whole package
-              <Info
-                className="size-3.5 text-muted-foreground"
-                aria-hidden="true"
-              />
             </Label>
           </div>
-          <FieldDescription>
-            The buyer picks one quantity that applies to every item.
-          </FieldDescription>
-        </div>
+        </FormSection>
 
-        <Separator />
-
-        <div className="flex flex-col gap-3">
-          <div>
-            <p className="text-sm font-medium text-foreground">
-              Items in this package
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Add the plans and products included. Each can have its own
-              quantity.
-            </p>
-          </div>
-
+        <FormSection
+          icon={ListChecks}
+          title="Items in this package"
+          description="Add the plans and products included. Each can have its own quantity."
+        >
           {values.items.length > 0 && (
             <div className="flex flex-col gap-2">
               {values.items.map((item, index) => (
@@ -434,11 +419,11 @@ function PackageFormBody({ pkg, onSubmit, onCancel }: PackageFormBodyProps) {
 
           <FieldError>{errors.items}</FieldError>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => addItem("plan")}
-              className="flex items-center gap-1 text-sm font-medium text-primary hover:underline"
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-dashed border-border py-2 text-sm font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
             >
               <Plus className="size-3.5" />
               Add Plan
@@ -446,17 +431,19 @@ function PackageFormBody({ pkg, onSubmit, onCancel }: PackageFormBodyProps) {
             <button
               type="button"
               onClick={() => addItem("product")}
-              className="flex items-center gap-1 text-sm font-medium text-primary hover:underline"
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-dashed border-border py-2 text-sm font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
             >
               <Plus className="size-3.5" />
               Add Product
             </button>
           </div>
-        </div>
+        </FormSection>
 
-        <Separator />
-
-        <div className="flex flex-col gap-1.5">
+        <FormSection
+          icon={CalendarCheck}
+          title="Booking"
+          description="Buyers pick one of the slots below."
+        >
           <div className="flex items-center gap-2.5">
             <Switch
               id="package-bookable"
@@ -465,21 +452,9 @@ function PackageFormBody({ pkg, onSubmit, onCancel }: PackageFormBodyProps) {
                 setValues((v) => ({ ...v, bookable: checked }))
               }
             />
-            <Label
-              htmlFor="package-bookable"
-              className="flex items-center gap-1.5"
-            >
-              Bookable
-              <Info
-                className="size-3.5 text-muted-foreground"
-                aria-hidden="true"
-              />
-            </Label>
+            <Label htmlFor="package-bookable">Bookable</Label>
           </div>
-          <FieldDescription>
-            Buyers pick one of the slots below.
-          </FieldDescription>
-        </div>
+        </FormSection>
       </SheetBody>
 
       <SheetFooter>

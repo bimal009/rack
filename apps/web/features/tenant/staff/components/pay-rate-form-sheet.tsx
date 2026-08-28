@@ -1,17 +1,14 @@
 "use client"
 
 import { useState, type FormEvent } from "react"
-import { Info } from "lucide-react"
+import { Banknote, BadgeDollarSign, Info, Target } from "lucide-react"
 
 import { Button } from "@repo/ui/components/ui/button"
 import {
   Field,
   FieldDescription,
   FieldError,
-  FieldGroup,
   FieldLabel,
-  FieldLegend,
-  FieldSet,
 } from "@repo/ui/components/ui/field"
 import { Input } from "@repo/ui/components/ui/input"
 import {
@@ -31,14 +28,13 @@ import {
   Sheet,
   SheetBody,
   SheetContent,
-  SheetDescription,
   SheetFooter,
   SheetHeader,
-  SheetTitle,
 } from "@repo/ui/components/ui/sheet"
 import { Switch } from "@repo/ui/components/ui/switch"
+import { cn } from "@repo/ui/lib/utils"
 
-import { FilterPills } from "@/features/tenant/components/filter-pills"
+import { FormSection, FormSheetHeader } from "@/features/tenant/components/form-section"
 
 import { fieldErrors } from "../lib/validation"
 import { classScopeOptions } from "../lib/pay-rate-data"
@@ -134,239 +130,221 @@ function PayRateFormBody({ policy, onSubmit, onCancel }: PayRateFormBodyProps) {
   return (
     <form onSubmit={handleSubmit} className="flex h-full flex-col">
       <SheetHeader>
-        <SheetTitle>{isEdit ? "Edit Pay Rate" : "Add Pay Rate"}</SheetTitle>
-        <SheetDescription>
-          Define how staff earn for classes or individual training sessions.
-        </SheetDescription>
+        <FormSheetHeader
+          icon={BadgeDollarSign}
+          title={isEdit ? "Edit pay rate" : "Add pay rate"}
+          description="Define how staff earn for classes or individual training sessions."
+        />
       </SheetHeader>
 
-      <SheetBody className="flex flex-col gap-6">
-        <FilterPills
-          options={payRateModes}
-          value={values.mode}
-          onChange={(mode) => setValues((v) => ({ ...v, mode }))}
-        />
+      <SheetBody className="flex flex-col gap-7">
+        <div className="grid grid-cols-2 gap-1 rounded-full border border-border bg-card p-1">
+          {payRateModes.map((mode) => (
+            <button
+              key={mode}
+              type="button"
+              onClick={() => setValues((v) => ({ ...v, mode }))}
+              className={cn(
+                "rounded-full px-3 py-1.5 text-center text-sm font-medium whitespace-nowrap transition-colors",
+                values.mode === mode
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              {mode}
+            </button>
+          ))}
+        </div>
 
-        <FieldSet>
-          <FieldGroup>
-            <Field data-invalid={Boolean(errors.policyName)}>
-              <FieldLabel htmlFor="pay-rate-name">
-                Policy name <span className="text-destructive">*</span>
-              </FieldLabel>
-              <Input
-                id="pay-rate-name"
-                placeholder="Policy name"
-                value={values.policyName}
-                aria-invalid={Boolean(errors.policyName)}
-                onChange={(e) =>
-                  setValues((v) => ({ ...v, policyName: e.target.value }))
-                }
-              />
-              <FieldError>{errors.policyName}</FieldError>
-            </Field>
-          </FieldGroup>
-        </FieldSet>
+        <Field data-invalid={Boolean(errors.policyName)}>
+          <FieldLabel htmlFor="pay-rate-name">
+            Policy name <span className="text-destructive">*</span>
+          </FieldLabel>
+          <Input
+            id="pay-rate-name"
+            placeholder="Policy name"
+            value={values.policyName}
+            aria-invalid={Boolean(errors.policyName)}
+            onChange={(e) =>
+              setValues((v) => ({ ...v, policyName: e.target.value }))
+            }
+          />
+          <FieldError>{errors.policyName}</FieldError>
+        </Field>
 
-        <FieldSet>
-          <FieldLegend>Earnings</FieldLegend>
-          <FieldGroup>
-            {isClass ? (
-              <>
-                <Field>
-                  <FieldLabel htmlFor="pay-rate-per-class">
-                    Per class
-                  </FieldLabel>
-                  <InputGroup>
-                    <InputGroupAddon>
-                      <InputGroupText>NPR</InputGroupText>
-                    </InputGroupAddon>
-                    <InputGroupInput
-                      id="pay-rate-per-class"
-                      type="number"
-                      inputMode="decimal"
-                      min="0"
-                      step="1"
-                      value={values.perClassRate}
-                      onChange={(e) =>
-                        setValues((v) => ({
-                          ...v,
-                          perClassRate: e.target.value,
-                        }))
-                      }
-                    />
-                  </InputGroup>
-                </Field>
-
-                <Field>
-                  <FieldLabel htmlFor="pay-rate-per-person">
-                    Per person
-                  </FieldLabel>
-                  <InputGroup>
-                    <InputGroupAddon>
-                      <InputGroupText>NPR</InputGroupText>
-                    </InputGroupAddon>
-                    <InputGroupInput
-                      id="pay-rate-per-person"
-                      type="number"
-                      inputMode="decimal"
-                      min="0"
-                      step="1"
-                      value={values.perPersonRate}
-                      onChange={(e) =>
-                        setValues((v) => ({
-                          ...v,
-                          perPersonRate: e.target.value,
-                        }))
-                      }
-                    />
-                  </InputGroup>
-                </Field>
-
-                <Field>
-                  <FieldLabel htmlFor="pay-rate-revenue-share">
-                    % of total class revenue
-                  </FieldLabel>
-                  <InputGroup>
-                    <InputGroupInput
-                      id="pay-rate-revenue-share"
-                      type="number"
-                      inputMode="decimal"
-                      min="0"
-                      max="100"
-                      step="1"
-                      value={values.revenueSharePercent}
-                      onChange={(e) =>
-                        setValues((v) => ({
-                          ...v,
-                          revenueSharePercent: e.target.value,
-                        }))
-                      }
-                    />
-                    <InputGroupAddon align="inline-end">
-                      <InputGroupText>%</InputGroupText>
-                    </InputGroupAddon>
-                  </InputGroup>
-                </Field>
-              </>
-            ) : (
-              <>
-                <Field>
-                  <FieldLabel htmlFor="pay-rate-per-session">
-                    Per session
-                  </FieldLabel>
-                  <InputGroup>
-                    <InputGroupAddon>
-                      <InputGroupText>NPR</InputGroupText>
-                    </InputGroupAddon>
-                    <InputGroupInput
-                      id="pay-rate-per-session"
-                      type="number"
-                      inputMode="decimal"
-                      min="0"
-                      step="1"
-                      value={values.perSessionRate}
-                      onChange={(e) =>
-                        setValues((v) => ({
-                          ...v,
-                          perSessionRate: e.target.value,
-                        }))
-                      }
-                    />
-                  </InputGroup>
-                </Field>
-
-                <Field>
-                  <FieldLabel htmlFor="pay-rate-revenue-share-session">
-                    % of total session revenue
-                  </FieldLabel>
-                  <InputGroup>
-                    <InputGroupInput
-                      id="pay-rate-revenue-share-session"
-                      type="number"
-                      inputMode="decimal"
-                      min="0"
-                      max="100"
-                      step="1"
-                      value={values.revenueSharePercent}
-                      onChange={(e) =>
-                        setValues((v) => ({
-                          ...v,
-                          revenueSharePercent: e.target.value,
-                        }))
-                      }
-                    />
-                    <InputGroupAddon align="inline-end">
-                      <InputGroupText>%</InputGroupText>
-                    </InputGroupAddon>
-                  </InputGroup>
-                </Field>
-              </>
-            )}
-
-            <Field orientation="horizontal">
-              <Switch
-                id="pay-rate-unpaid"
-                checked={values.compensateUnpaidBookings}
-                onCheckedChange={(checked) =>
-                  setValues((v) => ({
-                    ...v,
-                    compensateUnpaidBookings: checked,
-                  }))
-                }
-              />
-              <div className="flex items-center gap-1.5">
-                <FieldLabel htmlFor="pay-rate-unpaid">
-                  Compensate for unpaid bookings
-                </FieldLabel>
-                <Info className="size-3.5 text-muted-foreground" />
-              </div>
-            </Field>
-            <FieldDescription>
-              Paid for every booking, including unpaid and no-shows.
-            </FieldDescription>
-          </FieldGroup>
-        </FieldSet>
-
-        <FieldSet>
-          <FieldLegend>Applies to</FieldLegend>
-          <FieldGroup>
-            {isClass && (
+        <FormSection icon={Banknote} title="Earnings">
+          {isClass ? (
+            <>
               <Field>
-                <Select
-                  value={values.classScope}
-                  onValueChange={(value) =>
-                    setValues((v) => ({ ...v, classScope: value ?? "" }))
-                  }
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {classScopeOptions.map((option) => (
-                      <SelectItem key={option} value={option}>
-                        {option}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <FieldLabel htmlFor="pay-rate-per-class">
+                  Per class
+                </FieldLabel>
+                <InputGroup>
+                  <InputGroupAddon>
+                    <InputGroupText>NPR</InputGroupText>
+                  </InputGroupAddon>
+                  <InputGroupInput
+                    id="pay-rate-per-class"
+                    type="number"
+                    inputMode="decimal"
+                    min="0"
+                    step="1"
+                    value={values.perClassRate}
+                    onChange={(e) =>
+                      setValues((v) => ({
+                        ...v,
+                        perClassRate: e.target.value,
+                      }))
+                    }
+                  />
+                </InputGroup>
               </Field>
-            )}
 
+              <Field>
+                <FieldLabel htmlFor="pay-rate-per-person">
+                  Per person
+                </FieldLabel>
+                <InputGroup>
+                  <InputGroupAddon>
+                    <InputGroupText>NPR</InputGroupText>
+                  </InputGroupAddon>
+                  <InputGroupInput
+                    id="pay-rate-per-person"
+                    type="number"
+                    inputMode="decimal"
+                    min="0"
+                    step="1"
+                    value={values.perPersonRate}
+                    onChange={(e) =>
+                      setValues((v) => ({
+                        ...v,
+                        perPersonRate: e.target.value,
+                      }))
+                    }
+                  />
+                </InputGroup>
+              </Field>
+
+              <Field>
+                <FieldLabel htmlFor="pay-rate-revenue-share">
+                  % of total class revenue
+                </FieldLabel>
+                <InputGroup>
+                  <InputGroupInput
+                    id="pay-rate-revenue-share"
+                    type="number"
+                    inputMode="decimal"
+                    min="0"
+                    max="100"
+                    step="1"
+                    value={values.revenueSharePercent}
+                    onChange={(e) =>
+                      setValues((v) => ({
+                        ...v,
+                        revenueSharePercent: e.target.value,
+                      }))
+                    }
+                  />
+                  <InputGroupAddon align="inline-end">
+                    <InputGroupText>%</InputGroupText>
+                  </InputGroupAddon>
+                </InputGroup>
+              </Field>
+            </>
+          ) : (
+            <>
+              <Field>
+                <FieldLabel htmlFor="pay-rate-per-session">
+                  Per session
+                </FieldLabel>
+                <InputGroup>
+                  <InputGroupAddon>
+                    <InputGroupText>NPR</InputGroupText>
+                  </InputGroupAddon>
+                  <InputGroupInput
+                    id="pay-rate-per-session"
+                    type="number"
+                    inputMode="decimal"
+                    min="0"
+                    step="1"
+                    value={values.perSessionRate}
+                    onChange={(e) =>
+                      setValues((v) => ({
+                        ...v,
+                        perSessionRate: e.target.value,
+                      }))
+                    }
+                  />
+                </InputGroup>
+              </Field>
+
+              <Field>
+                <FieldLabel htmlFor="pay-rate-revenue-share-session">
+                  % of total session revenue
+                </FieldLabel>
+                <InputGroup>
+                  <InputGroupInput
+                    id="pay-rate-revenue-share-session"
+                    type="number"
+                    inputMode="decimal"
+                    min="0"
+                    max="100"
+                    step="1"
+                    value={values.revenueSharePercent}
+                    onChange={(e) =>
+                      setValues((v) => ({
+                        ...v,
+                        revenueSharePercent: e.target.value,
+                      }))
+                    }
+                  />
+                  <InputGroupAddon align="inline-end">
+                    <InputGroupText>%</InputGroupText>
+                  </InputGroupAddon>
+                </InputGroup>
+              </Field>
+            </>
+          )}
+
+          <Field orientation="horizontal">
+            <Switch
+              id="pay-rate-unpaid"
+              checked={values.compensateUnpaidBookings}
+              onCheckedChange={(checked) =>
+                setValues((v) => ({
+                  ...v,
+                  compensateUnpaidBookings: checked,
+                }))
+              }
+            />
+            <div className="flex items-center gap-1.5">
+              <FieldLabel htmlFor="pay-rate-unpaid">
+                Pay for no-shows and unpaid bookings
+              </FieldLabel>
+              <Info className="size-3.5 text-muted-foreground" />
+            </div>
+          </Field>
+          <FieldDescription>
+            When on, the instructor gets paid for every booked spot, even if
+            the member didn&apos;t pay or show up. Turn this off to only pay
+            for bookings that were paid and completed.
+          </FieldDescription>
+        </FormSection>
+
+        <FormSection icon={Target} title="Applies to">
+          {isClass && (
             <Field>
               <Select
-                value={values.appliesToRole}
+                value={values.classScope}
                 onValueChange={(value) =>
-                  setValues((v) => ({
-                    ...v,
-                    appliesToRole: value as PayRateAppliesToRole,
-                  }))
+                  setValues((v) => ({ ...v, classScope: value ?? "" }))
                 }
               >
                 <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {payRateAppliesToRoles.map((option) => (
+                  {classScopeOptions.map((option) => (
                     <SelectItem key={option} value={option}>
                       {option}
                     </SelectItem>
@@ -374,31 +352,54 @@ function PayRateFormBody({ policy, onSubmit, onCancel }: PayRateFormBodyProps) {
                 </SelectContent>
               </Select>
             </Field>
+          )}
 
-            <Field>
-              <Select
-                value={values.entranceMethod}
-                onValueChange={(value) =>
-                  setValues((v) => ({
-                    ...v,
-                    entranceMethod: value as PayRateEntranceMethod,
-                  }))
-                }
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {payRateEntranceMethods.map((option) => (
-                    <SelectItem key={option} value={option}>
-                      {option}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </Field>
-          </FieldGroup>
-        </FieldSet>
+          <Field>
+            <Select
+              value={values.appliesToRole}
+              onValueChange={(value) =>
+                setValues((v) => ({
+                  ...v,
+                  appliesToRole: value as PayRateAppliesToRole,
+                }))
+              }
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {payRateAppliesToRoles.map((option) => (
+                  <SelectItem key={option} value={option}>
+                    {option}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+
+          <Field>
+            <Select
+              value={values.entranceMethod}
+              onValueChange={(value) =>
+                setValues((v) => ({
+                  ...v,
+                  entranceMethod: value as PayRateEntranceMethod,
+                }))
+              }
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {payRateEntranceMethods.map((option) => (
+                  <SelectItem key={option} value={option}>
+                    {option}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+        </FormSection>
       </SheetBody>
 
       <SheetFooter>

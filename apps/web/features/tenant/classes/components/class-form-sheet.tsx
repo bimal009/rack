@@ -1,16 +1,14 @@
 "use client"
 
 import { useState, type FormEvent } from "react"
+import { CalendarClock, Dumbbell, FileText, Info, MapPin, Palette } from "lucide-react"
 
 import { Button } from "@repo/ui/components/ui/button"
 import {
   Field,
   FieldDescription,
   FieldError,
-  FieldGroup,
   FieldLabel,
-  FieldLegend,
-  FieldSet,
 } from "@repo/ui/components/ui/field"
 import { Input } from "@repo/ui/components/ui/input"
 import {
@@ -30,15 +28,14 @@ import {
   Sheet,
   SheetBody,
   SheetContent,
-  SheetDescription,
   SheetFooter,
   SheetHeader,
-  SheetTitle,
 } from "@repo/ui/components/ui/sheet"
 import { Switch } from "@repo/ui/components/ui/switch"
 import { Textarea } from "@repo/ui/components/ui/textarea"
 
 import { TimeSelect } from "@/components/time-select"
+import { FormSection, FormSheetHeader } from "@/features/tenant/components/form-section"
 import { initialAreaTypes, initialClassTypes } from "@/features/tenant/settings/types/lib/data"
 import { fullName } from "@/features/tenant/staff/components/columns"
 import { initialStaff } from "@/features/tenant/staff/lib/data"
@@ -189,432 +186,434 @@ function ClassFormBody({ cls, onSubmit, onCancel }: ClassFormBodyProps) {
   return (
     <form onSubmit={handleSubmit} className="flex h-full flex-col">
       <SheetHeader>
-        <SheetTitle>{isEdit ? "Edit Class" : "Add Class"}</SheetTitle>
-        <SheetDescription>
-          Schedule a class, assign an instructor, and set its pricing.
-        </SheetDescription>
+        <FormSheetHeader
+          icon={Dumbbell}
+          title={isEdit ? "Edit class" : "Add class"}
+          description="Schedule a class, assign an instructor, and set its pricing."
+        />
       </SheetHeader>
 
-      <SheetBody className="flex flex-col gap-6">
-        <FieldSet>
-          <FieldLegend>Basic Information</FieldLegend>
-          <FieldGroup>
-            <div className="grid grid-cols-2 gap-4">
-              <Field data-invalid={Boolean(errors.name)}>
-                <FieldLabel htmlFor="class-name">
-                  Class Name <span className="text-destructive">*</span>
-                </FieldLabel>
-                <Input
-                  id="class-name"
-                  value={values.name}
-                  aria-invalid={Boolean(errors.name)}
-                  onChange={(e) =>
-                    setValues((v) => ({ ...v, name: e.target.value }))
-                  }
-                />
-                <FieldError>{errors.name}</FieldError>
-              </Field>
-
-              <Field>
-                <FieldLabel htmlFor="class-type">Class Type</FieldLabel>
-                <Select
-                  value={values.classType}
-                  onValueChange={(value) =>
-                    setValues((v) => ({ ...v, classType: value ?? "" }))
-                  }
-                >
-                  <SelectTrigger id="class-type" className="w-full">
-                    <SelectValue placeholder="Select type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {initialClassTypes.map((type) => (
-                      <SelectItem key={type.id} value={type.name}>
-                        {type.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </Field>
-            </div>
-
-            <div className="grid grid-cols-3 gap-4">
-              <Field>
-                <FieldLabel htmlFor="class-price">Price</FieldLabel>
-                <InputGroup>
-                  <InputGroupAddon>
-                    <InputGroupText>NPR</InputGroupText>
-                  </InputGroupAddon>
-                  <InputGroupInput
-                    id="class-price"
-                    type="number"
-                    inputMode="decimal"
-                    min="0"
-                    step="1"
-                    value={values.price}
-                    onChange={(e) =>
-                      setValues((v) => ({ ...v, price: e.target.value }))
-                    }
-                  />
-                </InputGroup>
-              </Field>
-
-              <Field>
-                <FieldLabel htmlFor="class-max-capacity">
-                  Max Capacity
-                </FieldLabel>
-                <Input
-                  id="class-max-capacity"
-                  type="number"
-                  inputMode="numeric"
-                  min="1"
-                  step="1"
-                  value={values.maxCapacity}
-                  onChange={(e) =>
-                    setValues((v) => ({ ...v, maxCapacity: e.target.value }))
-                  }
-                />
-              </Field>
-
-              <Field>
-                <FieldLabel htmlFor="class-visibility">Visibility</FieldLabel>
-                <Select
-                  value={values.visibility}
-                  onValueChange={(value) =>
-                    setValues((v) => ({
-                      ...v,
-                      visibility: value as ClassVisibility,
-                    }))
-                  }
-                >
-                  <SelectTrigger id="class-visibility" className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {classVisibilities.map((option) => (
-                      <SelectItem key={option} value={option}>
-                        {option}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </Field>
-            </div>
-          </FieldGroup>
-        </FieldSet>
-
-        <FieldSet>
-          <FieldLegend>Location & Instructor</FieldLegend>
-          <FieldGroup>
-            <div className="grid grid-cols-2 gap-4">
-              <Field>
-                <FieldLabel htmlFor="class-instructor">Instructor</FieldLabel>
-                <Select
-                  value={values.instructorId}
-                  onValueChange={(value) =>
-                    setValues((v) => ({ ...v, instructorId: value ?? "" }))
-                  }
-                >
-                  <SelectTrigger id="class-instructor" className="w-full">
-                    <SelectValue placeholder="Instructors" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {instructorOptions.map((staff) => (
-                      <SelectItem key={staff.id} value={staff.id}>
-                        {fullName(staff)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </Field>
-
-              <Field>
-                <FieldLabel htmlFor="class-area">Select Area</FieldLabel>
-                <Select
-                  value={values.areaId}
-                  onValueChange={(value) =>
-                    setValues((v) => ({ ...v, areaId: value ?? "" }))
-                  }
-                >
-                  <SelectTrigger id="class-area" className="w-full">
-                    <SelectValue placeholder="Select Area" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {initialAreaTypes.map((area) => (
-                      <SelectItem key={area.id} value={area.id}>
-                        {area.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </Field>
-            </div>
-          </FieldGroup>
-        </FieldSet>
-
-        <FieldSet>
-          <FieldLegend>Date & Time</FieldLegend>
-          <FieldGroup>
-            <FieldDescription>
-              Times are in the club timezone (Asia/Kathmandu).
-            </FieldDescription>
-
-            <Field data-invalid={Boolean(errors.date)}>
-              <FieldLabel htmlFor="class-date">
-                Date <span className="text-destructive">*</span>
+      <SheetBody className="flex flex-col gap-7">
+        <FormSection icon={Info} title="Basic information">
+          <div className="grid grid-cols-2 gap-4">
+            <Field data-invalid={Boolean(errors.name)}>
+              <FieldLabel htmlFor="class-name">
+                Class Name <span className="text-destructive">*</span>
               </FieldLabel>
               <Input
-                id="class-date"
-                type="date"
-                value={values.date}
-                aria-invalid={Boolean(errors.date)}
+                id="class-name"
+                value={values.name}
+                aria-invalid={Boolean(errors.name)}
                 onChange={(e) =>
-                  setValues((v) => ({ ...v, date: e.target.value }))
+                  setValues((v) => ({ ...v, name: e.target.value }))
                 }
               />
-              <FieldError>{errors.date}</FieldError>
+              <FieldError>{errors.name}</FieldError>
             </Field>
 
-            <div className="grid grid-cols-3 gap-4">
-              <Field>
-                <FieldLabel htmlFor="class-start-time">
-                  Start Time <span className="text-destructive">*</span>
-                </FieldLabel>
-                <TimeSelect
-                  id="class-start-time"
-                  value={values.startTime}
-                  onChange={(startTime) =>
-                    setValues((v) => ({ ...v, startTime }))
+            <Field>
+              <FieldLabel htmlFor="class-type">Class Type</FieldLabel>
+              <Select
+                value={values.classType}
+                onValueChange={(value) =>
+                  setValues((v) => ({ ...v, classType: value ?? "" }))
+                }
+              >
+                <SelectTrigger id="class-type" className="w-full">
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {initialClassTypes.map((type) => (
+                    <SelectItem key={type.id} value={type.name}>
+                      {type.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+          </div>
+
+          <div className="grid grid-cols-3 gap-4">
+            <Field>
+              <FieldLabel htmlFor="class-price">Price</FieldLabel>
+              <InputGroup>
+                <InputGroupAddon>
+                  <InputGroupText>NPR</InputGroupText>
+                </InputGroupAddon>
+                <InputGroupInput
+                  id="class-price"
+                  type="number"
+                  inputMode="decimal"
+                  min="0"
+                  step="1"
+                  value={values.price}
+                  onChange={(e) =>
+                    setValues((v) => ({ ...v, price: e.target.value }))
                   }
                 />
-              </Field>
+              </InputGroup>
+            </Field>
 
-              <Field data-invalid={Boolean(errors.endTime)}>
-                <FieldLabel htmlFor="class-end-time">
-                  End Time <span className="text-destructive">*</span>
-                </FieldLabel>
-                <TimeSelect
-                  id="class-end-time"
-                  value={values.endTime}
-                  onChange={(endTime) =>
-                    setValues((v) => ({ ...v, endTime }))
-                  }
-                />
-                <FieldError>{errors.endTime}</FieldError>
-              </Field>
-
-              <Field>
-                <FieldLabel htmlFor="class-duration">Duration</FieldLabel>
-                <Input
-                  id="class-duration"
-                  value={duration}
-                  readOnly
-                  disabled
-                />
-              </Field>
-            </div>
-
-            <Field orientation="horizontal">
-              <Switch
-                id="class-repeat"
-                checked={values.repeat}
-                onCheckedChange={(checked) =>
-                  setValues((v) => ({ ...v, repeat: checked }))
+            <Field>
+              <FieldLabel htmlFor="class-max-capacity">
+                Max Capacity
+              </FieldLabel>
+              <Input
+                id="class-max-capacity"
+                type="number"
+                inputMode="numeric"
+                min="1"
+                step="1"
+                value={values.maxCapacity}
+                onChange={(e) =>
+                  setValues((v) => ({ ...v, maxCapacity: e.target.value }))
                 }
               />
-              <FieldLabel htmlFor="class-repeat">Repeat</FieldLabel>
             </Field>
 
-            {values.repeat && (
-              <>
-                <div className="grid grid-cols-2 gap-4">
-                  <Field>
-                    <FieldLabel htmlFor="class-repeat-every">
-                      Repeat every
-                    </FieldLabel>
-                    <Input
-                      id="class-repeat-every"
-                      type="number"
-                      inputMode="numeric"
-                      min="1"
-                      step="1"
-                      value={values.repeatEvery}
-                      onChange={(e) =>
-                        setValues((v) => ({
-                          ...v,
-                          repeatEvery: e.target.value,
-                        }))
-                      }
-                    />
-                  </Field>
+            <Field>
+              <FieldLabel htmlFor="class-visibility">Visibility</FieldLabel>
+              <Select
+                value={values.visibility}
+                onValueChange={(value) =>
+                  setValues((v) => ({
+                    ...v,
+                    visibility: value as ClassVisibility,
+                  }))
+                }
+              >
+                <SelectTrigger id="class-visibility" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {classVisibilities.map((option) => (
+                    <SelectItem key={option} value={option}>
+                      {option}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+          </div>
+        </FormSection>
 
-                  <Field>
-                    <FieldLabel htmlFor="class-repeat-frequency">
-                      Frequency
-                    </FieldLabel>
-                    <Select
-                      value={values.repeatFrequency}
-                      onValueChange={(value) =>
-                        setValues((v) => ({
-                          ...v,
-                          repeatFrequency: value as RepeatFrequency,
-                        }))
-                      }
-                    >
-                      <SelectTrigger
-                        id="class-repeat-frequency"
-                        className="w-full"
-                      >
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {repeatFrequencies.map((freq) => (
-                          <SelectItem key={freq} value={freq}>
-                            {freq}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </Field>
-                </div>
+        <FormSection icon={MapPin} title="Location & instructor">
+          <div className="grid grid-cols-2 gap-4">
+            <Field>
+              <FieldLabel htmlFor="class-instructor">Instructor</FieldLabel>
+              <Select
+                value={values.instructorId}
+                onValueChange={(value) =>
+                  setValues((v) => ({ ...v, instructorId: value ?? "" }))
+                }
+              >
+                <SelectTrigger id="class-instructor" className="w-full">
+                  <SelectValue placeholder="Instructors">
+                    {(value: string | null) =>
+                      instructorOptions.find((s) => s.id === value)
+                        ? fullName(
+                            instructorOptions.find((s) => s.id === value)!
+                          )
+                        : "Instructors"
+                    }
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {instructorOptions.map((staff) => (
+                    <SelectItem key={staff.id} value={staff.id}>
+                      {fullName(staff)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+
+            <Field>
+              <FieldLabel htmlFor="class-area">Select Area</FieldLabel>
+              <Select
+                value={values.areaId}
+                onValueChange={(value) =>
+                  setValues((v) => ({ ...v, areaId: value ?? "" }))
+                }
+              >
+                <SelectTrigger id="class-area" className="w-full">
+                  <SelectValue placeholder="Select Area">
+                    {(value: string | null) =>
+                      initialAreaTypes.find((a) => a.id === value)?.name ??
+                      "Select Area"
+                    }
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {initialAreaTypes.map((area) => (
+                    <SelectItem key={area.id} value={area.id}>
+                      {area.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+          </div>
+        </FormSection>
+
+        <FormSection
+          icon={CalendarClock}
+          title="Date & time"
+          description="Times are in the club timezone (Asia/Kathmandu)."
+        >
+          <Field data-invalid={Boolean(errors.date)}>
+            <FieldLabel htmlFor="class-date">
+              Date <span className="text-destructive">*</span>
+            </FieldLabel>
+            <Input
+              id="class-date"
+              type="date"
+              value={values.date}
+              aria-invalid={Boolean(errors.date)}
+              onChange={(e) =>
+                setValues((v) => ({ ...v, date: e.target.value }))
+              }
+            />
+            <FieldError>{errors.date}</FieldError>
+          </Field>
+
+          <div className="grid grid-cols-3 gap-4">
+            <Field>
+              <FieldLabel htmlFor="class-start-time">
+                Start Time <span className="text-destructive">*</span>
+              </FieldLabel>
+              <TimeSelect
+                id="class-start-time"
+                value={values.startTime}
+                onChange={(startTime) =>
+                  setValues((v) => ({ ...v, startTime }))
+                }
+              />
+            </Field>
+
+            <Field data-invalid={Boolean(errors.endTime)}>
+              <FieldLabel htmlFor="class-end-time">
+                End Time <span className="text-destructive">*</span>
+              </FieldLabel>
+              <TimeSelect
+                id="class-end-time"
+                value={values.endTime}
+                onChange={(endTime) =>
+                  setValues((v) => ({ ...v, endTime }))
+                }
+              />
+              <FieldError>{errors.endTime}</FieldError>
+            </Field>
+
+            <Field>
+              <FieldLabel htmlFor="class-duration">Duration</FieldLabel>
+              <Input
+                id="class-duration"
+                value={duration}
+                readOnly
+                disabled
+              />
+            </Field>
+          </div>
+
+          <Field orientation="horizontal">
+            <Switch
+              id="class-repeat"
+              checked={values.repeat}
+              onCheckedChange={(checked) =>
+                setValues((v) => ({ ...v, repeat: checked }))
+              }
+            />
+            <FieldLabel htmlFor="class-repeat">Repeat</FieldLabel>
+          </Field>
+
+          {values.repeat && (
+            <>
+              <div className="grid grid-cols-2 gap-4">
+                <Field>
+                  <FieldLabel htmlFor="class-repeat-every">
+                    Repeat every
+                  </FieldLabel>
+                  <Input
+                    id="class-repeat-every"
+                    type="number"
+                    inputMode="numeric"
+                    min="1"
+                    step="1"
+                    value={values.repeatEvery}
+                    onChange={(e) =>
+                      setValues((v) => ({
+                        ...v,
+                        repeatEvery: e.target.value,
+                      }))
+                    }
+                  />
+                </Field>
 
                 <Field>
-                  <FieldLabel htmlFor="class-repeat-ends">Ends</FieldLabel>
+                  <FieldLabel htmlFor="class-repeat-frequency">
+                    Frequency
+                  </FieldLabel>
                   <Select
-                    value={values.repeatEndMode}
+                    value={values.repeatFrequency}
                     onValueChange={(value) =>
                       setValues((v) => ({
                         ...v,
-                        repeatEndMode: value as RepeatEndMode,
+                        repeatFrequency: value as RepeatFrequency,
                       }))
                     }
                   >
-                    <SelectTrigger id="class-repeat-ends" className="w-full">
+                    <SelectTrigger
+                      id="class-repeat-frequency"
+                      className="w-full"
+                    >
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {repeatEndModes.map((mode) => (
-                        <SelectItem key={mode} value={mode}>
-                          {mode}
+                      {repeatFrequencies.map((freq) => (
+                        <SelectItem key={freq} value={freq}>
+                          {freq}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  {values.repeatEndMode === "Never" && (
-                    <FieldDescription>
-                      Bookings will be created automatically on a rolling
-                      basis.
-                    </FieldDescription>
-                  )}
                 </Field>
+              </div>
 
-                {values.repeatEndMode === "Until date" && (
-                  <Field>
-                    <FieldLabel htmlFor="class-repeat-end-date">
-                      Until date
-                    </FieldLabel>
-                    <Input
-                      id="class-repeat-end-date"
-                      type="date"
-                      value={values.repeatEndDate}
-                      onChange={(e) =>
-                        setValues((v) => ({
-                          ...v,
-                          repeatEndDate: e.target.value,
-                        }))
-                      }
-                    />
-                  </Field>
-                )}
-
-                {values.repeatEndMode === "After occurrences" && (
-                  <Field>
-                    <FieldLabel htmlFor="class-repeat-occurrences">
-                      After occurrences
-                    </FieldLabel>
-                    <Input
-                      id="class-repeat-occurrences"
-                      type="number"
-                      inputMode="numeric"
-                      min="1"
-                      step="1"
-                      value={values.repeatEndOccurrences}
-                      onChange={(e) =>
-                        setValues((v) => ({
-                          ...v,
-                          repeatEndOccurrences: e.target.value,
-                        }))
-                      }
-                    />
-                  </Field>
-                )}
-              </>
-            )}
-          </FieldGroup>
-        </FieldSet>
-
-        <FieldSet>
-          <FieldLegend>Appearance</FieldLegend>
-          <FieldGroup>
-            <div className="grid grid-cols-2 gap-4">
               <Field>
-                <FieldLabel htmlFor="class-color">Color</FieldLabel>
-                <div className="flex items-center gap-2">
-                  <span
-                    className="size-9 shrink-0 rounded-md border border-input"
-                    style={{ backgroundColor: values.color }}
-                  />
+                <FieldLabel htmlFor="class-repeat-ends">Ends</FieldLabel>
+                <Select
+                  value={values.repeatEndMode}
+                  onValueChange={(value) =>
+                    setValues((v) => ({
+                      ...v,
+                      repeatEndMode: value as RepeatEndMode,
+                    }))
+                  }
+                >
+                  <SelectTrigger id="class-repeat-ends" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {repeatEndModes.map((mode) => (
+                      <SelectItem key={mode} value={mode}>
+                        {mode}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {values.repeatEndMode === "Never" && (
+                  <FieldDescription>
+                    Bookings will be created automatically on a rolling
+                    basis.
+                  </FieldDescription>
+                )}
+              </Field>
+
+              {values.repeatEndMode === "Until date" && (
+                <Field>
+                  <FieldLabel htmlFor="class-repeat-end-date">
+                    Until date
+                  </FieldLabel>
                   <Input
-                    id="class-color"
-                    value={values.color}
+                    id="class-repeat-end-date"
+                    type="date"
+                    value={values.repeatEndDate}
                     onChange={(e) =>
-                      setValues((v) => ({ ...v, color: e.target.value }))
+                      setValues((v) => ({
+                        ...v,
+                        repeatEndDate: e.target.value,
+                      }))
                     }
                   />
-                </div>
-              </Field>
+                </Field>
+              )}
 
-              <Field>
-                <FieldLabel htmlFor="class-sport">Sport</FieldLabel>
+              {values.repeatEndMode === "After occurrences" && (
+                <Field>
+                  <FieldLabel htmlFor="class-repeat-occurrences">
+                    After occurrences
+                  </FieldLabel>
+                  <Input
+                    id="class-repeat-occurrences"
+                    type="number"
+                    inputMode="numeric"
+                    min="1"
+                    step="1"
+                    value={values.repeatEndOccurrences}
+                    onChange={(e) =>
+                      setValues((v) => ({
+                        ...v,
+                        repeatEndOccurrences: e.target.value,
+                      }))
+                    }
+                  />
+                </Field>
+              )}
+            </>
+          )}
+        </FormSection>
+
+        <FormSection icon={Palette} title="Appearance">
+          <div className="grid grid-cols-2 gap-4">
+            <Field>
+              <FieldLabel htmlFor="class-color">Color</FieldLabel>
+              <div className="flex items-center gap-2">
+                <span
+                  className="size-9 shrink-0 rounded-md border border-input"
+                  style={{ backgroundColor: values.color }}
+                />
                 <Input
-                  id="class-sport"
-                  placeholder="Yoga, Boxing..."
-                  value={values.sport}
+                  id="class-color"
+                  value={values.color}
                   onChange={(e) =>
-                    setValues((v) => ({ ...v, sport: e.target.value }))
+                    setValues((v) => ({ ...v, color: e.target.value }))
                   }
                 />
-              </Field>
-            </div>
-          </FieldGroup>
-        </FieldSet>
+              </div>
+            </Field>
 
-        <FieldSet>
-          <FieldLegend>Description</FieldLegend>
-          <FieldGroup>
+            <Field>
+              <FieldLabel htmlFor="class-sport">Sport</FieldLabel>
+              <Input
+                id="class-sport"
+                placeholder="Yoga, Boxing..."
+                value={values.sport}
+                onChange={(e) =>
+                  setValues((v) => ({ ...v, sport: e.target.value }))
+                }
+              />
+            </Field>
+          </div>
+        </FormSection>
+
+        <FormSection icon={FileText} title="Description & notes">
+          <Field>
+            <FieldLabel htmlFor="class-description">Description</FieldLabel>
             <Textarea
+              id="class-description"
               value={values.description}
               onChange={(e) =>
                 setValues((v) => ({ ...v, description: e.target.value }))
               }
             />
-          </FieldGroup>
-        </FieldSet>
+          </Field>
 
-        <FieldSet>
-          <FieldLegend>Notes</FieldLegend>
-          <FieldGroup>
-            <FieldDescription>
-              Only visible to staff, never to members. Applies to this class
-              only, not the whole series.
-            </FieldDescription>
+          <Field>
+            <FieldLabel htmlFor="class-notes">Notes</FieldLabel>
             <Textarea
+              id="class-notes"
               value={values.notes}
               onChange={(e) =>
                 setValues((v) => ({ ...v, notes: e.target.value }))
               }
             />
-          </FieldGroup>
-        </FieldSet>
+            <FieldDescription>
+              Only visible to staff, never to members. Applies to this class
+              only, not the whole series.
+            </FieldDescription>
+          </Field>
+        </FormSection>
       </SheetBody>
 
       <SheetFooter>

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, type DragEvent } from "react"
-import { CalendarOff, ChevronLeft, ChevronRight, Eye, MoreVertical, Ticket } from "lucide-react"
+import { CalendarOff, ChevronLeft, ChevronRight, Ticket } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@repo/ui/components/ui/button"
@@ -36,11 +36,12 @@ import {
 } from "../lib/schedule-utils"
 import { BookingFormSheet } from "./booking-form-sheet"
 import { ScheduleCreatorMenu } from "./schedule-creator-menu"
+import { ScheduleTimeline } from "./schedule-timeline"
 import { TimeOffFormSheet } from "./time-off-form-sheet"
 
 const viewOptions = [
   { label: "Day", days: 1, enabled: true },
-  { label: "Timeline", days: 0, enabled: false },
+  { label: "Timeline", days: 1, enabled: true },
   { label: "3 days", days: 3, enabled: true },
   { label: "Week", days: 7, enabled: true },
 ] as const
@@ -178,6 +179,30 @@ export function ScheduleView() {
     }
   }
 
+  function handleRescheduleClass(
+    id: string,
+    patch: { startTime: string; endTime: string; instructorId: string }
+  ) {
+    setClasses((prev) =>
+      prev.map((c) => (c.id === id ? { ...c, ...patch } : c))
+    )
+  }
+
+  function handleRescheduleBooking(
+    id: string,
+    patch: { startTime: string; endTime: string; areaId: string }
+  ) {
+    setBookings((prev) =>
+      prev.map((b) => (b.id === id ? { ...b, ...patch } : b))
+    )
+  }
+
+  function handleReassignTimeOff(id: string, staffId: string) {
+    setTimeOff((prev) =>
+      prev.map((o) => (o.id === id ? { ...o, staffId } : o))
+    )
+  }
+
   function handleDrop(event: DragEvent<HTMLDivElement>, day: Date) {
     event.preventDefault()
     const raw = event.dataTransfer.getData("text/plain")
@@ -242,14 +267,20 @@ export function ScheduleView() {
           <Button variant="outline" size="sm" className="rounded-full" onClick={goToday}>
             Today
           </Button>
-          <Button variant="ghost" size="icon-sm" onClick={goPrev}>
+          <Button variant="ghost" size="icon-sm" className="rounded-full" onClick={goPrev}>
             <ChevronLeft className="size-4" />
           </Button>
-          <Button variant="ghost" size="icon-sm" onClick={goNext}>
+          <Button variant="ghost" size="icon-sm" className="rounded-full" onClick={goNext}>
             <ChevronRight className="size-4" />
           </Button>
           <span className="text-sm font-medium text-foreground">
-            {formatDateRange(rangeStart, days.length)}
+            {viewLabel === "Timeline"
+              ? anchor.toLocaleDateString("en-US", {
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                })
+              : formatDateRange(rangeStart, days.length)}
           </span>
         </div>
 
@@ -274,20 +305,28 @@ export function ScheduleView() {
         </div>
 
         <div className="flex items-center gap-1.5">
-          <Button variant="ghost" size="icon">
-            <Eye className="size-4" />
-          </Button>
           <ScheduleCreatorMenu
             onCreateBooking={openAddBooking}
             onCreateClass={() => openAddClass()}
             onCreateTimeOff={openAddTimeOff}
           />
-          <Button variant="ghost" size="icon">
-            <MoreVertical className="size-4" />
-          </Button>
         </div>
       </div>
 
+      {viewLabel === "Timeline" ? (
+        <ScheduleTimeline
+          day={anchor}
+          classes={classes}
+          bookings={bookings}
+          timeOff={timeOff}
+          onEditClass={openEditClass}
+          onEditBooking={openEditBooking}
+          onEditTimeOff={openEditTimeOff}
+          onRescheduleClass={handleRescheduleClass}
+          onRescheduleBooking={handleRescheduleBooking}
+          onReassignTimeOff={handleReassignTimeOff}
+        />
+      ) : (
       <div className="flex flex-1 overflow-auto">
         <div className="w-14 shrink-0 border-r border-border">
           <div className="h-14 border-b border-border" />
@@ -392,7 +431,7 @@ export function ScheduleView() {
                         backgroundColor: `${color}1a`,
                         borderColor: `${color}80`,
                       }}
-                      className="absolute inset-x-1 z-10 flex cursor-grab flex-col overflow-hidden rounded-lg border border-l-[3px] px-2.5 py-1 shadow-sm transition-all hover:z-20 hover:shadow-md active:cursor-grabbing"
+                      className="absolute inset-x-1 z-10 flex cursor-grab flex-col overflow-hidden rounded-lg border px-2.5 py-1 shadow-sm transition-all hover:z-20 hover:shadow-md active:cursor-grabbing"
                     >
                       <p
                         className="truncate text-[0.75rem] leading-tight font-semibold"
@@ -429,7 +468,7 @@ export function ScheduleView() {
                         top: eventTopPx(booking.startTime),
                         height,
                       }}
-                      className="absolute inset-x-1 z-10 flex cursor-grab flex-col overflow-hidden rounded-lg border border-l-[3px] border-primary/40 bg-primary/10 px-2.5 py-1 shadow-sm transition-all hover:z-20 hover:shadow-md active:cursor-grabbing"
+                      className="absolute inset-x-1 z-10 flex cursor-grab flex-col overflow-hidden rounded-lg border border-primary/40 bg-primary/10 px-2.5 py-1 shadow-sm transition-all hover:z-20 hover:shadow-md active:cursor-grabbing"
                     >
                       <p className="flex items-center gap-1 truncate text-[0.75rem] leading-tight font-semibold text-primary">
                         <Ticket className="size-3 shrink-0" />
@@ -451,6 +490,7 @@ export function ScheduleView() {
           )
         })}
       </div>
+      )}
 
       <ClassFormSheet
         open={classSheetOpen}

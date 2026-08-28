@@ -92,7 +92,7 @@ function OrganizationForm({ gym }: OrganizationFormProps) {
       setErrors(fieldErrors(result.error))
       setOpeningHoursError(
         result.error.issues.some((issue) => issue.path[0] === "openingHours")
-          ? "Check your opening hours — each closing time must be after its opening time."
+          ? "Check your opening hours. Each closing time must be after its opening time."
           : ""
       )
       return

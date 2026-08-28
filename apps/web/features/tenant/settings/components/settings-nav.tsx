@@ -6,15 +6,8 @@ import {
   Bot,
   Building2,
   CircleUserRound,
-  CreditCard,
-  Database,
-  MessageSquare,
-  Plug,
-  Settings2,
-  ShieldCheck,
   Smartphone,
   Tags,
-  Users2,
 } from "lucide-react"
 
 import { cn } from "@repo/ui/lib/utils"
@@ -23,15 +16,9 @@ const categories = [
   { label: "Personal", icon: CircleUserRound },
   { label: "Organization", icon: Building2, segment: "organization" },
   { label: "Types", icon: Tags, segment: "types" },
-  { label: "Access Control", icon: ShieldCheck },
-  { label: "CRM", icon: Users2 },
-  { label: "Operations", icon: Settings2 },
-  { label: "Billing", icon: CreditCard },
-  { label: "Member Apps", icon: Smartphone },
-  { label: "Communication", icon: MessageSquare },
-  { label: "Artificial Intelligence", icon: Bot },
-  { label: "Integrations", icon: Plug },
-  { label: "Data Tools", icon: Database },
+  { label: "Member Apps", icon: Smartphone,badge:"Soon" },
+  { label: "AI", icon: Bot ,badge:"Soon"},
+
 ]
 
 interface SettingsNavProps {
@@ -58,6 +45,11 @@ export function SettingsNav({ tenant }: SettingsNavProps) {
             >
               <item.icon className="size-4" />
               {item.label}
+              {item.badge && (
+                <span className="ml-auto rounded-full bg-muted px-2 py-0.5 text-[0.65rem] font-semibold text-muted-foreground">
+                  {item.badge}
+                </span>
+              )}
             </span>
           )
         }

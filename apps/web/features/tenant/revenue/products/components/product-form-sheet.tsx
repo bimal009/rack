@@ -7,7 +7,7 @@ import {
   type ChangeEvent,
   type FormEvent,
 } from "react"
-import { Plus, X } from "lucide-react"
+import { Banknote, ImageIcon, Info, Plus, ShoppingBag, X } from "lucide-react"
 
 import { Button } from "@repo/ui/components/ui/button"
 import {
@@ -22,10 +22,7 @@ import {
   Field,
   FieldDescription,
   FieldError,
-  FieldGroup,
   FieldLabel,
-  FieldLegend,
-  FieldSet,
 } from "@repo/ui/components/ui/field"
 import { Input } from "@repo/ui/components/ui/input"
 import {
@@ -46,13 +43,13 @@ import {
   Sheet,
   SheetBody,
   SheetContent,
-  SheetDescription,
   SheetFooter,
   SheetHeader,
-  SheetTitle,
 } from "@repo/ui/components/ui/sheet"
 import { Switch } from "@repo/ui/components/ui/switch"
 import { Textarea } from "@repo/ui/components/ui/textarea"
+
+import { FormSection, FormSheetHeader } from "@/features/tenant/components/form-section"
 
 import { fieldErrors } from "../../lib/validation"
 import {
@@ -190,350 +187,344 @@ function ProductFormBody({ product, onSubmit, onCancel }: ProductFormBodyProps) 
   return (
     <form onSubmit={handleSubmit} className="flex h-full flex-col">
       <SheetHeader>
-        <SheetTitle>{isEdit ? "Edit product" : "Add Product"}</SheetTitle>
-        <SheetDescription>
-          {isEdit
-            ? "Update this product's details and pricing."
-            : "Add a product to sell in your gym shop."}
-        </SheetDescription>
+        <FormSheetHeader
+          icon={ShoppingBag}
+          title={isEdit ? "Edit product" : "Add product"}
+          description={
+            isEdit
+              ? "Update this product's details and pricing."
+              : "Add a product to sell in your gym shop."
+          }
+        />
       </SheetHeader>
 
-      <SheetBody className="flex flex-col gap-6">
-        <FieldSet>
-          <FieldLegend>General</FieldLegend>
-          <FieldGroup>
-            <Field data-invalid={Boolean(errors.name)}>
-              <FieldLabel htmlFor="product-name">Product Name</FieldLabel>
-              <Input
-                id="product-name"
-                placeholder="Whey Protein 1kg"
-                value={values.name}
-                aria-invalid={Boolean(errors.name)}
-                onChange={(e) =>
-                  setValues((v) => ({ ...v, name: e.target.value }))
-                }
-              />
-              <FieldError>{errors.name}</FieldError>
-            </Field>
+      <SheetBody className="flex flex-col gap-7">
+        <FormSection icon={Info} title="General">
+          <Field data-invalid={Boolean(errors.name)}>
+            <FieldLabel htmlFor="product-name">Product Name</FieldLabel>
+            <Input
+              id="product-name"
+              placeholder="Whey Protein 1kg"
+              value={values.name}
+              aria-invalid={Boolean(errors.name)}
+              onChange={(e) =>
+                setValues((v) => ({ ...v, name: e.target.value }))
+              }
+            />
+            <FieldError>{errors.name}</FieldError>
+          </Field>
 
-            <div className="grid grid-cols-2 gap-4">
-              <Field data-invalid={Boolean(errors.category)}>
-                <FieldLabel htmlFor="product-category">Categories</FieldLabel>
-                <Select
-                  value={values.category}
-                  onValueChange={(value) =>
-                    setValues((v) => ({
-                      ...v,
-                      category: value as ProductCategory,
-                    }))
-                  }
-                >
-                  <SelectTrigger
-                    id="product-category"
-                    className="w-full"
-                    aria-invalid={Boolean(errors.category)}
-                  >
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {productCategories.map((category) => (
-                      <SelectItem key={category} value={category}>
-                        {category}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FieldError>{errors.category}</FieldError>
-              </Field>
-
-              <Field>
-                <FieldLabel htmlFor="product-brand">Brand</FieldLabel>
-                <Select
-                  value={values.brand}
-                  onValueChange={(value) =>
-                    setValues((v) => ({ ...v, brand: value as ProductBrand }))
-                  }
-                >
-                  <SelectTrigger id="product-brand" className="w-full">
-                    <SelectValue placeholder="Select brand" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {productBrands.map((brand) => (
-                      <SelectItem key={brand} value={brand}>
-                        {brand}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </Field>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <Field>
-                <FieldLabel htmlFor="product-barcode">Barcode</FieldLabel>
-                <Input
-                  id="product-barcode"
-                  placeholder="Scan or enter a code"
-                  value={values.barcode}
-                  onChange={(e) =>
-                    setValues((v) => ({ ...v, barcode: e.target.value }))
-                  }
-                />
-              </Field>
-
-              <Field>
-                <FieldLabel htmlFor="product-sku">
-                  SKU / Product code
-                </FieldLabel>
-                <Input
-                  id="product-sku"
-                  placeholder="e.g. WP-1KG"
-                  value={values.sku}
-                  onChange={(e) =>
-                    setValues((v) => ({ ...v, sku: e.target.value }))
-                  }
-                />
-              </Field>
-            </div>
-            <FieldDescription className="-mt-3">
-              Scan the item here to fill this in. The till adds this product
-              when the code is scanned.
-            </FieldDescription>
-
-            <Field>
-              <FieldLabel htmlFor="product-visibility">Visibility</FieldLabel>
+          <div className="grid grid-cols-2 gap-4">
+            <Field data-invalid={Boolean(errors.category)}>
+              <FieldLabel htmlFor="product-category">Categories</FieldLabel>
               <Select
-                value={values.visibility}
+                value={values.category}
                 onValueChange={(value) =>
                   setValues((v) => ({
                     ...v,
-                    visibility: value as ProductVisibility,
+                    category: value as ProductCategory,
                   }))
                 }
               >
-                <SelectTrigger id="product-visibility" className="w-full">
-                  <SelectValue />
+                <SelectTrigger
+                  id="product-category"
+                  className="w-full"
+                  aria-invalid={Boolean(errors.category)}
+                >
+                  <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
-                  {productVisibilities.map((visibility) => (
-                    <SelectItem key={visibility} value={visibility}>
-                      {visibility}
+                  {productCategories.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FieldError>{errors.category}</FieldError>
+            </Field>
+
+            <Field>
+              <FieldLabel htmlFor="product-brand">Brand</FieldLabel>
+              <Select
+                value={values.brand}
+                onValueChange={(value) =>
+                  setValues((v) => ({ ...v, brand: value as ProductBrand }))
+                }
+              >
+                <SelectTrigger id="product-brand" className="w-full">
+                  <SelectValue placeholder="Select brand" />
+                </SelectTrigger>
+                <SelectContent>
+                  {productBrands.map((brand) => (
+                    <SelectItem key={brand} value={brand}>
+                      {brand}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Field>
+              <FieldLabel htmlFor="product-barcode">Barcode</FieldLabel>
+              <Input
+                id="product-barcode"
+                placeholder="Scan or enter a code"
+                value={values.barcode}
+                onChange={(e) =>
+                  setValues((v) => ({ ...v, barcode: e.target.value }))
+                }
+              />
+            </Field>
+
+            <Field>
+              <FieldLabel htmlFor="product-sku">
+                SKU / Product code
+              </FieldLabel>
+              <Input
+                id="product-sku"
+                placeholder="e.g. WP-1KG"
+                value={values.sku}
+                onChange={(e) =>
+                  setValues((v) => ({ ...v, sku: e.target.value }))
+                }
+              />
+            </Field>
+          </div>
+          <FieldDescription className="-mt-3">
+            Scan the item here to fill this in. The till adds this product
+            when the code is scanned.
+          </FieldDescription>
+
+          <Field>
+            <FieldLabel htmlFor="product-visibility">Visibility</FieldLabel>
+            <Select
+              value={values.visibility}
+              onValueChange={(value) =>
+                setValues((v) => ({
+                  ...v,
+                  visibility: value as ProductVisibility,
+                }))
+              }
+            >
+              <SelectTrigger id="product-visibility" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {productVisibilities.map((visibility) => (
+                  <SelectItem key={visibility} value={visibility}>
+                    {visibility}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+
+          <div className="flex items-center gap-2.5">
+            <Switch
+              id="product-active"
+              checked={values.active}
+              onCheckedChange={(checked) =>
+                setValues((v) => ({ ...v, active: checked }))
+              }
+            />
+            <Label htmlFor="product-active">Active</Label>
+          </div>
+        </FormSection>
+
+        <FormSection icon={Banknote} title="Pricing">
+          <div className="grid grid-cols-2 gap-4">
+            <Field data-invalid={Boolean(errors.price)}>
+              <FieldLabel htmlFor="product-price">Price</FieldLabel>
+              <InputGroup>
+                <InputGroupAddon>
+                  <InputGroupText>NPR</InputGroupText>
+                </InputGroupAddon>
+                <InputGroupInput
+                  id="product-price"
+                  type="number"
+                  inputMode="decimal"
+                  min="0"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={values.price}
+                  aria-invalid={Boolean(errors.price)}
+                  onChange={(e) =>
+                    setValues((v) => ({ ...v, price: e.target.value }))
+                  }
+                />
+              </InputGroup>
+              <FieldError>{errors.price}</FieldError>
+            </Field>
+
+            <Field data-invalid={Boolean(errors.costPrice)}>
+              <FieldLabel htmlFor="product-cost-price">
+                Cost price
+              </FieldLabel>
+              <InputGroup>
+                <InputGroupAddon>
+                  <InputGroupText>NPR</InputGroupText>
+                </InputGroupAddon>
+                <InputGroupInput
+                  id="product-cost-price"
+                  type="number"
+                  inputMode="decimal"
+                  min="0"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={values.costPrice}
+                  aria-invalid={Boolean(errors.costPrice)}
+                  onChange={(e) =>
+                    setValues((v) => ({
+                      ...v,
+                      costPrice: e.target.value,
+                    }))
+                  }
+                />
+              </InputGroup>
+              <FieldDescription>
+                What you pay per unit, used for margin reporting.
+              </FieldDescription>
+              <FieldError>{errors.costPrice}</FieldError>
+            </Field>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Field>
+              <FieldLabel htmlFor="product-revenue-account">
+                Revenue Account
+              </FieldLabel>
+              <Select
+                value={values.revenueAccount}
+                onValueChange={(value) =>
+                  setValues((v) => ({ ...v, revenueAccount: value ?? "" }))
+                }
+              >
+                <SelectTrigger
+                  id="product-revenue-account"
+                  className="w-full"
+                >
+                  <SelectValue placeholder="Select account" />
+                </SelectTrigger>
+                <SelectContent>
+                  {productRevenueAccounts.map((account) => (
+                    <SelectItem key={account} value={account}>
+                      {account}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </Field>
 
-            <div className="flex items-center gap-2.5">
-              <Switch
-                id="product-active"
-                checked={values.active}
-                onCheckedChange={(checked) =>
-                  setValues((v) => ({ ...v, active: checked }))
-                }
-              />
-              <Label htmlFor="product-active">Active</Label>
-            </div>
-          </FieldGroup>
-        </FieldSet>
-
-        <FieldSet>
-          <FieldLegend>Pricing</FieldLegend>
-          <FieldGroup>
-            <div className="grid grid-cols-2 gap-4">
-              <Field data-invalid={Boolean(errors.price)}>
-                <FieldLabel htmlFor="product-price">Price</FieldLabel>
-                <InputGroup>
-                  <InputGroupAddon>
-                    <InputGroupText>NPR</InputGroupText>
-                  </InputGroupAddon>
-                  <InputGroupInput
-                    id="product-price"
-                    type="number"
-                    inputMode="decimal"
-                    min="0"
-                    step="0.01"
-                    placeholder="0.00"
-                    value={values.price}
-                    aria-invalid={Boolean(errors.price)}
-                    onChange={(e) =>
-                      setValues((v) => ({ ...v, price: e.target.value }))
-                    }
-                  />
-                </InputGroup>
-                <FieldError>{errors.price}</FieldError>
-              </Field>
-
-              <Field data-invalid={Boolean(errors.costPrice)}>
-                <FieldLabel htmlFor="product-cost-price">
-                  Cost price
-                </FieldLabel>
-                <InputGroup>
-                  <InputGroupAddon>
-                    <InputGroupText>NPR</InputGroupText>
-                  </InputGroupAddon>
-                  <InputGroupInput
-                    id="product-cost-price"
-                    type="number"
-                    inputMode="decimal"
-                    min="0"
-                    step="0.01"
-                    placeholder="0.00"
-                    value={values.costPrice}
-                    aria-invalid={Boolean(errors.costPrice)}
-                    onChange={(e) =>
-                      setValues((v) => ({
-                        ...v,
-                        costPrice: e.target.value,
-                      }))
-                    }
-                  />
-                </InputGroup>
-                <FieldDescription>
-                  What you pay per unit — used for margin reporting.
-                </FieldDescription>
-                <FieldError>{errors.costPrice}</FieldError>
-              </Field>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <Field>
-                <FieldLabel htmlFor="product-revenue-account">
-                  Revenue Account
-                </FieldLabel>
-                <Select
-                  value={values.revenueAccount}
-                  onValueChange={(value) =>
-                    setValues((v) => ({ ...v, revenueAccount: value ?? "" }))
-                  }
-                >
-                  <SelectTrigger
-                    id="product-revenue-account"
-                    className="w-full"
-                  >
-                    <SelectValue placeholder="Select account" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {productRevenueAccounts.map((account) => (
-                      <SelectItem key={account} value={account}>
-                        {account}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </Field>
-
-              <Field>
-                <FieldLabel htmlFor="product-tax-rate">Tax rate</FieldLabel>
-                <Select
-                  value={values.taxRate}
-                  onValueChange={(value) =>
-                    setValues((v) => ({ ...v, taxRate: value ?? "" }))
-                  }
-                >
-                  <SelectTrigger id="product-tax-rate" className="w-full">
-                    <SelectValue placeholder="Select rate" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {productTaxRates.map((rate) => (
-                      <SelectItem key={rate} value={rate}>
-                        {rate}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FieldDescription>
-                  Overrides the revenue account default at point of sale.
-                </FieldDescription>
-              </Field>
-            </div>
-          </FieldGroup>
-        </FieldSet>
-
-        <FieldSet>
-          <FieldLegend>Presentation</FieldLegend>
-          <FieldGroup>
-            <Field data-invalid={Boolean(errors.description)}>
-              <FieldLabel htmlFor="product-description">
-                Description
-              </FieldLabel>
-              <Textarea
-                id="product-description"
-                placeholder="Describe this product"
-                value={values.description}
-                aria-invalid={Boolean(errors.description)}
-                onChange={(e) =>
-                  setValues((v) => ({ ...v, description: e.target.value }))
-                }
-              />
-              <FieldError>{errors.description}</FieldError>
-            </Field>
-
             <Field>
-              <FieldLabel htmlFor="product-features">Features</FieldLabel>
-              <Combobox
-                items={productFeatureOptions}
-                value={values.features || null}
+              <FieldLabel htmlFor="product-tax-rate">Tax rate</FieldLabel>
+              <Select
+                value={values.taxRate}
                 onValueChange={(value) =>
-                  setValues((v) => ({ ...v, features: value ?? "" }))
+                  setValues((v) => ({ ...v, taxRate: value ?? "" }))
                 }
               >
-                <ComboboxInput
-                  id="product-features"
-                  placeholder="Search features..."
-                />
-                <ComboboxContent>
-                  <ComboboxEmpty>No features found.</ComboboxEmpty>
-                  <ComboboxList>
-                    {(item: string) => (
-                      <ComboboxItem key={item} value={item}>
-                        {item}
-                      </ComboboxItem>
-                    )}
-                  </ComboboxList>
-                </ComboboxContent>
-              </Combobox>
+                <SelectTrigger id="product-tax-rate" className="w-full">
+                  <SelectValue placeholder="Select rate" />
+                </SelectTrigger>
+                <SelectContent>
+                  {productTaxRates.map((rate) => (
+                    <SelectItem key={rate} value={rate}>
+                      {rate}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FieldDescription>
+                Overrides the revenue account default at point of sale.
+              </FieldDescription>
             </Field>
+          </div>
+        </FormSection>
 
-            <Field>
-              <FieldLabel>Images</FieldLabel>
-              <div className="flex flex-wrap gap-2">
-                {images.map((image) => (
-                  <div
-                    key={image.id}
-                    className="group relative size-16 shrink-0 overflow-hidden rounded-lg border border-border"
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={image.url}
-                      alt=""
-                      className="size-full object-cover"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeImage(image.id)}
-                      className="absolute top-0.5 right-0.5 flex size-4 items-center justify-center rounded-full bg-foreground/70 text-background opacity-0 transition-opacity group-hover:opacity-100"
-                    >
-                      <X className="size-2.5" />
-                      <span className="sr-only">Remove image</span>
-                    </button>
-                  </div>
-                ))}
-                <label className="flex size-16 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-dashed border-input text-muted-foreground transition-colors hover:bg-muted/50">
-                  <Plus className="size-4" />
-                  <span className="sr-only">Add image</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    className="hidden"
-                    onChange={handleFilesSelected}
+        <FormSection icon={ImageIcon} title="Presentation">
+          <Field data-invalid={Boolean(errors.description)}>
+            <FieldLabel htmlFor="product-description">
+              Description
+            </FieldLabel>
+            <Textarea
+              id="product-description"
+              placeholder="Describe this product"
+              value={values.description}
+              aria-invalid={Boolean(errors.description)}
+              onChange={(e) =>
+                setValues((v) => ({ ...v, description: e.target.value }))
+              }
+            />
+            <FieldError>{errors.description}</FieldError>
+          </Field>
+
+          <Field>
+            <FieldLabel htmlFor="product-features">Features</FieldLabel>
+            <Combobox
+              items={productFeatureOptions}
+              value={values.features || null}
+              onValueChange={(value) =>
+                setValues((v) => ({ ...v, features: value ?? "" }))
+              }
+            >
+              <ComboboxInput
+                id="product-features"
+                placeholder="Search features..."
+              />
+              <ComboboxContent>
+                <ComboboxEmpty>No features found.</ComboboxEmpty>
+                <ComboboxList>
+                  {(item: string) => (
+                    <ComboboxItem key={item} value={item}>
+                      {item}
+                    </ComboboxItem>
+                  )}
+                </ComboboxList>
+              </ComboboxContent>
+            </Combobox>
+          </Field>
+
+          <Field>
+            <FieldLabel>Images</FieldLabel>
+            <div className="flex flex-wrap gap-2">
+              {images.map((image) => (
+                <div
+                  key={image.id}
+                  className="group relative size-16 shrink-0 overflow-hidden rounded-lg border border-border"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={image.url}
+                    alt=""
+                    className="size-full object-cover"
                   />
-                </label>
-              </div>
-            </Field>
-          </FieldGroup>
-        </FieldSet>
+                  <button
+                    type="button"
+                    onClick={() => removeImage(image.id)}
+                    className="absolute top-0.5 right-0.5 flex size-4 items-center justify-center rounded-full bg-foreground/70 text-background opacity-0 transition-opacity group-hover:opacity-100"
+                  >
+                    <X className="size-2.5" />
+                    <span className="sr-only">Remove image</span>
+                  </button>
+                </div>
+              ))}
+              <label className="flex size-16 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-dashed border-input text-muted-foreground transition-colors hover:bg-muted/50">
+                <Plus className="size-4" />
+                <span className="sr-only">Add image</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={handleFilesSelected}
+                />
+              </label>
+            </div>
+          </Field>
+        </FormSection>
       </SheetBody>
 
       <SheetFooter>

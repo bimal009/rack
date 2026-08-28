@@ -1,32 +1,50 @@
+"use client"
+
+import Link from "next/link"
+import { usePathname } from "next/navigation"
+
+import { cn } from "@repo/ui/lib/utils"
+
 const tabs = [
-  "Details",
-  "Subscription",
-  "Users",
-  "Permissions",
-  "Notifications",
-  "Domains",
-  "APIs & webhooks",
+  { label: "Details", segment: "details" },
+  { label: "Subscription", segment: "subscription" },
+  { label: "Permissions", segment: "permissions" },
+  { label: "Notifications", segment: "notifications" },
+  { label: "Domains", segment: "domains" },
+  { label: "APIs & webhooks", segment: "api-webhooks" },
+  { label: "Door Lock", segment: "door-lock" },
 ]
 
-export function OrganizationTabs() {
+interface OrganizationTabsProps {
+  tenant: string
+}
+
+export function OrganizationTabs({ tenant }: OrganizationTabsProps) {
+  const pathname = usePathname()
+  const base = `/s/${tenant}/settings/organization`
+
   return (
     <div className="no-scrollbar scroll-fade-x flex items-center gap-4 overflow-x-auto border-b border-border">
       {tabs.map((tab) => {
-        const active = tab === "Details"
+        const href = `${base}/${tab.segment}`
+        const active = pathname === href
+
         return (
-          <span
-            key={tab}
-            className={
+          <Link
+            key={tab.label}
+            href={href}
+            className={cn(
+              "relative shrink-0 py-2.5 text-sm font-medium whitespace-nowrap transition-colors",
               active
-                ? "relative shrink-0 py-2.5 text-sm font-medium whitespace-nowrap text-foreground"
-                : "shrink-0 cursor-not-allowed py-2.5 text-sm font-medium whitespace-nowrap text-muted-foreground/50"
-            }
+                ? "text-foreground"
+                : "text-muted-foreground hover:text-foreground"
+            )}
           >
-            {tab}
+            {tab.label}
             {active && (
               <span className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-primary" />
             )}
-          </span>
+          </Link>
         )
       })}
     </div>

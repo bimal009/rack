@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react"
 import { MoreHorizontal, PenSquare, Plus, Trash2 } from "lucide-react"
+import type { LucideIcon } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@repo/ui/components/ui/button"
@@ -24,6 +25,7 @@ import type { SimpleType, SimpleTypeInput } from "../lib/schema"
 import { SimpleTypeFormSheet } from "./simple-type-form-sheet"
 
 interface SimpleTypeListProps {
+  icon: LucideIcon
   label: string
   idPrefix: string
   hasSlug: boolean
@@ -32,6 +34,7 @@ interface SimpleTypeListProps {
 }
 
 export function SimpleTypeList({
+  icon,
   label,
   idPrefix,
   hasSlug,
@@ -145,6 +148,7 @@ export function SimpleTypeList({
       <SimpleTypeFormSheet
         open={sheetOpen}
         onOpenChange={setSheetOpen}
+        icon={icon}
         label={label}
         hasSlug={hasSlug}
         hasRate={hasRate}

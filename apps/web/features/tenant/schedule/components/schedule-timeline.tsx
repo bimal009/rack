@@ -4,7 +4,6 @@ import { type DragEvent } from "react"
 import { Ticket } from "lucide-react"
 
 import type { ClassSession } from "@/features/tenant/classes/lib/schema"
-import { areaName } from "@/features/tenant/classes/components/columns"
 import { initialAreaTypes } from "@/features/tenant/settings/types/lib/data"
 import { fullName as fullMemberName } from "@/features/tenant/members/components/columns"
 import { initialMembers } from "@/features/tenant/members/lib/data"
@@ -239,7 +238,7 @@ export function ScheduleTimeline({
                       backgroundColor: `${color}1a`,
                       borderColor: `${color}80`,
                     }}
-                    className="absolute inset-y-1 z-10 flex cursor-grab flex-col justify-center overflow-hidden rounded-lg border border-l-[3px] px-2.5 shadow-sm transition-all hover:z-20 hover:shadow-md active:cursor-grabbing"
+                    className="absolute inset-y-1 z-10 flex cursor-grab flex-col justify-center overflow-hidden rounded-lg border px-2.5 shadow-sm transition-all hover:z-20 hover:shadow-md active:cursor-grabbing"
                   >
                     <p
                       className="truncate text-[0.75rem] leading-tight font-semibold"
@@ -316,7 +315,7 @@ export function ScheduleTimeline({
                       left: eventLeftPx(booking.startTime),
                       width,
                     }}
-                    className="absolute inset-y-1 z-10 flex cursor-grab flex-col justify-center overflow-hidden rounded-lg border border-l-[3px] border-primary/40 bg-primary/10 px-2.5 shadow-sm transition-all hover:z-20 hover:shadow-md active:cursor-grabbing"
+                    className="absolute inset-y-1 z-10 flex cursor-grab flex-col justify-center overflow-hidden rounded-lg border border-primary/40 bg-primary/10 px-2.5 shadow-sm transition-all hover:z-20 hover:shadow-md active:cursor-grabbing"
                   >
                     <p className="flex items-center gap-1 truncate text-[0.75rem] leading-tight font-semibold text-primary">
                       <Ticket className="size-3 shrink-0" />

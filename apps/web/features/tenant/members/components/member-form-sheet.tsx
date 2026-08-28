@@ -7,18 +7,14 @@ import {
   type ChangeEvent,
   type FormEvent,
 } from "react"
-import { Camera, Plus, Trash2 } from "lucide-react"
+import { Camera, CreditCard, MapPin, Plus, Trash2, UserRound, Users } from "lucide-react"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/components/ui/avatar"
 import { Button } from "@repo/ui/components/ui/button"
 import {
   Field,
-  FieldDescription,
   FieldError,
-  FieldGroup,
   FieldLabel,
-  FieldLegend,
-  FieldSet,
 } from "@repo/ui/components/ui/field"
 import { Input } from "@repo/ui/components/ui/input"
 import {
@@ -38,12 +34,11 @@ import {
   Sheet,
   SheetBody,
   SheetContent,
-  SheetDescription,
   SheetFooter,
   SheetHeader,
-  SheetTitle,
 } from "@repo/ui/components/ui/sheet"
 
+import { FormSection, FormSheetHeader } from "@/features/tenant/components/form-section"
 import { initialPlans } from "@/features/tenant/revenue/plans/lib/data"
 
 import { fieldErrors } from "../lib/validation"
@@ -179,225 +174,217 @@ function MemberFormBody({ member, onSubmit, onCancel }: MemberFormBodyProps) {
   return (
     <form onSubmit={handleSubmit} className="flex h-full flex-col">
       <SheetHeader>
-        <SheetTitle>{isEdit ? "Edit member" : "Add Member"}</SheetTitle>
-        <SheetDescription>
-          {isEdit
-            ? "Update this member's profile and membership."
-            : "Add a new member to your gym."}
-        </SheetDescription>
+        <FormSheetHeader
+          icon={Users}
+          title={isEdit ? "Edit member" : "Add member"}
+          description={
+            isEdit
+              ? "Update this member's profile and membership."
+              : "Add a new member to your gym."
+          }
+        />
       </SheetHeader>
 
-      <SheetBody className="flex flex-col gap-6">
-        <FieldSet>
-          <FieldLegend>Basic Information</FieldLegend>
-          <FieldGroup>
-            <div className="relative w-fit">
-              <Avatar className="size-16">
-                <AvatarImage src={avatar?.url} alt="" />
-                <AvatarFallback className="bg-muted text-sm font-medium text-muted-foreground">
-                  {initials(previewMember)}
-                </AvatarFallback>
-              </Avatar>
-              <label className="absolute -right-0.5 -bottom-0.5 flex size-6 cursor-pointer items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm">
-                <Camera className="size-3.5" />
-                <span className="sr-only">Upload photo</span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleAvatarSelected}
-                />
-              </label>
-            </div>
+      <SheetBody className="flex flex-col gap-7">
+        <FormSection icon={UserRound} title="Basic information">
+          <div className="relative w-fit">
+            <Avatar className="size-16">
+              <AvatarImage src={avatar?.url} alt="" />
+              <AvatarFallback className="bg-muted text-sm font-medium text-muted-foreground">
+                {initials(previewMember)}
+              </AvatarFallback>
+            </Avatar>
+            <label className="absolute -right-0.5 -bottom-0.5 flex size-6 cursor-pointer items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm">
+              <Camera className="size-3.5" />
+              <span className="sr-only">Upload photo</span>
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleAvatarSelected}
+              />
+            </label>
+          </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <Field data-invalid={Boolean(errors.firstName)}>
-                <FieldLabel htmlFor="member-first-name">
-                  First Name <span className="text-destructive">*</span>
-                </FieldLabel>
-                <Input
-                  id="member-first-name"
-                  value={values.firstName}
-                  aria-invalid={Boolean(errors.firstName)}
-                  onChange={(e) =>
-                    setValues((v) => ({ ...v, firstName: e.target.value }))
-                  }
-                />
-                <FieldError>{errors.firstName}</FieldError>
-              </Field>
-
-              <Field data-invalid={Boolean(errors.lastName)}>
-                <FieldLabel htmlFor="member-last-name">
-                  Last Name <span className="text-destructive">*</span>
-                </FieldLabel>
-                <Input
-                  id="member-last-name"
-                  value={values.lastName}
-                  aria-invalid={Boolean(errors.lastName)}
-                  onChange={(e) =>
-                    setValues((v) => ({ ...v, lastName: e.target.value }))
-                  }
-                />
-                <FieldError>{errors.lastName}</FieldError>
-              </Field>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <Field data-invalid={Boolean(errors.email)}>
-                <FieldLabel htmlFor="member-email">
-                  Email <span className="text-destructive">*</span>
-                </FieldLabel>
-                <Input
-                  id="member-email"
-                  type="email"
-                  value={values.email}
-                  aria-invalid={Boolean(errors.email)}
-                  onChange={(e) =>
-                    setValues((v) => ({ ...v, email: e.target.value }))
-                  }
-                />
-                <FieldError>{errors.email}</FieldError>
-              </Field>
-
-              <Field data-invalid={Boolean(errors.phone)}>
-                <FieldLabel htmlFor="member-phone">Phone</FieldLabel>
-                <InputGroup>
-                  <InputGroupAddon>
-                    <InputGroupText>+977</InputGroupText>
-                  </InputGroupAddon>
-                  <InputGroupInput
-                    id="member-phone"
-                    type="tel"
-                    placeholder="98XXXXXXXX"
-                    value={values.phone}
-                    aria-invalid={Boolean(errors.phone)}
-                    onChange={(e) =>
-                      setValues((v) => ({ ...v, phone: e.target.value }))
-                    }
-                  />
-                </InputGroup>
-                <FieldError>{errors.phone}</FieldError>
-              </Field>
-            </div>
-          </FieldGroup>
-        </FieldSet>
-
-        <FieldSet>
-          <FieldLegend>Additional Information</FieldLegend>
-          <FieldGroup>
-            <div className="grid grid-cols-2 gap-4">
-              <Field>
-                <FieldLabel htmlFor="member-dob">Date of Birth</FieldLabel>
-                <Input
-                  id="member-dob"
-                  type="date"
-                  value={values.dateOfBirth}
-                  onChange={(e) =>
-                    setValues((v) => ({ ...v, dateOfBirth: e.target.value }))
-                  }
-                />
-              </Field>
-
-              <Field>
-                <FieldLabel htmlFor="member-gender">Gender</FieldLabel>
-                <Select
-                  value={values.gender}
-                  onValueChange={(value) =>
-                    setValues((v) => ({ ...v, gender: value as Gender }))
-                  }
-                >
-                  <SelectTrigger id="member-gender" className="w-full">
-                    <SelectValue placeholder="Select gender" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {genders.map((gender) => (
-                      <SelectItem key={gender} value={gender}>
-                        {gender}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </Field>
-            </div>
-          </FieldGroup>
-        </FieldSet>
-
-        <FieldSet>
-          <FieldLegend>Address</FieldLegend>
-          <FieldGroup>
-            <Field>
-              <FieldLabel htmlFor="member-address">Address</FieldLabel>
+          <div className="grid grid-cols-2 gap-4">
+            <Field data-invalid={Boolean(errors.firstName)}>
+              <FieldLabel htmlFor="member-first-name">
+                First Name <span className="text-destructive">*</span>
+              </FieldLabel>
               <Input
-                id="member-address"
-                placeholder="Street, city, postcode"
-                value={values.address}
+                id="member-first-name"
+                value={values.firstName}
+                aria-invalid={Boolean(errors.firstName)}
                 onChange={(e) =>
-                  setValues((v) => ({ ...v, address: e.target.value }))
+                  setValues((v) => ({ ...v, firstName: e.target.value }))
+                }
+              />
+              <FieldError>{errors.firstName}</FieldError>
+            </Field>
+
+            <Field data-invalid={Boolean(errors.lastName)}>
+              <FieldLabel htmlFor="member-last-name">
+                Last Name <span className="text-destructive">*</span>
+              </FieldLabel>
+              <Input
+                id="member-last-name"
+                value={values.lastName}
+                aria-invalid={Boolean(errors.lastName)}
+                onChange={(e) =>
+                  setValues((v) => ({ ...v, lastName: e.target.value }))
+                }
+              />
+              <FieldError>{errors.lastName}</FieldError>
+            </Field>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Field data-invalid={Boolean(errors.email)}>
+              <FieldLabel htmlFor="member-email">
+                Email <span className="text-destructive">*</span>
+              </FieldLabel>
+              <Input
+                id="member-email"
+                type="email"
+                value={values.email}
+                aria-invalid={Boolean(errors.email)}
+                onChange={(e) =>
+                  setValues((v) => ({ ...v, email: e.target.value }))
+                }
+              />
+              <FieldError>{errors.email}</FieldError>
+            </Field>
+
+            <Field data-invalid={Boolean(errors.phone)}>
+              <FieldLabel htmlFor="member-phone">Phone</FieldLabel>
+              <InputGroup>
+                <InputGroupAddon>
+                  <InputGroupText>+977</InputGroupText>
+                </InputGroupAddon>
+                <InputGroupInput
+                  id="member-phone"
+                  type="tel"
+                  placeholder="98XXXXXXXX"
+                  value={values.phone}
+                  aria-invalid={Boolean(errors.phone)}
+                  onChange={(e) =>
+                    setValues((v) => ({ ...v, phone: e.target.value }))
+                  }
+                />
+              </InputGroup>
+              <FieldError>{errors.phone}</FieldError>
+            </Field>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Field>
+              <FieldLabel htmlFor="member-dob">Date of Birth</FieldLabel>
+              <Input
+                id="member-dob"
+                type="date"
+                value={values.dateOfBirth}
+                onChange={(e) =>
+                  setValues((v) => ({ ...v, dateOfBirth: e.target.value }))
                 }
               />
             </Field>
-          </FieldGroup>
-        </FieldSet>
 
-        <FieldSet>
-          <FieldLegend>Membership</FieldLegend>
-          <FieldGroup>
-            {values.memberships.length > 0 && (
-              <div className="flex flex-col gap-2">
-                {values.memberships.map((membership, index) => (
-                  <div key={index} className="flex items-center gap-2">
-                    <Select
-                      value={membership.planId}
-                      onValueChange={(planId) => {
-                        const plan = initialPlans.find((p) => p.id === planId)
-                        updateMembership(index, {
-                          planId: planId ?? "",
-                          planName: plan?.name ?? "",
-                        })
-                      }}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select a plan" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {initialPlans
-                          .filter((plan) => plan.active)
-                          .map((plan) => (
-                            <SelectItem key={plan.id} value={plan.id}>
-                              {plan.name}
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
+            <Field>
+              <FieldLabel htmlFor="member-gender">Gender</FieldLabel>
+              <Select
+                value={values.gender}
+                onValueChange={(value) =>
+                  setValues((v) => ({ ...v, gender: value as Gender }))
+                }
+              >
+                <SelectTrigger id="member-gender" className="w-full">
+                  <SelectValue placeholder="Select gender" />
+                </SelectTrigger>
+                <SelectContent>
+                  {genders.map((gender) => (
+                    <SelectItem key={gender} value={gender}>
+                      {gender}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+          </div>
+        </FormSection>
 
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon-sm"
-                      className="shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                      onClick={() => removeMembership(index)}
-                    >
-                      <Trash2 className="size-4" />
-                      <span className="sr-only">Remove membership</span>
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )}
+        <FormSection icon={MapPin} title="Address">
+          <Field>
+            <FieldLabel htmlFor="member-address">Address</FieldLabel>
+            <Input
+              id="member-address"
+              placeholder="Street, city, postcode"
+              value={values.address}
+              onChange={(e) =>
+                setValues((v) => ({ ...v, address: e.target.value }))
+              }
+            />
+          </Field>
+        </FormSection>
 
-            <button
-              type="button"
-              onClick={addMembership}
-              className="flex w-fit items-center gap-1 text-sm font-medium text-primary hover:underline"
-            >
-              <Plus className="size-3.5" />
-              Add Membership
-            </button>
-            <FieldDescription>
-              Assign an existing plan to this member.
-            </FieldDescription>
-          </FieldGroup>
-        </FieldSet>
+        <FormSection
+          icon={CreditCard}
+          title="Membership"
+          description="Assign an existing plan to this member."
+        >
+          {values.memberships.length > 0 && (
+            <div className="flex flex-col gap-2">
+              {values.memberships.map((membership, index) => (
+                <div key={index} className="flex items-center gap-2">
+                  <Select
+                    value={membership.planId}
+                    onValueChange={(planId) => {
+                      const plan = initialPlans.find((p) => p.id === planId)
+                      updateMembership(index, {
+                        planId: planId ?? "",
+                        planName: plan?.name ?? "",
+                      })
+                    }}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select a plan">
+                        {() => membership.planName || "Select a plan"}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {initialPlans
+                        .filter((plan) => plan.active)
+                        .map((plan) => (
+                          <SelectItem key={plan.id} value={plan.id}>
+                            {plan.name}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    className="shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                    onClick={() => removeMembership(index)}
+                  >
+                    <Trash2 className="size-4" />
+                    <span className="sr-only">Remove membership</span>
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <button
+            type="button"
+            onClick={addMembership}
+            className="flex items-center justify-center gap-1.5 rounded-lg border border-dashed border-border py-2 text-sm font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
+          >
+            <Plus className="size-3.5" />
+            Add Membership
+          </button>
+        </FormSection>
       </SheetBody>
 
       <SheetFooter>

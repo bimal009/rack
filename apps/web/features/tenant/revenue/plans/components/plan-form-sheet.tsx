@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, type FormEvent } from "react"
-import { Info } from "lucide-react"
+import { Banknote, CreditCard, Info, Sparkles, SquareCheck } from "lucide-react"
 import { SPECIALTY_OPTIONS } from "@repo/types"
 
 import { Button } from "@repo/ui/components/ui/button"
@@ -17,10 +17,7 @@ import {
   Field,
   FieldDescription,
   FieldError,
-  FieldGroup,
   FieldLabel,
-  FieldLegend,
-  FieldSet,
 } from "@repo/ui/components/ui/field"
 import { Input } from "@repo/ui/components/ui/input"
 import {
@@ -41,13 +38,13 @@ import {
   Sheet,
   SheetBody,
   SheetContent,
-  SheetDescription,
   SheetFooter,
   SheetHeader,
-  SheetTitle,
 } from "@repo/ui/components/ui/sheet"
 import { Switch } from "@repo/ui/components/ui/switch"
 import { Textarea } from "@repo/ui/components/ui/textarea"
+
+import { FormSection, FormSheetHeader } from "@/features/tenant/components/form-section"
 
 import { fieldErrors } from "../../lib/validation"
 import {
@@ -156,360 +153,346 @@ function PlanFormBody({ plan, onSubmit, onCancel }: PlanFormBodyProps) {
   return (
     <form onSubmit={handleSubmit} className="flex h-full flex-col">
       <SheetHeader>
-        <SheetTitle>{isEdit ? "Edit plan" : "Add plan"}</SheetTitle>
-        <SheetDescription>
-          {isEdit
-            ? "Update this membership plan's pricing and details."
-            : "Create a membership plan members can subscribe to."}
-        </SheetDescription>
+        <FormSheetHeader
+          icon={CreditCard}
+          title={isEdit ? "Edit plan" : "Add plan"}
+          description={
+            isEdit
+              ? "Update this membership plan's pricing and details."
+              : "Create a membership plan members can subscribe to."
+          }
+        />
       </SheetHeader>
 
-      <SheetBody className="flex flex-col gap-6">
-        <FieldSet>
-          <FieldLegend>General</FieldLegend>
-          <FieldGroup>
-            <div className="grid grid-cols-2 gap-4">
-              <Field data-invalid={Boolean(errors.name)}>
-                <FieldLabel htmlFor="plan-name">Plan name</FieldLabel>
-                <Input
-                  id="plan-name"
-                  placeholder="Gold Membership"
-                  value={values.name}
-                  aria-invalid={Boolean(errors.name)}
-                  onChange={(e) =>
-                    setValues((v) => ({ ...v, name: e.target.value }))
-                  }
-                />
-                <FieldError>{errors.name}</FieldError>
-              </Field>
-
-              <Field data-invalid={Boolean(errors.category)}>
-                <FieldLabel htmlFor="plan-category">Category</FieldLabel>
-                <Select
-                  value={values.category}
-                  onValueChange={(value) =>
-                    setValues((v) => ({
-                      ...v,
-                      category: value as PlanCategory,
-                    }))
-                  }
-                >
-                  <SelectTrigger
-                    id="plan-category"
-                    className="w-full"
-                    aria-invalid={Boolean(errors.category)}
-                  >
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {planCategories.map((category) => (
-                      <SelectItem key={category} value={category}>
-                        {category}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FieldError>{errors.category}</FieldError>
-              </Field>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <Field>
-                <FieldLabel htmlFor="plan-barcode">
-                  Barcode{" "}
-                  <span className="text-muted-foreground">(optional)</span>
-                </FieldLabel>
-                <Input
-                  id="plan-barcode"
-                  placeholder="Scan or enter a code"
-                  value={values.barcode}
-                  onChange={(e) =>
-                    setValues((v) => ({ ...v, barcode: e.target.value }))
-                  }
-                />
-                <FieldDescription>
-                  Scan the shelf card to fill this in. The till adds this
-                  plan when the code is scanned.
-                </FieldDescription>
-              </Field>
-
-              <Field>
-                <FieldLabel htmlFor="plan-visibility">Visibility</FieldLabel>
-                <Select
-                  value={values.visibility}
-                  onValueChange={(value) =>
-                    setValues((v) => ({
-                      ...v,
-                      visibility: value as PlanVisibility,
-                    }))
-                  }
-                >
-                  <SelectTrigger id="plan-visibility" className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {planVisibilities.map((visibility) => (
-                      <SelectItem key={visibility} value={visibility}>
-                        {visibility}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </Field>
-            </div>
-
-            <Field data-invalid={Boolean(errors.description)}>
-              <FieldLabel htmlFor="plan-description">
-                Description{" "}
-                <span className="text-muted-foreground">(optional)</span>
-              </FieldLabel>
-              <Textarea
-                id="plan-description"
-                placeholder="What members get with this plan"
-                value={values.description}
-                aria-invalid={Boolean(errors.description)}
+      <SheetBody className="flex flex-col gap-7">
+        <FormSection icon={Info} title="General">
+          <div className="grid grid-cols-2 gap-4">
+            <Field data-invalid={Boolean(errors.name)}>
+              <FieldLabel htmlFor="plan-name">Plan name</FieldLabel>
+              <Input
+                id="plan-name"
+                placeholder="Gold Membership"
+                value={values.name}
+                aria-invalid={Boolean(errors.name)}
                 onChange={(e) =>
-                  setValues((v) => ({ ...v, description: e.target.value }))
+                  setValues((v) => ({ ...v, name: e.target.value }))
                 }
               />
-              <FieldError>{errors.description}</FieldError>
+              <FieldError>{errors.name}</FieldError>
             </Field>
 
-            <div className="flex items-center gap-2.5">
-              <Switch
-                id="plan-active"
-                checked={values.active}
-                onCheckedChange={(checked) =>
-                  setValues((v) => ({ ...v, active: checked }))
+            <Field data-invalid={Boolean(errors.category)}>
+              <FieldLabel htmlFor="plan-category">Category</FieldLabel>
+              <Select
+                value={values.category}
+                onValueChange={(value) =>
+                  setValues((v) => ({
+                    ...v,
+                    category: value as PlanCategory,
+                  }))
+                }
+              >
+                <SelectTrigger
+                  id="plan-category"
+                  className="w-full"
+                  aria-invalid={Boolean(errors.category)}
+                >
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {planCategories.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FieldError>{errors.category}</FieldError>
+            </Field>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Field>
+              <FieldLabel htmlFor="plan-barcode">
+                Barcode{" "}
+                <span className="text-muted-foreground">(optional)</span>
+              </FieldLabel>
+              <Input
+                id="plan-barcode"
+                placeholder="Scan or enter a code"
+                value={values.barcode}
+                onChange={(e) =>
+                  setValues((v) => ({ ...v, barcode: e.target.value }))
                 }
               />
-              <Label htmlFor="plan-active">Active</Label>
-            </div>
-          </FieldGroup>
-        </FieldSet>
+              <FieldDescription>
+                Scan the shelf card to fill this in. The till adds this
+                plan when the code is scanned.
+              </FieldDescription>
+            </Field>
 
-        <FieldSet>
-          <FieldLegend>Pricing</FieldLegend>
-          <FieldGroup>
-            <div className="grid grid-cols-2 gap-4">
-              <Field data-invalid={Boolean(errors.pricePerPeriod)}>
-                <FieldLabel htmlFor="plan-price">Price per period</FieldLabel>
-                <InputGroup>
-                  <InputGroupAddon>
-                    <InputGroupText>NPR</InputGroupText>
-                  </InputGroupAddon>
-                  <InputGroupInput
-                    id="plan-price"
-                    type="number"
-                    inputMode="decimal"
-                    min="0"
-                    step="0.01"
-                    placeholder="0.00"
-                    value={values.pricePerPeriod}
-                    aria-invalid={Boolean(errors.pricePerPeriod)}
-                    onChange={(e) =>
-                      setValues((v) => ({
-                        ...v,
-                        pricePerPeriod: e.target.value,
-                      }))
-                    }
-                  />
-                </InputGroup>
-                <FieldError>{errors.pricePerPeriod}</FieldError>
-              </Field>
+            <Field>
+              <FieldLabel htmlFor="plan-visibility">Visibility</FieldLabel>
+              <Select
+                value={values.visibility}
+                onValueChange={(value) =>
+                  setValues((v) => ({
+                    ...v,
+                    visibility: value as PlanVisibility,
+                  }))
+                }
+              >
+                <SelectTrigger id="plan-visibility" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {planVisibilities.map((visibility) => (
+                    <SelectItem key={visibility} value={visibility}>
+                      {visibility}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+          </div>
 
-              <Field data-invalid={Boolean(errors.billingType)}>
-                <FieldLabel htmlFor="plan-billing-type">Type</FieldLabel>
-                <Select
-                  value={values.billingType}
-                  onValueChange={(value) =>
-                    setValues((v) => ({
-                      ...v,
-                      billingType: value as BillingType,
-                    }))
-                  }
-                >
-                  <SelectTrigger
-                    id="plan-billing-type"
-                    className="w-full"
-                    aria-invalid={Boolean(errors.billingType)}
-                  >
-                    <SelectValue placeholder="Select type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {billingTypes.map((type) => (
-                      <SelectItem key={type} value={type}>
-                        {type}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FieldError>{errors.billingType}</FieldError>
-              </Field>
-            </div>
+          <Field data-invalid={Boolean(errors.description)}>
+            <FieldLabel htmlFor="plan-description">
+              Description{" "}
+              <span className="text-muted-foreground">(optional)</span>
+            </FieldLabel>
+            <Textarea
+              id="plan-description"
+              placeholder="What members get with this plan"
+              value={values.description}
+              aria-invalid={Boolean(errors.description)}
+              onChange={(e) =>
+                setValues((v) => ({ ...v, description: e.target.value }))
+              }
+            />
+            <FieldError>{errors.description}</FieldError>
+          </Field>
 
-            <Field data-invalid={Boolean(errors.signupFee)}>
-              <FieldLabel htmlFor="plan-signup-fee">Signup fee</FieldLabel>
+          <div className="flex items-center gap-2.5">
+            <Switch
+              id="plan-active"
+              checked={values.active}
+              onCheckedChange={(checked) =>
+                setValues((v) => ({ ...v, active: checked }))
+              }
+            />
+            <Label htmlFor="plan-active">Active</Label>
+          </div>
+        </FormSection>
+
+        <FormSection icon={Banknote} title="Pricing">
+          <div className="grid grid-cols-2 gap-4">
+            <Field data-invalid={Boolean(errors.pricePerPeriod)}>
+              <FieldLabel htmlFor="plan-price">Price per period</FieldLabel>
               <InputGroup>
                 <InputGroupAddon>
                   <InputGroupText>NPR</InputGroupText>
                 </InputGroupAddon>
                 <InputGroupInput
-                  id="plan-signup-fee"
+                  id="plan-price"
                   type="number"
                   inputMode="decimal"
                   min="0"
                   step="0.01"
                   placeholder="0.00"
-                  value={values.signupFee}
-                  aria-invalid={Boolean(errors.signupFee)}
+                  value={values.pricePerPeriod}
+                  aria-invalid={Boolean(errors.pricePerPeriod)}
                   onChange={(e) =>
-                    setValues((v) => ({ ...v, signupFee: e.target.value }))
+                    setValues((v) => ({
+                      ...v,
+                      pricePerPeriod: e.target.value,
+                    }))
                   }
                 />
               </InputGroup>
-              <FieldDescription>
-                One-time fee charged when joining.
-              </FieldDescription>
-              <FieldError>{errors.signupFee}</FieldError>
+              <FieldError>{errors.pricePerPeriod}</FieldError>
             </Field>
 
-            <div className="flex flex-col gap-1.5">
-              <div className="flex items-center gap-2.5">
-                <Switch
-                  id="plan-require-payment"
-                  checked={values.requirePaymentUpfront}
-                  onCheckedChange={(checked) =>
-                    setValues((v) => ({
-                      ...v,
-                      requirePaymentUpfront: checked,
-                    }))
-                  }
-                />
-                <Label htmlFor="plan-require-payment">
-                  Require payment upfront
-                </Label>
-              </div>
+            <Field data-invalid={Boolean(errors.billingType)}>
+              <FieldLabel htmlFor="plan-billing-type">Type</FieldLabel>
+              <Select
+                value={values.billingType}
+                onValueChange={(value) =>
+                  setValues((v) => ({
+                    ...v,
+                    billingType: value as BillingType,
+                  }))
+                }
+              >
+                <SelectTrigger
+                  id="plan-billing-type"
+                  className="w-full"
+                  aria-invalid={Boolean(errors.billingType)}
+                >
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {billingTypes.map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {type}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FieldError>{errors.billingType}</FieldError>
+            </Field>
+          </div>
+
+          <Field data-invalid={Boolean(errors.signupFee)}>
+            <FieldLabel htmlFor="plan-signup-fee">Signup fee</FieldLabel>
+            <InputGroup>
+              <InputGroupAddon>
+                <InputGroupText>NPR</InputGroupText>
+              </InputGroupAddon>
+              <InputGroupInput
+                id="plan-signup-fee"
+                type="number"
+                inputMode="decimal"
+                min="0"
+                step="0.01"
+                placeholder="0.00"
+                value={values.signupFee}
+                aria-invalid={Boolean(errors.signupFee)}
+                onChange={(e) =>
+                  setValues((v) => ({ ...v, signupFee: e.target.value }))
+                }
+              />
+            </InputGroup>
+            <FieldDescription>
+              One-time fee charged when joining.
+            </FieldDescription>
+            <FieldError>{errors.signupFee}</FieldError>
+          </Field>
+
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center gap-2.5">
+              <Switch
+                id="plan-require-payment"
+                checked={values.requirePaymentUpfront}
+                onCheckedChange={(checked) =>
+                  setValues((v) => ({
+                    ...v,
+                    requirePaymentUpfront: checked,
+                  }))
+                }
+              />
+              <Label htmlFor="plan-require-payment">
+                Require payment upfront
+              </Label>
+            </div>
+            <FieldDescription>
+              The membership only starts once it has been paid.
+            </FieldDescription>
+          </div>
+        </FormSection>
+
+        <FormSection
+          icon={SquareCheck}
+          title="Validity"
+          description="Check-ins and dynamic pricing only, no booking access."
+        >
+          <div className="grid grid-cols-2 gap-4">
+            <Field>
+              <FieldLabel htmlFor="plan-coverage">Coverage</FieldLabel>
+              <Select
+                value={values.coverage}
+                onValueChange={(value) =>
+                  setValues((v) => ({
+                    ...v,
+                    coverage: value as PlanCoverage,
+                  }))
+                }
+              >
+                <SelectTrigger id="plan-coverage" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {planCoverages.map((coverage) => (
+                    <SelectItem key={coverage} value={coverage}>
+                      {coverage}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+
+            <Field>
+              <FieldLabel htmlFor="plan-sessions">Sessions</FieldLabel>
+              <Input
+                id="plan-sessions"
+                placeholder="e.g. 10/month"
+                value={values.sessions}
+                onChange={(e) =>
+                  setValues((v) => ({ ...v, sessions: e.target.value }))
+                }
+              />
               <FieldDescription>
-                The membership only starts once it has been paid.
+                Uses per billing period (e.g. 10/month).
               </FieldDescription>
-            </div>
-          </FieldGroup>
-        </FieldSet>
+            </Field>
+          </div>
+        </FormSection>
 
-        <FieldSet>
-          <FieldLegend className="flex items-center gap-1.5">
-            Validity
-            <Info
-              className="size-3.5 text-muted-foreground"
-              aria-hidden="true"
-            />
-          </FieldLegend>
-          <FieldGroup>
-            <div className="grid grid-cols-2 gap-4">
-              <Field>
-                <FieldLabel htmlFor="plan-coverage">Coverage</FieldLabel>
-                <Select
-                  value={values.coverage}
-                  onValueChange={(value) =>
-                    setValues((v) => ({
-                      ...v,
-                      coverage: value as PlanCoverage,
-                    }))
-                  }
-                >
-                  <SelectTrigger id="plan-coverage" className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {planCoverages.map((coverage) => (
-                      <SelectItem key={coverage} value={coverage}>
-                        {coverage}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FieldDescription>
-                  Check-ins and dynamic pricing only — no booking access.
-                </FieldDescription>
-              </Field>
-
-              <Field>
-                <FieldLabel htmlFor="plan-sessions">Sessions</FieldLabel>
-                <Input
-                  id="plan-sessions"
-                  placeholder="e.g. 10/month"
-                  value={values.sessions}
-                  onChange={(e) =>
-                    setValues((v) => ({ ...v, sessions: e.target.value }))
-                  }
+        <FormSection icon={Sparkles} title="Presentation">
+          <div className="grid grid-cols-2 gap-4">
+            <Field>
+              <FieldLabel htmlFor="plan-features">Features</FieldLabel>
+              <Combobox
+                items={planFeatureOptions}
+                value={values.features || null}
+                onValueChange={(value) =>
+                  setValues((v) => ({ ...v, features: value ?? "" }))
+                }
+              >
+                <ComboboxInput
+                  id="plan-features"
+                  placeholder="Search features..."
                 />
-                <FieldDescription>
-                  Uses per billing period (e.g. 10/month).
-                </FieldDescription>
-              </Field>
-            </div>
-          </FieldGroup>
-        </FieldSet>
+                <ComboboxContent>
+                  <ComboboxEmpty>No features found.</ComboboxEmpty>
+                  <ComboboxList>
+                    {(item: string) => (
+                      <ComboboxItem key={item} value={item}>
+                        {item}
+                      </ComboboxItem>
+                    )}
+                  </ComboboxList>
+                </ComboboxContent>
+              </Combobox>
+            </Field>
 
-        <FieldSet>
-          <FieldLegend>Presentation</FieldLegend>
-          <FieldGroup>
-            <div className="grid grid-cols-2 gap-4">
-              <Field>
-                <FieldLabel htmlFor="plan-features">Features</FieldLabel>
-                <Combobox
-                  items={planFeatureOptions}
-                  value={values.features || null}
-                  onValueChange={(value) =>
-                    setValues((v) => ({ ...v, features: value ?? "" }))
-                  }
-                >
-                  <ComboboxInput
-                    id="plan-features"
-                    placeholder="Search features..."
-                  />
-                  <ComboboxContent>
-                    <ComboboxEmpty>No features found.</ComboboxEmpty>
-                    <ComboboxList>
-                      {(item: string) => (
-                        <ComboboxItem key={item} value={item}>
-                          {item}
-                        </ComboboxItem>
-                      )}
-                    </ComboboxList>
-                  </ComboboxContent>
-                </Combobox>
-              </Field>
-
-              <Field>
-                <FieldLabel htmlFor="plan-sports">Sports</FieldLabel>
-                <Combobox
-                  items={SPECIALTY_OPTIONS}
-                  value={values.sports || null}
-                  onValueChange={(value) =>
-                    setValues((v) => ({ ...v, sports: value ?? "" }))
-                  }
-                >
-                  <ComboboxInput
-                    id="plan-sports"
-                    placeholder="Search sports..."
-                  />
-                  <ComboboxContent>
-                    <ComboboxEmpty>No sports found.</ComboboxEmpty>
-                    <ComboboxList>
-                      {(item: string) => (
-                        <ComboboxItem key={item} value={item}>
-                          {item}
-                        </ComboboxItem>
-                      )}
-                    </ComboboxList>
-                  </ComboboxContent>
-                </Combobox>
-              </Field>
-            </div>
-          </FieldGroup>
-        </FieldSet>
+            <Field>
+              <FieldLabel htmlFor="plan-sports">Sports</FieldLabel>
+              <Combobox
+                items={SPECIALTY_OPTIONS}
+                value={values.sports || null}
+                onValueChange={(value) =>
+                  setValues((v) => ({ ...v, sports: value ?? "" }))
+                }
+              >
+                <ComboboxInput
+                  id="plan-sports"
+                  placeholder="Search sports..."
+                />
+                <ComboboxContent>
+                  <ComboboxEmpty>No sports found.</ComboboxEmpty>
+                  <ComboboxList>
+                    {(item: string) => (
+                      <ComboboxItem key={item} value={item}>
+                        {item}
+                      </ComboboxItem>
+                    )}
+                  </ComboboxList>
+                </ComboboxContent>
+              </Combobox>
+            </Field>
+          </div>
+        </FormSection>
       </SheetBody>
 
       <SheetFooter>
