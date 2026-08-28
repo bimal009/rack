@@ -65,7 +65,6 @@ import {
 interface PlanFormValues {
   name: string
   category: PlanCategory | ""
-  barcode: string
   visibility: PlanVisibility
   description: string
   active: boolean
@@ -87,7 +86,6 @@ function toFormValues(plan?: Plan | null): PlanFormValues {
     return {
       name: "",
       category: "",
-      barcode: "",
       visibility: "Public",
       description: "",
       active: true,
@@ -104,7 +102,6 @@ function toFormValues(plan?: Plan | null): PlanFormValues {
   return {
     name: plan.name,
     category: plan.category,
-    barcode: plan.barcode ?? "",
     visibility: plan.visibility,
     description: plan.description ?? "",
     active: plan.active,
@@ -212,24 +209,7 @@ function PlanFormBody({ plan, onSubmit, onCancel }: PlanFormBodyProps) {
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <Field>
-              <FieldLabel htmlFor="plan-barcode">
-                Barcode{" "}
-                <span className="text-muted-foreground">(optional)</span>
-              </FieldLabel>
-              <Input
-                id="plan-barcode"
-                placeholder="Scan or enter a code"
-                value={values.barcode}
-                onChange={(e) =>
-                  setValues((v) => ({ ...v, barcode: e.target.value }))
-                }
-              />
-              <FieldDescription>
-                Scan the shelf card to fill this in. The till adds this
-                plan when the code is scanned.
-              </FieldDescription>
-            </Field>
+
 
             <Field>
               <FieldLabel htmlFor="plan-visibility">Visibility</FieldLabel>
@@ -254,6 +234,17 @@ function PlanFormBody({ plan, onSubmit, onCancel }: PlanFormBodyProps) {
                 </SelectContent>
               </Select>
             </Field>
+
+                      <div className="flex items-center gap-2.5">
+            <Switch
+              id="plan-active"
+              checked={values.active}
+              onCheckedChange={(checked) =>
+                setValues((v) => ({ ...v, active: checked }))
+              }
+            />
+            <Label htmlFor="plan-active">Active</Label>
+          </div>
           </div>
 
           <Field data-invalid={Boolean(errors.description)}>
@@ -273,16 +264,7 @@ function PlanFormBody({ plan, onSubmit, onCancel }: PlanFormBodyProps) {
             <FieldError>{errors.description}</FieldError>
           </Field>
 
-          <div className="flex items-center gap-2.5">
-            <Switch
-              id="plan-active"
-              checked={values.active}
-              onCheckedChange={(checked) =>
-                setValues((v) => ({ ...v, active: checked }))
-              }
-            />
-            <Label htmlFor="plan-active">Active</Label>
-          </div>
+
         </FormSection>
 
         <FormSection icon={Banknote} title="Pricing">

@@ -14,7 +14,7 @@ export const initialPayRatePolicies: PayRatePolicy[] = [
     policyName: "Standard Instructor Rate",
     perSessionRate: 800,
     compensateUnpaidBookings: false,
-    appliesToRole: "Instructor",
+    appliesToInstructorType: "Personal Trainer",
     entranceMethod: "All entrance methods",
   },
   {
@@ -23,8 +23,8 @@ export const initialPayRatePolicies: PayRatePolicy[] = [
     policyName: "Personal Training Revenue Share",
     revenueSharePercent: 40,
     compensateUnpaidBookings: true,
-    appliesToRole: "Instructor",
-    entranceMethod: "All entrance methods",
+    appliesToInstructorType: "Personal Trainer",
+    entranceMethod: "Any membership",
   },
   {
     id: "pay_3",
@@ -34,7 +34,7 @@ export const initialPayRatePolicies: PayRatePolicy[] = [
     perPersonRate: 20,
     classScope: "All classes",
     compensateUnpaidBookings: false,
-    appliesToRole: "Instructor",
+    appliesToInstructorType: "All Instructors",
     entranceMethod: "All entrance methods",
   },
 ]

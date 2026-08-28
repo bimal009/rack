@@ -98,7 +98,7 @@ export function PayRatesList() {
         header: "Earnings",
         enableGlobalFilter: false,
       }),
-      columnHelper.accessor("appliesToRole", {
+      columnHelper.accessor("appliesToInstructorType", {
         header: "Applies To",
         enableGlobalFilter: false,
       }),

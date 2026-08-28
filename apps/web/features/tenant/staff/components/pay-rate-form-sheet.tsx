@@ -20,7 +20,9 @@ import {
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@repo/ui/components/ui/select"
@@ -39,12 +41,12 @@ import { FormSection, FormSheetHeader } from "@/features/tenant/components/form-
 import { fieldErrors } from "../lib/validation"
 import { classScopeOptions } from "../lib/pay-rate-data"
 import {
-  payRateAppliesToRoles,
-  payRateEntranceMethods,
+  payRateEntranceMethodGroups,
+  payRateInstructorScopes,
   payRateModes,
   payRatePolicySchema,
-  type PayRateAppliesToRole,
   type PayRateEntranceMethod,
+  type PayRateInstructorScope,
   type PayRateMode,
   type PayRatePolicy,
   type PayRatePolicyInput,
@@ -59,7 +61,7 @@ interface PayRateFormValues {
   revenueSharePercent: string
   compensateUnpaidBookings: boolean
   classScope: string
-  appliesToRole: PayRateAppliesToRole
+  appliesToInstructorType: PayRateInstructorScope
   entranceMethod: PayRateEntranceMethod
 }
 
@@ -81,7 +83,8 @@ function toFormValues(policy?: PayRatePolicy | null): PayRateFormValues {
         : "",
     compensateUnpaidBookings: policy?.compensateUnpaidBookings ?? false,
     classScope: policy?.classScope ?? "All classes",
-    appliesToRole: policy?.appliesToRole ?? "Instructor",
+    appliesToInstructorType:
+      policy?.appliesToInstructorType ?? "All Instructors",
     entranceMethod: policy?.entranceMethod ?? "All entrance methods",
   }
 }
@@ -114,7 +117,7 @@ function PayRateFormBody({ policy, onSubmit, onCancel }: PayRateFormBodyProps) {
         : undefined,
       compensateUnpaidBookings: values.compensateUnpaidBookings,
       classScope: isClass ? values.classScope : undefined,
-      appliesToRole: values.appliesToRole,
+      appliesToInstructorType: values.appliesToInstructorType,
       entranceMethod: values.entranceMethod,
     })
 
@@ -334,13 +337,14 @@ function PayRateFormBody({ policy, onSubmit, onCancel }: PayRateFormBodyProps) {
         <FormSection icon={Target} title="Applies to">
           {isClass && (
             <Field>
+              <FieldLabel htmlFor="pay-rate-class-scope">Classes</FieldLabel>
               <Select
                 value={values.classScope}
                 onValueChange={(value) =>
                   setValues((v) => ({ ...v, classScope: value ?? "" }))
                 }
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger id="pay-rate-class-scope" className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -355,29 +359,41 @@ function PayRateFormBody({ policy, onSubmit, onCancel }: PayRateFormBodyProps) {
           )}
 
           <Field>
+            <FieldLabel htmlFor="pay-rate-instructor-type">
+              Instructors
+            </FieldLabel>
             <Select
-              value={values.appliesToRole}
+              value={values.appliesToInstructorType}
               onValueChange={(value) =>
                 setValues((v) => ({
                   ...v,
-                  appliesToRole: value as PayRateAppliesToRole,
+                  appliesToInstructorType: value as PayRateInstructorScope,
                 }))
               }
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger
+                id="pay-rate-instructor-type"
+                className="w-full"
+              >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {payRateAppliesToRoles.map((option) => (
+                {payRateInstructorScopes.map((option) => (
                   <SelectItem key={option} value={option}>
                     {option}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
+            <FieldDescription>
+              Which instructors this pay rate pays out to.
+            </FieldDescription>
           </Field>
 
           <Field>
+            <FieldLabel htmlFor="pay-rate-entrance-method">
+              Entrance method
+            </FieldLabel>
             <Select
               value={values.entranceMethod}
               onValueChange={(value) =>
@@ -387,17 +403,29 @@ function PayRateFormBody({ policy, onSubmit, onCancel }: PayRateFormBodyProps) {
                 }))
               }
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger
+                id="pay-rate-entrance-method"
+                className="w-full"
+              >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {payRateEntranceMethods.map((option) => (
-                  <SelectItem key={option} value={option}>
-                    {option}
-                  </SelectItem>
+                {payRateEntranceMethodGroups.map((group, index) => (
+                  <SelectGroup key={group.label ?? `group-${index}`}>
+                    {group.label && <SelectLabel>{group.label}</SelectLabel>}
+                    {group.options.map((option) => (
+                      <SelectItem key={option} value={option}>
+                        {option}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
                 ))}
               </SelectContent>
             </Select>
+            <FieldDescription>
+              How the member paid for or accessed the session, not how they
+              checked in at the door.
+            </FieldDescription>
           </Field>
         </FormSection>
       </SheetBody>
