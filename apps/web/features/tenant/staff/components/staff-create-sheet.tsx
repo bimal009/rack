@@ -4,6 +4,7 @@ import { useState, type FormEvent } from "react"
 import { useRouter } from "next/navigation"
 import {
   Briefcase,
+  CalendarIcon,
   Dumbbell,
   IdCard,
   MapPin,
@@ -25,12 +26,18 @@ import {
 } from "@repo/types"
 
 import { Button } from "@repo/ui/components/ui/button"
+import { Calendar } from "@repo/ui/components/ui/calendar"
 import {
   Field,
   FieldDescription,
   FieldError,
   FieldLabel,
 } from "@repo/ui/components/ui/field"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@repo/ui/components/ui/popover"
 import { Input } from "@repo/ui/components/ui/input"
 import {
   InputGroup,
@@ -288,12 +295,57 @@ function StaffCreateForm({
           <div className="grid grid-cols-2 gap-4">
             <Field>
               <FieldLabel htmlFor="staff-dob">Date of Birth</FieldLabel>
-              <Input
-                id="staff-dob"
-                type="date"
-                value={values.dateOfBirth}
-                onChange={(e) => set("dateOfBirth", e.target.value)}
-              />
+              <Popover>
+                <PopoverTrigger
+                  render={
+                    <Button
+                      id="staff-dob"
+                      type="button"
+                      variant="outline"
+                      className="w-full justify-start font-normal data-[empty=true]:text-muted-foreground"
+                      data-empty={!values.dateOfBirth}
+                    />
+                  }
+                >
+                  <CalendarIcon className="size-4" />
+                  {values.dateOfBirth
+                    ? new Date(
+                        `${values.dateOfBirth}T00:00:00`
+                      ).toLocaleDateString(undefined, {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      })
+                    : "Pick a date"}
+                </PopoverTrigger>
+                <PopoverContent align="start" className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    captionLayout="dropdown"
+                    startMonth={new Date(1940, 0)}
+                    endMonth={new Date()}
+                    disabled={{ after: new Date() }}
+                    selected={
+                      values.dateOfBirth
+                        ? new Date(`${values.dateOfBirth}T00:00:00`)
+                        : undefined
+                    }
+                    onSelect={(date) =>
+                      set(
+                        "dateOfBirth",
+                        date
+                          ? `${date.getFullYear()}-${String(
+                              date.getMonth() + 1
+                            ).padStart(2, "0")}-${String(date.getDate()).padStart(
+                              2,
+                              "0"
+                            )}`
+                          : ""
+                      )
+                    }
+                  />
+                </PopoverContent>
+              </Popover>
             </Field>
 
             <Field>

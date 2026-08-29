@@ -17,6 +17,7 @@ export function useStaffFilters() {
       search: parseAsString.withDefault(""),
       role: parseAsStringLiteral(STAFF_ROLES),
       status: parseAsStringLiteral(STAFF_STATUSES),
+      sort: parseAsStringLiteral(["asc", "desc"] as const).withDefault("desc"),
     },
     {
       history: "replace",

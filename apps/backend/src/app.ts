@@ -33,7 +33,7 @@ app.use(
   cors({
     origin: process.env.CORS_ORIGIN?.split(",") ?? (isDev ? "http://localhost:3000" : false),
     credentials: true,
-     methods: ["GET", "POST", "PUT", "DELETE"],
+     methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
   })
 );
 

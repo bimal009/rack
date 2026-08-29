@@ -215,14 +215,14 @@ export function TypeList<TRow extends { id: string; name: string }, TInput>({
             Filter
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Sort order</DropdownMenuLabel>
-            <DropdownMenuSeparator />
             <DropdownMenuRadioGroup
               value={filters.sort}
               onValueChange={(value) =>
                 setFilters({ sort: value as "asc" | "desc", page: 1 })
               }
             >
+              <DropdownMenuLabel>Sort order</DropdownMenuLabel>
+              <DropdownMenuSeparator />
               <DropdownMenuRadioItem value="asc">A → Z</DropdownMenuRadioItem>
               <DropdownMenuRadioItem value="desc">Z → A</DropdownMenuRadioItem>
             </DropdownMenuRadioGroup>

@@ -46,14 +46,22 @@ function payLabel(row: StaffWithUser) {
   return `${payCurrency.format(row.payRate)}${suffix}`
 }
 
-export function createStaffDirectoryColumns() {
+interface StaffColumnOptions {
+  instructor?: boolean
+  instructorTypeName?: (id: string | null) => string
+}
+
+export function createStaffDirectoryColumns({
+  instructor = false,
+  instructorTypeName,
+}: StaffColumnOptions = {}) {
   const columnHelper = createDataTableColumnHelper<StaffWithUser>()
 
-  return columnHelper.columns([
-    createIndexColumn(columnHelper),
-    columnHelper.accessor((row) => `${row.user.name} ${row.user.email}`, {
+  const nameColumn = columnHelper.accessor(
+    (row) => `${row.user.name} ${row.user.email}`,
+    {
       id: "staff",
-      header: "Staff",
+      header: instructor ? "Instructor" : "Staff",
       cell: ({ row }) => {
         const { name, email, image } = row.original.user
         return (
@@ -73,7 +81,101 @@ export function createStaffDirectoryColumns() {
           </div>
         )
       },
-    }),
+    }
+  )
+
+  const payColumn = columnHelper.accessor("payRate", {
+    header: "Pay Rate",
+    cell: ({ row }) => {
+      const label = payLabel(row.original)
+      return label ? (
+        <span className="text-foreground">{label}</span>
+      ) : (
+        <span className="text-muted-foreground">—</span>
+      )
+    },
+  })
+
+  const joinedColumn = columnHelper.accessor("createdAt", {
+    header: "Joined",
+    cell: ({ getValue }) => (
+      <span className="text-muted-foreground">
+        {joinedFormatter.format(new Date(getValue()))}
+      </span>
+    ),
+  })
+
+  const statusColumn = columnHelper.accessor("isActive", {
+    header: "Status",
+    cell: ({ getValue }) => {
+      const active = getValue()
+      return (
+        <Badge
+          variant={active ? "default" : "secondary"}
+          className={cn("rounded-full", !active && "bg-muted text-foreground")}
+        >
+          {active ? "Active" : "Inactive"}
+        </Badge>
+      )
+    },
+  })
+
+  if (instructor) {
+    return columnHelper.columns([
+      createIndexColumn(columnHelper),
+      nameColumn,
+      columnHelper.accessor("instructorTypeId", {
+        header: "Type",
+        cell: ({ getValue }) => {
+          const label = instructorTypeName?.(getValue()) ?? ""
+          return label ? (
+            <Badge variant="outline" className="rounded-full font-normal">
+              {label}
+            </Badge>
+          ) : (
+            <span className="text-muted-foreground">—</span>
+          )
+        },
+      }),
+      columnHelper.accessor("experience", {
+        header: "Experience",
+        cell: ({ getValue }) => {
+          const years = getValue()
+          return years == null ? (
+            <span className="text-muted-foreground">—</span>
+          ) : (
+            <span>
+              {years} {years === 1 ? "yr" : "yrs"}
+            </span>
+          )
+        },
+      }),
+      payColumn,
+      columnHelper.accessor("canBeBooked", {
+        header: "Bookable",
+        cell: ({ getValue }) => (
+          <Badge
+            variant={getValue() ? "default" : "secondary"}
+            className="rounded-full"
+          >
+            {getValue() ? "Yes" : "No"}
+          </Badge>
+        ),
+      }),
+      columnHelper.accessor("visibility", {
+        header: "Visibility",
+        cell: ({ getValue }) => (
+          <span className="text-muted-foreground">{getValue()}</span>
+        ),
+      }),
+      joinedColumn,
+      statusColumn,
+    ])
+  }
+
+  return columnHelper.columns([
+    createIndexColumn(columnHelper),
+    nameColumn,
     columnHelper.accessor("role", {
       header: "Role",
       cell: ({ getValue }) => (
@@ -82,38 +184,8 @@ export function createStaffDirectoryColumns() {
         </Badge>
       ),
     }),
-    columnHelper.accessor("payRate", {
-      header: "Pay Rate",
-      cell: ({ row }) => {
-        const label = payLabel(row.original)
-        return label ? (
-          <span className="text-foreground">{label}</span>
-        ) : (
-          <span className="text-muted-foreground">—</span>
-        )
-      },
-    }),
-    columnHelper.accessor("createdAt", {
-      header: "Joined",
-      cell: ({ getValue }) => (
-        <span className="text-muted-foreground">
-          {joinedFormatter.format(new Date(getValue()))}
-        </span>
-      ),
-    }),
-    columnHelper.accessor("isActive", {
-      header: "Status",
-      cell: ({ getValue }) => {
-        const active = getValue()
-        return (
-          <Badge
-            variant={active ? "default" : "secondary"}
-            className={cn("rounded-full", !active && "bg-muted text-foreground")}
-          >
-            {active ? "Active" : "Inactive"}
-          </Badge>
-        )
-      },
-    }),
+    payColumn,
+    joinedColumn,
+    statusColumn,
   ])
 }

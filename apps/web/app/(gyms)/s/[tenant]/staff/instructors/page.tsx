@@ -1,11 +1,11 @@
 import type { Metadata } from "next"
 
-import { InstructorsList } from "@/features/tenant/staff/components/instructors-list"
+import { StaffList } from "@/features/tenant/staff/components/staff-list"
 
 export const metadata: Metadata = {
   title: "Instructors",
 }
 
 export default function Page() {
-  return <InstructorsList />
+  return <StaffList lockedRole="instructor" label="Instructor" />
 }
