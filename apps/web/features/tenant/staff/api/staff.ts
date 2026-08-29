@@ -1,24 +1,17 @@
 import { apiClient } from "@/api-client"
 import type {
+  CreateStaffResult,
   NewStaffWithUser,
-  PaginatedResponse,
-  StaffMemberUser,
-  StaffPagination,
-  StaffWithUser,
+  StaffListQuery,
+  StaffListResponse,
 } from "@repo/types"
 import { isAxiosError } from "axios"
 
 export class StaffError extends Error {}
 
-export type StaffListResponse = PaginatedResponse<StaffWithUser>
-
-export type StaffListParams = Partial<
-  Pick<StaffPagination, "page" | "limit" | "sortOrder" | "search" | "status" | "role">
->
-
 export async function getStaffList(
   tenant: string,
-  params: StaffListParams
+  params: StaffListQuery
 ): Promise<StaffListResponse> {
   try {
     const { data } = await apiClient.get<StaffListResponse>(
@@ -37,11 +30,12 @@ export async function getStaffList(
 export async function createStaff(
   tenant: string,
   input: NewStaffWithUser
-): Promise<{ user: StaffMemberUser; staff: StaffWithUser }> {
+): Promise<CreateStaffResult> {
   try {
-    const { data } = await apiClient.post<{
-      data: { user: StaffMemberUser; staff: StaffWithUser }
-    }>(`/api/v1/gyms/${tenant}/staff`, input)
+    const { data } = await apiClient.post<{ data: CreateStaffResult }>(
+      `/api/v1/gyms/${tenant}/staff`,
+      input
+    )
     return data.data
   } catch (error) {
     if (isAxiosError<{ message?: string }>(error)) {

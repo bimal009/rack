@@ -1,149 +1,124 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { Download, Plus } from "lucide-react"
-import { toast } from "sonner"
+import { useParams } from "next/navigation"
+import { ChevronLeft, ChevronRight, Download, Plus, SearchIcon } from "lucide-react"
+import { gymRoleEnumSchema, type GymRole } from "@repo/types"
 
 import { Button } from "@repo/ui/components/ui/button"
 import { DataTable } from "@repo/ui/components/ui/data-table"
+import { Input } from "@repo/ui/components/ui/input"
+import { Spinner } from "@repo/ui/components/ui/spinner"
 
-import { DeleteConfirmDialog } from "@/features/tenant/components/delete-confirm-dialog"
 import { FilterPills } from "@/features/tenant/components/filter-pills"
-import { exportToCsv } from "@/features/tenant/lib/export-csv"
 
-import { generateStaffId, initialStaff } from "../lib/data"
-import { staffRoles, type StaffInput, type StaffMember } from "../lib/schema"
-import { createStaffColumns, fullName } from "./columns"
-import { StaffFormSheet } from "./staff-form-sheet"
+import { useStaffDirectory } from "../hooks/use-staff"
+import { gymRoleLabel } from "../lib/roles"
+import { createStaffDirectoryColumns } from "./directory-columns"
+import { StaffCreateSheet } from "./staff-create-sheet"
 
-const filters = ["All", ...staffRoles] as const
-
-function today() {
-  const months = [
-    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-  ]
-  const date = new Date()
-  return `${date.getDate()} ${months[date.getMonth()]} ${String(date.getFullYear()).slice(-2)}`
-}
+const roleOptions = ["All", ...gymRoleEnumSchema.options.map(gymRoleLabel)] as const
 
 export function StaffList() {
-  const [staff, setStaff] = useState<StaffMember[]>(initialStaff)
-  const [filter, setFilter] = useState<(typeof filters)[number]>("All")
+  const tenant = useParams<{ tenant: string }>().tenant
+  const { filters, setFilters, query } = useStaffDirectory(tenant)
   const [sheetOpen, setSheetOpen] = useState(false)
-  const [editingStaff, setEditingStaff] = useState<StaffMember | null>(null)
-  const [deletingStaff, setDeletingStaff] = useState<StaffMember | null>(null)
 
-  const visible =
-    filter === "All" ? staff : staff.filter((s) => s.role === filter)
+  const columns = useMemo(() => createStaffDirectoryColumns(), [])
 
-  function handleAdd() {
-    setEditingStaff(null)
-    setSheetOpen(true)
-  }
-
-  function handleEdit(member: StaffMember) {
-    setEditingStaff(member)
-    setSheetOpen(true)
-  }
-
-  function handleSubmit(values: StaffInput) {
-    if (editingStaff) {
-      setStaff((prev) =>
-        prev.map((member) =>
-          member.id === editingStaff.id ? { ...member, ...values } : member
-        )
-      )
-      toast.success(`${fullName(values)} updated`)
-    } else {
-      setStaff((prev) => [
-        {
-          ...values,
-          id: generateStaffId(),
-          joined: today(),
-          status: "Active",
-        },
-        ...prev,
-      ])
-      toast.success(`${fullName(values)} added`)
-    }
-  }
-
-  function handleDelete() {
-    if (!deletingStaff) return
-    setStaff((prev) => prev.filter((member) => member.id !== deletingStaff.id))
-    toast.success(`${fullName(deletingStaff)} removed`)
-    setDeletingStaff(null)
-  }
-
-  function handleExport() {
-    exportToCsv(
-      "staff.csv",
-      visible.map((member) => ({
-        Name: fullName(member),
-        Email: member.email,
-        Phone: member.phone,
-        Role: member.role,
-        "Instructor Type":
-          member.role === "Instructor" ? member.instructorType : "",
-        "Pay Type": member.payType,
-        "Pay Rate": member.payRate,
-        Joined: member.joined,
-        Status: member.status,
-      }))
-    )
-  }
-
-  const columns = useMemo(
-    () =>
-      createStaffColumns({
-        onEdit: handleEdit,
-        onDelete: setDeletingStaff,
-      }),
-    []
-  )
+  const rows = query.data?.data ?? []
+  const meta = query.data?.meta
+  const activeRoleLabel = filters.role ? gymRoleLabel(filters.role) : "All"
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between gap-2">
-        <FilterPills options={filters} value={filter} onChange={setFilter} />
-        <Button variant="outline" onClick={handleExport}>
-          <Download className="size-4" />
-          Export
-        </Button>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <FilterPills
+          options={roleOptions}
+          value={activeRoleLabel}
+          onChange={(label) => {
+            const role =
+              gymRoleEnumSchema.options.find(
+                (r) => gymRoleLabel(r) === label
+              ) ?? null
+            setFilters({ role: role as GymRole | null, page: 1 })
+          }}
+        />
+        <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
+          <div className="relative min-w-0 flex-1 sm:max-w-xs">
+            <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={filters.search}
+              onChange={(e) => setFilters({ search: e.target.value, page: 1 })}
+              placeholder="Search by name or email..."
+              className="rounded-full pl-9 shadow-none"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" disabled className="flex-1 sm:flex-none">
+              <Download className="size-4" />
+              Export
+            </Button>
+            <Button
+              onClick={() => setSheetOpen(true)}
+              className="flex-1 sm:flex-none"
+            >
+              <Plus className="size-4" />
+              Add Staff
+            </Button>
+          </div>
+        </div>
       </div>
 
-      <DataTable
-        columns={columns}
-        data={visible}
-        getRowId={(row) => row.id}
-        enableRowSelection
-        searchPlaceholder="Search by name or email..."
-        toolbar={
-          <Button onClick={handleAdd}>
-            <Plus className="size-4" />
-            Add Staff
-          </Button>
-        }
-      />
+      {query.isError ? (
+        <div className="rounded-xl border border-border bg-card p-8 text-center text-sm text-muted-foreground">
+          {(query.error as Error).message}
+        </div>
+      ) : query.isLoading ? (
+        <div className="flex items-center justify-center rounded-xl border border-border bg-card p-12">
+          <Spinner className="size-5" />
+        </div>
+      ) : (
+        <DataTable
+          columns={columns}
+          data={rows}
+          getRowId={(row) => row.id}
+          enableSearch={false}
+          enablePagination={false}
+          emptyMessage="No staff found."
+        />
+      )}
 
-      <StaffFormSheet
+      {meta && meta.totalPages > 1 && (
+        <div className="flex items-center justify-between gap-4">
+          <p className="text-sm text-muted-foreground">
+            Page {meta.page} of {meta.totalPages} · {meta.total} total
+          </p>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="outline"
+              size="icon-sm"
+              disabled={meta.page <= 1 || query.isPlaceholderData}
+              onClick={() => setFilters({ page: meta.page - 1 })}
+            >
+              <ChevronLeft className="size-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon-sm"
+              disabled={meta.page >= meta.totalPages || query.isPlaceholderData}
+              onClick={() => setFilters({ page: meta.page + 1 })}
+            >
+              <ChevronRight className="size-4" />
+            </Button>
+          </div>
+        </div>
+      )}
+
+      <StaffCreateSheet
+        tenant={tenant}
         open={sheetOpen}
         onOpenChange={setSheetOpen}
-        staff={editingStaff}
-        onSubmit={handleSubmit}
-      />
-
-      <DeleteConfirmDialog
-        open={Boolean(deletingStaff)}
-        onOpenChange={(open) => !open && setDeletingStaff(null)}
-        title="Remove staff member?"
-        description={
-          deletingStaff
-            ? `"${fullName(deletingStaff)}" will be removed from your staff list.`
-            : ""
-        }
-        onConfirm={handleDelete}
       />
     </div>
   )

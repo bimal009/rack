@@ -11,6 +11,7 @@ export async function createStaffWithUser(data: NewStaffWithUser,gymId:string) {
     throw new ValidationError("Invalid staff data", result.error.flatten());
   }
   const input = result.data;
+  const name = `${input.firstName} ${input.lastName}`.trim();
 
   return await db.transaction(async (tx) => {
     const [newUser] = await tx
@@ -18,8 +19,8 @@ export async function createStaffWithUser(data: NewStaffWithUser,gymId:string) {
       .values({
         id: randomUUID(),
         email: input.email,
-        name: input.name,
-        image: input.image,
+        name,
+        image: input.image ?? null,
         role: "user",
       })
       .returning();
@@ -31,10 +32,26 @@ export async function createStaffWithUser(data: NewStaffWithUser,gymId:string) {
     const [newStaff] = await tx
       .insert(staff)
       .values({
-        gymId: gymId,
+        gymId,
         userId: newUser.id,
         role: input.role,
         isActive: input.isActive,
+        allowAdminAccess: input.allowAdminAccess,
+        phone: input.phone,
+        dateOfBirth: input.dateOfBirth,
+        gender: input.gender,
+        address: input.address,
+        payType: input.payType,
+        payRate: input.payRate,
+        displayName: input.displayName,
+        instructorType: input.instructorType,
+        sports: input.sports,
+        experience: input.experience,
+        certifications: input.certifications,
+        canBeBooked: input.canBeBooked,
+        visibility: input.visibility,
+        maxConcurrentBookings: input.maxConcurrentBookings,
+        activeInstructor: input.activeInstructor,
       })
       .returning();
 
@@ -61,8 +78,25 @@ export const getAll = async (gymId: string, pagination: StaffPagination) => {
       .select({
         id: staff.id,
         gymId: staff.gymId,
+        userId: staff.userId,
         role: staff.role,
         isActive: staff.isActive,
+        allowAdminAccess: staff.allowAdminAccess,
+        phone: staff.phone,
+        dateOfBirth: staff.dateOfBirth,
+        gender: staff.gender,
+        address: staff.address,
+        payType: staff.payType,
+        payRate: staff.payRate,
+        displayName: staff.displayName,
+        instructorType: staff.instructorType,
+        sports: staff.sports,
+        experience: staff.experience,
+        certifications: staff.certifications,
+        canBeBooked: staff.canBeBooked,
+        visibility: staff.visibility,
+        maxConcurrentBookings: staff.maxConcurrentBookings,
+        activeInstructor: staff.activeInstructor,
         createdAt: staff.createdAt,
         updatedAt: staff.updatedAt,
         user: {
