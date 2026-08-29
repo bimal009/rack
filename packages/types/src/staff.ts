@@ -31,7 +31,6 @@ export type StaffGender = z.infer<typeof staffGenderEnumSchema>;
 export const staffVisibilityEnumSchema = z.enum(["Public", "Private"]);
 export type StaffVisibility = z.infer<typeof staffVisibilityEnumSchema>;
 
-
 export const staffSchema = z.object({
   id: z.string().uuid(),
   gymId: z.string().uuid(),
@@ -46,9 +45,7 @@ export const staffSchema = z.object({
   address: z.string().nullable(),
   payType: payTypeEnumSchema.nullable(),
   payRate: z.number().nullable(),
-  displayName: z.string().nullable(),
   instructorType: instructorTypeEnumSchema.default("None"),
-  sports: z.string().nullable(),
   experience: z.string().nullable(),
   certifications: z.string().nullable(),
   canBeBooked: z.boolean().default(false),
@@ -72,7 +69,6 @@ export const staffInsertSchema = staffSchema.omit({
 
 export type NewStaff = z.infer<typeof staffInsertSchema>;
 
-// --- create-staff-with-user payload (what the "Add staff" form submits) ---
 
 const optionalText = z
   .union([z.string(), z.null()])
@@ -105,9 +101,7 @@ export const staffWithUserInsertSchema = z.object({
   payType: payTypeEnumSchema,
   payRate: z.number().positive("Enter a pay rate"),
 
-  displayName: optionalText,
   instructorType: instructorTypeEnumSchema.default("None"),
-  sports: optionalText,
   experience: optionalText,
   certifications: optionalText,
   canBeBooked: z.boolean().default(false),

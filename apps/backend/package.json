@@ -26,9 +26,10 @@
     "typescript": "5.9.2"
   },
   "dependencies": {
-    "@repo/types":"workspace:*",
     "@better-auth/drizzle-adapter": "^1.7.1",
+    "@imagekit/javascript": "^5.4.1",
     "@neondatabase/serverless": "^1.1.0",
+    "@repo/types": "workspace:*",
     "better-auth": "^1.7.1",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",

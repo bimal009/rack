@@ -10,6 +10,14 @@ import { handleError } from "./lib/errors";
 import gymRoutes from "./modules/gym/gym.routes";
 import plansRoutes from "./modules/plans/plans.routes";
 import staffRoutes from "./modules/staff/staff.routes";
+import mediaRoutes from "./modules/media/media.routes";
+import sportRoutes from "./modules/sport/sport.routes";
+import areaTypeRoutes from "./modules/areaType/areaType.routes";
+import instructorTypeRoutes from "./modules/instructorType/instructorType.routes";
+import classTypeRoutes from "./modules/classType/classType.routes";
+import brandRoutes from "./modules/brand/brand.routes";
+import categoryRoutes from "./modules/category/category.routes";
+import taxRateRoutes from "./modules/taxRate/taxRate.routes";
 
 const isDev = process.env.NODE_ENV === "development";
 
@@ -42,7 +50,15 @@ app.use(express.json({ limit: "10kb" }));
 
 app.use("/api/v1/gyms", gymRoutes);
 app.use("/api/v1/gyms/:slug/staff", staffRoutes);
+app.use("/api/v1/gyms/:slug/sports", sportRoutes);
+app.use("/api/v1/gyms/:slug/settings/area-types", areaTypeRoutes);
+app.use("/api/v1/gyms/:slug/settings/instructor-types", instructorTypeRoutes);
+app.use("/api/v1/gyms/:slug/settings/class-types", classTypeRoutes);
+app.use("/api/v1/gyms/:slug/settings/brands", brandRoutes);
+app.use("/api/v1/gyms/:slug/settings/categories", categoryRoutes);
+app.use("/api/v1/gyms/:slug/settings/tax-rates", taxRateRoutes);
 app.use("/api/v1/plans", plansRoutes);
+app.use("/api/v1/media", mediaRoutes);
 
 app.get("/health", (_req, res) => {
   res.status(200).json({ status: "ok",uptime:process.uptime() });

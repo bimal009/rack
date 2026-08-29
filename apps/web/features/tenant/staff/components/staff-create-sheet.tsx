@@ -24,7 +24,6 @@ import {
   type StaffVisibility,
 } from "@repo/types"
 
-import { Avatar, AvatarFallback } from "@repo/ui/components/ui/avatar"
 import { Button } from "@repo/ui/components/ui/button"
 import {
   Field,
@@ -57,6 +56,7 @@ import { Spinner } from "@repo/ui/components/ui/spinner"
 import { Switch } from "@repo/ui/components/ui/switch"
 
 import { FormSection, FormSheetHeader } from "@/features/tenant/components/form-section"
+import { ImageUpload } from "@/features/media"
 
 import { useCreateStaffMutation } from "../hooks/use-staff"
 import { GYM_ROLE_LABELS } from "../lib/roles"
@@ -65,6 +65,7 @@ import { fieldErrors } from "../lib/validation"
 const GYM_ROLES = ["admin", "manager", "instructor", "frontdesk"] as const
 
 interface StaffFormValues {
+  image: string
   isActive: boolean
   allowAdminAccess: boolean
   firstName: string
@@ -77,9 +78,7 @@ interface StaffFormValues {
   role: GymRole | ""
   payType: PayType | ""
   payRate: string
-  displayName: string
   instructorType: InstructorType
-  sports: string
   experience: string
   certifications: string
   canBeBooked: boolean
@@ -89,6 +88,7 @@ interface StaffFormValues {
 }
 
 const emptyForm: StaffFormValues = {
+  image: "",
   isActive: true,
   allowAdminAccess: false,
   firstName: "",
@@ -101,19 +101,13 @@ const emptyForm: StaffFormValues = {
   role: "",
   payType: "",
   payRate: "",
-  displayName: "",
   instructorType: "None",
-  sports: "",
   experience: "",
   certifications: "",
   canBeBooked: false,
   visibility: "Public",
   maxConcurrentBookings: "1",
   activeInstructor: true,
-}
-
-function initials(firstName: string, lastName: string) {
-  return ((firstName[0] ?? "") + (lastName[0] ?? "")).toUpperCase() || "?"
 }
 
 interface StaffCreateSheetProps {
@@ -160,6 +154,7 @@ function StaffCreateForm({
 
     const result = staffWithUserInsertSchema.safeParse({
       ...values,
+      image: values.image || undefined,
       role: values.role || undefined,
       payType: values.payType || undefined,
       payRate: Number(values.payRate),
@@ -231,11 +226,16 @@ function StaffCreateForm({
         </FormSection>
 
         <FormSection icon={UserRound} title="Basic information">
-          <Avatar className="size-16">
-            <AvatarFallback className="bg-muted text-sm font-medium text-muted-foreground">
-              {initials(values.firstName, values.lastName)}
-            </AvatarFallback>
-          </Avatar>
+          <Field>
+            <FieldLabel>Photo</FieldLabel>
+            <ImageUpload
+              shape="circle"
+              folder="staff/avatars"
+              value={values.image || null}
+              onChange={(url) => set("image", url ?? "")}
+              disabled={createStaff.isPending}
+            />
+          </Field>
 
           <div className="grid grid-cols-2 gap-4">
             <Field data-invalid={Boolean(errors.firstName)}>
@@ -431,16 +431,6 @@ function StaffCreateForm({
           >
             <div className="grid grid-cols-2 gap-4">
               <Field>
-                <FieldLabel htmlFor="staff-display-name">Display name</FieldLabel>
-                <Input
-                  id="staff-display-name"
-                  placeholder="Shown on the schedule"
-                  value={values.displayName}
-                  onChange={(e) => set("displayName", e.target.value)}
-                />
-              </Field>
-
-              <Field>
                 <FieldLabel htmlFor="staff-instructor-type">
                   Instructor Type
                 </FieldLabel>
@@ -461,18 +451,6 @@ function StaffCreateForm({
                     ))}
                   </SelectContent>
                 </Select>
-              </Field>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <Field>
-                <FieldLabel htmlFor="staff-sports">Sports</FieldLabel>
-                <Input
-                  id="staff-sports"
-                  placeholder="Boxing, Yoga..."
-                  value={values.sports}
-                  onChange={(e) => set("sports", e.target.value)}
-                />
               </Field>
 
               <Field>

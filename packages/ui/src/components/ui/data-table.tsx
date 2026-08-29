@@ -29,6 +29,7 @@ import { cn } from "@repo/ui/lib/utils"
 import { Button } from "@repo/ui/components/ui/button"
 import { Checkbox } from "@repo/ui/components/ui/checkbox"
 import { Input } from "@repo/ui/components/ui/input"
+import { Skeleton } from "@repo/ui/components/ui/skeleton"
 import {
   Select,
   SelectContent,
@@ -117,6 +118,10 @@ interface DataTableProps<TData extends RowData> {
   /** Extra controls rendered next to the search input (filters, add button, view toggle...) */
   toolbar?: React.ReactNode
   emptyMessage?: string
+  /** Render placeholder skeleton rows instead of data (e.g. while a query is pending). */
+  isLoading?: boolean
+  /** Number of skeleton rows to render when `isLoading`. */
+  skeletonRows?: number
   className?: string
 }
 
@@ -132,6 +137,8 @@ export function DataTable<TData extends RowData>({
   pageSizeOptions = [5, 10, 20, 30, 50],
   toolbar,
   emptyMessage = "No results.",
+  isLoading = false,
+  skeletonRows = 5,
   className,
 }: DataTableProps<TData>) {
   const [globalFilter, setGlobalFilter] = React.useState("")
@@ -191,7 +198,17 @@ export function DataTable<TData extends RowData>({
             ))}
           </TableHeader>
           <TableBody>
-            {rows.length ? (
+            {isLoading ? (
+              Array.from({ length: skeletonRows }).map((_, rowIndex) => (
+                <TableRow key={`skeleton-${rowIndex}`}>
+                  {Array.from({ length: columns.length }).map((__, cellIndex) => (
+                    <TableCell key={cellIndex}>
+                      <Skeleton className="h-5 w-full max-w-32" />
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : rows.length ? (
               rows.map((row) => (
                 <TableRow
                   key={row.id}

@@ -3,16 +3,17 @@
 import { useMemo, useState } from "react"
 import { useParams } from "next/navigation"
 import { ChevronLeft, ChevronRight, Download, Plus, SearchIcon } from "lucide-react"
-import { gymRoleEnumSchema, type GymRole } from "@repo/types"
+import { gymRoleEnumSchema, type GymRole, type StaffListQuery } from "@repo/types"
 
 import { Button } from "@repo/ui/components/ui/button"
 import { DataTable } from "@repo/ui/components/ui/data-table"
 import { Input } from "@repo/ui/components/ui/input"
-import { Spinner } from "@repo/ui/components/ui/spinner"
 
 import { FilterPills } from "@/features/tenant/components/filter-pills"
+import { useDebounce } from "@/hooks/use-debounce"
 
-import { useStaffDirectory } from "../hooks/use-staff"
+import { useStaffListQuery } from "../hooks/use-staff"
+import { useStaffFilters } from "../hooks/use-staff-filters"
 import { gymRoleLabel } from "../lib/roles"
 import { createStaffDirectoryColumns } from "./directory-columns"
 import { StaffCreateSheet } from "./staff-create-sheet"
@@ -21,8 +22,20 @@ const roleOptions = ["All", ...gymRoleEnumSchema.options.map(gymRoleLabel)] as c
 
 export function StaffList() {
   const tenant = useParams<{ tenant: string }>().tenant
-  const { filters, setFilters, query } = useStaffDirectory(tenant)
+  const [filters, setFilters] = useStaffFilters()
   const [sheetOpen, setSheetOpen] = useState(false)
+
+  const debouncedSearch = useDebounce(filters.search, 350)
+
+  const params: StaffListQuery = {
+    page: filters.page,
+    search: debouncedSearch || undefined,
+    role: filters.role ?? undefined,
+    status: filters.status ?? undefined,
+    sortOrder: filters.sortOrder,
+  }
+
+  const query = useStaffListQuery(tenant, params)
 
   const columns = useMemo(() => createStaffDirectoryColumns(), [])
 
@@ -74,10 +87,6 @@ export function StaffList() {
         <div className="rounded-xl border border-border bg-card p-8 text-center text-sm text-muted-foreground">
           {(query.error as Error).message}
         </div>
-      ) : query.isLoading ? (
-        <div className="flex items-center justify-center rounded-xl border border-border bg-card p-12">
-          <Spinner className="size-5" />
-        </div>
       ) : (
         <DataTable
           columns={columns}
@@ -85,6 +94,8 @@ export function StaffList() {
           getRowId={(row) => row.id}
           enableSearch={false}
           enablePagination={false}
+          isLoading={query.isLoading}
+          skeletonRows={8}
           emptyMessage="No staff found."
         />
       )}
