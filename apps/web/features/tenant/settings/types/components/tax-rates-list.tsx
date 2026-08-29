@@ -6,11 +6,11 @@ import {
   useTaxRatesQuery,
   useUpdateTaxRate,
 } from "../hooks/use-tax-rates"
-import { SimpleTypeList } from "./simple-type-list"
+import { TypeList } from "./type-list"
 
 export function TaxRatesList() {
   return (
-    <SimpleTypeList
+    <TypeList
       label="Tax Rate"
       icon="Percent"
       hasRate

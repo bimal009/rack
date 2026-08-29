@@ -14,10 +14,12 @@ export const onboardGym = async (gym: OnboardingInput, userId: string) => {
     );
   }
 
+  const { specialties, ...gymData } = result.data;
+
   return db.transaction(async (tx) => {
     const [gymRecord] = await tx
       .insert(gyms)
-      .values({ ...result.data, ownerUserId: userId })
+      .values({ ...gymData, ownerUserId: userId })
       .returning();
 
     if (!gymRecord) {
@@ -36,7 +38,7 @@ export const onboardGym = async (gym: OnboardingInput, userId: string) => {
     });
 
     await tx.insert(gymSport).values(
-      result.data.specialties.map((name) => ({ gymId: gymRecord.id, name }))
+      specialties.map((name) => ({ gymId: gymRecord.id, name }))
     );
 
     return gymRecord;

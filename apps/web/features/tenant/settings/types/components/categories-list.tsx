@@ -6,11 +6,11 @@ import {
   useDeleteCategory,
   useUpdateCategory,
 } from "../hooks/use-categories"
-import { SimpleTypeList } from "./simple-type-list"
+import { TypeList } from "./type-list"
 
 export function CategoriesList() {
   return (
-    <SimpleTypeList
+    <TypeList
       label="Category"
       icon="LayoutGrid"
       useList={useCategoriesQuery}

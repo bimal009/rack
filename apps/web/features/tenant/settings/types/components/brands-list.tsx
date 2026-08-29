@@ -6,11 +6,11 @@ import {
   useDeleteBrand,
   useUpdateBrand,
 } from "../hooks/use-brands"
-import { SimpleTypeList } from "./simple-type-list"
+import { TypeList } from "./type-list"
 
 export function BrandsList() {
   return (
-    <SimpleTypeList
+    <TypeList
       label="Brand"
       icon="Tag"
       useList={useBrandsQuery}

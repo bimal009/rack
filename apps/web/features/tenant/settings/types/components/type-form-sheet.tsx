@@ -24,7 +24,7 @@ import {
 import { FormSection, FormSheetHeader } from "@/features/tenant/components/form-section"
 
 import { fieldErrors } from "../lib/validation"
-import type { SimpleRow, SimpleTypeInput } from "./simple-type-list"
+import type { TypeRow, TypeInput } from "./type-list"
 
 const schema = z.object({
   name: z.string().trim().min(1, "Enter a name").max(120),
@@ -35,9 +35,9 @@ interface FormBodyProps {
   icon: LucideIcon
   label: string
   hasRate: boolean
-  item?: SimpleRow | null
+  item?: TypeRow | null
   pending?: boolean
-  onSubmit: (values: SimpleTypeInput) => void
+  onSubmit: (values: TypeInput) => void
   onCancel: () => void
 }
 
@@ -146,12 +146,12 @@ interface SheetProps {
   icon: LucideIcon
   label: string
   hasRate: boolean
-  item?: SimpleRow | null
+  item?: TypeRow | null
   pending?: boolean
-  onSubmit: (values: SimpleTypeInput) => void
+  onSubmit: (values: TypeInput) => void
 }
 
-export function SimpleTypeFormSheet({
+export function TypeFormSheet({
   open,
   onOpenChange,
   icon,

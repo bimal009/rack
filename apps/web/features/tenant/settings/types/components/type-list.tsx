@@ -29,24 +29,24 @@ import {
 
 import { DeleteConfirmDialog } from "@/features/tenant/components/delete-confirm-dialog"
 
-import { SimpleTypeFormSheet } from "./simple-type-form-sheet"
+import { TypeFormSheet } from "./type-form-sheet"
 
 const iconMap = { LayoutGrid, Percent, Tag } satisfies Record<string, LucideIcon>
-export type SimpleTypeIconName = keyof typeof iconMap
+export type TypeIconName = keyof typeof iconMap
 
-export interface SimpleRow {
+export interface TypeRow {
   id: string
   name: string
   rate?: number
 }
 
-export interface SimpleTypeInput {
+export interface TypeInput {
   name: string
   rate?: number
 }
 
 type QueryLike = {
-  data?: SimpleRow[]
+  data?: TypeRow[]
   isLoading: boolean
   isError: boolean
   error: unknown
@@ -60,19 +60,19 @@ type MutationLike<TVars> = {
   isPending: boolean
 }
 
-interface SimpleTypeListProps {
+interface TypeListProps {
   label: string
-  icon: SimpleTypeIconName
+  icon: TypeIconName
   hasRate?: boolean
   useList: (tenant: string) => QueryLike
-  useCreate: (tenant: string) => MutationLike<SimpleTypeInput>
+  useCreate: (tenant: string) => MutationLike<TypeInput>
   useUpdate: (
     tenant: string
-  ) => MutationLike<{ id: string; input: Partial<SimpleTypeInput> }>
+  ) => MutationLike<{ id: string; input: Partial<TypeInput> }>
   useDelete: (tenant: string) => MutationLike<string>
 }
 
-export function SimpleTypeList({
+export function TypeList({
   label,
   icon,
   hasRate = false,
@@ -80,7 +80,7 @@ export function SimpleTypeList({
   useCreate,
   useUpdate,
   useDelete,
-}: SimpleTypeListProps) {
+}: TypeListProps) {
   const Icon = iconMap[icon]
   const tenant = useParams<{ tenant: string }>().tenant
 
@@ -90,10 +90,10 @@ export function SimpleTypeList({
   const remove = useDelete(tenant)
 
   const [sheetOpen, setSheetOpen] = useState(false)
-  const [editing, setEditing] = useState<SimpleRow | null>(null)
-  const [deleting, setDeleting] = useState<SimpleRow | null>(null)
+  const [editing, setEditing] = useState<TypeRow | null>(null)
+  const [deleting, setDeleting] = useState<TypeRow | null>(null)
 
-  function handleSubmit(values: SimpleTypeInput) {
+  function handleSubmit(values: TypeInput) {
     if (editing) {
       update.mutate(
         { id: editing.id, input: values },
@@ -120,7 +120,7 @@ export function SimpleTypeList({
   }
 
   const columns = useMemo(() => {
-    const columnHelper = createDataTableColumnHelper<SimpleRow>()
+    const columnHelper = createDataTableColumnHelper<TypeRow>()
     return columnHelper.columns([
       createIndexColumn(columnHelper),
       columnHelper.accessor("name", { header: "Name" }),
@@ -191,7 +191,7 @@ export function SimpleTypeList({
         }
       />
 
-      <SimpleTypeFormSheet
+      <TypeFormSheet
         open={sheetOpen}
         onOpenChange={setSheetOpen}
         icon={Icon}
