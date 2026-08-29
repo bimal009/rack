@@ -20,9 +20,7 @@ import {
 import {
   Select,
   SelectContent,
-  SelectGroup,
   SelectItem,
-  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@repo/ui/components/ui/select"
@@ -41,7 +39,7 @@ import { FormSection, FormSheetHeader } from "@/features/tenant/components/form-
 import { fieldErrors } from "../lib/validation"
 import { classScopeOptions } from "../lib/pay-rate-data"
 import {
-  payRateEntranceMethodGroups,
+  payRateEntranceMethods,
   payRateInstructorScopes,
   payRateModes,
   payRatePolicySchema,
@@ -395,6 +393,7 @@ function PayRateFormBody({ policy, onSubmit, onCancel }: PayRateFormBodyProps) {
               Entrance method
             </FieldLabel>
             <Select
+              items={payRateEntranceMethods.map((m) => ({ value: m, label: m }))}
               value={values.entranceMethod}
               onValueChange={(value) =>
                 setValues((v) => ({
@@ -403,22 +402,14 @@ function PayRateFormBody({ policy, onSubmit, onCancel }: PayRateFormBodyProps) {
                 }))
               }
             >
-              <SelectTrigger
-                id="pay-rate-entrance-method"
-                className="w-full"
-              >
+              <SelectTrigger id="pay-rate-entrance-method" className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {payRateEntranceMethodGroups.map((group, index) => (
-                  <SelectGroup key={group.label ?? `group-${index}`}>
-                    {group.label && <SelectLabel>{group.label}</SelectLabel>}
-                    {group.options.map((option) => (
-                      <SelectItem key={option} value={option}>
-                        {option}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
+                {payRateEntranceMethods.map((method) => (
+                  <SelectItem key={method} value={method}>
+                    {method}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>

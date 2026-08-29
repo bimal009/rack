@@ -19,15 +19,6 @@ export const payRateEntranceMethods = [
 ] as const
 export type PayRateEntranceMethod = (typeof payRateEntranceMethods)[number]
 
-export const payRateEntranceMethodGroups: {
-  label: string | null
-  options: readonly PayRateEntranceMethod[]
-}[] = [
-  { label: null, options: ["All entrance methods", "Direct payment"] },
-  { label: "Memberships", options: ["Any membership"] },
-  { label: "External programs", options: ["Any external program"] },
-]
-
 export const payRatePolicySchema = z.object({
   mode: z.enum(payRateModes),
   policyName: z.string().trim().min(1, "Enter a policy name"),
