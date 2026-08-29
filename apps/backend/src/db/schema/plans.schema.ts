@@ -1,8 +1,8 @@
-import { boolean, integer, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { boolean, integer, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
 
 export const plan = pgTable("plans", {
-  id: text("id").primaryKey(),
+  id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
 
   monthlyPrice: integer("monthly_price").notNull(),

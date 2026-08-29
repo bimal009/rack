@@ -18,7 +18,7 @@ export const gyms = pgTable("gyms", {
     .references(() => user.id, { onDelete: "cascade" }),
 
   businessType: businessTypeEnum("business_type").notNull(),
-    specialties: jsonb("specialties").notNull().default([]),
+  specialties: jsonb("specialties").notNull().default([]),
 
   slug: varchar("slug", { length: 255 }).notNull().unique("gyms_slug_unique"),
   businessName: varchar("business_name", { length: 255 }).notNull(),
@@ -32,4 +32,3 @@ export const gyms = pgTable("gyms", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
-

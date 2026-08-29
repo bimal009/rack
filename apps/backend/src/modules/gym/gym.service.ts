@@ -1,7 +1,7 @@
 import { OnboardingInput, onboardingSchema, UpdateGymInput, updateGymSchema } from "@repo/types";
 import { eq } from "drizzle-orm";
-import { NotFoundError, ValidationError } from "../../lib/errors";
-import { gyms, user } from "../../db/schema";
+import { InternalServerError, NotFoundError, ValidationError } from "../../lib/errors";
+import { gyms, staff, user } from "../../db/schema";
 import { db } from "../../db";
 
 export const onboardGym = async (gym: OnboardingInput, userId: string) => {
@@ -20,10 +20,20 @@ export const onboardGym = async (gym: OnboardingInput, userId: string) => {
       .values({ ...result.data, ownerUserId: userId })
       .returning();
 
+    if (!gymRecord) {
+      throw new InternalServerError("Failed to create gym");
+    }
+
     await tx
       .update(user)
-      .set({ role: "owner", onboarded: true })
+      .set({ onboarded: true, isClaimed: true })
       .where(eq(user.id, userId));
+
+    await tx.insert(staff).values({
+      gymId: gymRecord.id,
+      role: "admin",
+      userId,
+    });
 
     return gymRecord;
   });

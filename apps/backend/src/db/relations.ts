@@ -37,23 +37,32 @@ export const relations = defineRelations(schema, (r) => ({
     }),
     staff: r.many.staff(),
     members: r.many.member(),
-    rolePermissions: r.many.rolePermission(),
+    rolePermissionOverrides: r.many.gymRolePermissionOverride(),
     memberMemberships: r.many.memberMembership(),
     subscriptions: r.many.gymSubscription(),
   },
 
   permission: {
     rolePermissions: r.many.rolePermission(),
+    rolePermissionOverrides: r.many.gymRolePermissionOverride(),
   },
 
   rolePermission: {
+    permission: r.one.permission({
+      from: r.rolePermission.permissionId,
+      to: r.permission.id,
+      optional: false,
+    }),
+  },
+
+  gymRolePermissionOverride: {
     gym: r.one.gyms({
-      from: r.rolePermission.gymId,
+      from: r.gymRolePermissionOverride.gymId,
       to: r.gyms.id,
       optional: false,
     }),
     permission: r.one.permission({
-      from: r.rolePermission.permissionId,
+      from: r.gymRolePermissionOverride.permissionId,
       to: r.permission.id,
       optional: false,
     }),

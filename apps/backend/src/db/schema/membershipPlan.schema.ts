@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, integer, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, integer, pgEnum, uuid } from "drizzle-orm/pg-core";
 import { gyms } from "./gym.schema";
 import { member } from "./member.schema";
 
@@ -10,9 +10,9 @@ export const memberStatusEnum = pgEnum("member_status", [
 ]);
 
 export const memberMembership = pgTable("member_memberships", {
-  id: text("id").primaryKey(),
-  memberId: text("member_id").notNull().references(() => member.id),
-  gymId: text("gym_id").notNull().references(() => gyms.id),
+  id: uuid("id").primaryKey().defaultRandom(),
+  memberId: uuid("member_id").notNull().references(() => member.id),
+  gymId: uuid("gym_id").notNull().references(() => gyms.id),
 
   packageName: text("package_name").notNull(),
   price: integer("price").notNull(),

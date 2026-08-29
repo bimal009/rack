@@ -1,11 +1,11 @@
-import { pgTable, text, timestamp, pgEnum, unique } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, pgEnum, unique, uuid } from "drizzle-orm/pg-core";
 
 export const actionEnum = pgEnum("action", ["create", "read", "update", "delete"]);
 
 export const permission = pgTable(
   "permissions",
   {
-    id: text("id").primaryKey(),
+    id: uuid("id").primaryKey().defaultRandom(),
     resource: text("resource").notNull(),
     action: actionEnum("action").notNull(),
     createdAt: timestamp("created_at").notNull().defaultNow(),

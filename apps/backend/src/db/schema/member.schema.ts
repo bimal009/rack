@@ -1,12 +1,12 @@
-import { pgTable, text, timestamp, pgEnum, integer } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, pgEnum, uuid } from "drizzle-orm/pg-core";
 import { gyms } from "./gym.schema";
 import { user } from "./user.schema";
 
 export const genderEnum = pgEnum("gender", ["male", "female", "other"]);
 
 export const member = pgTable("members", {
-  id: text("id").primaryKey(),
-  gymId: text("gym_id").notNull().references(() => gyms.id),
+  id: uuid("id").primaryKey().defaultRandom(),
+  gymId: uuid("gym_id").notNull().references(() => gyms.id),
   userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }), 
   gender: genderEnum("gender"),
   dob: timestamp("dob"),
