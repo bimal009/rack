@@ -10,7 +10,7 @@ export const plan = pgTable("plans", {
   discountPercent: integer("discount_percent").notNull().default(0),
 
   maxMembers: integer("max_members"),
-  durationDays: integer("duration_days").notNull(),
+  durationDays: integer("duration_days"),
   trialDays: integer("trial_days").notNull().default(0),
   smsEnabled: boolean("sms_enabled").notNull().default(false),
   emailEnabled: boolean("email_enabled").notNull().default(false),
