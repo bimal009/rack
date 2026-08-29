@@ -1,6 +1,6 @@
 import { pgTable, text, timestamp, boolean, pgEnum } from "drizzle-orm/pg-core";
 
-export const roleEnum = pgEnum("role", ["owner", "member", "user", "admin"]);
+export const roleEnum = pgEnum("role", ["user", "admin"]);
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -10,6 +10,7 @@ export const user = pgTable("user", {
   image: text("image"),
   role: roleEnum("role").notNull().default("user"),
   onboarded: boolean("onboarded").notNull().default(false),
+  isClaimed: boolean("is_claimed").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

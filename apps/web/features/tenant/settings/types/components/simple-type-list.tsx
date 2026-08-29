@@ -1,7 +1,15 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { MoreHorizontal, PenSquare, Plus, Trash2 } from "lucide-react"
+import {
+  LayoutGrid,
+  MoreHorizontal,
+  PenSquare,
+  Percent,
+  Plus,
+  Tag,
+  Trash2,
+} from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import { toast } from "sonner"
 
@@ -24,8 +32,16 @@ import { generateTypeId } from "../lib/data"
 import type { SimpleType, SimpleTypeInput } from "../lib/schema"
 import { SimpleTypeFormSheet } from "./simple-type-form-sheet"
 
+const iconMap = {
+  LayoutGrid,
+  Percent,
+  Tag,
+} satisfies Record<string, LucideIcon>
+
+export type SimpleTypeIconName = keyof typeof iconMap
+
 interface SimpleTypeListProps {
-  icon: LucideIcon
+  icon: SimpleTypeIconName
   label: string
   idPrefix: string
   hasSlug: boolean
@@ -41,6 +57,7 @@ export function SimpleTypeList({
   hasRate,
   initialItems,
 }: SimpleTypeListProps) {
+  const Icon = iconMap[icon]
   const [items, setItems] = useState<SimpleType[]>(initialItems)
   const [sheetOpen, setSheetOpen] = useState(false)
   const [editing, setEditing] = useState<SimpleType | null>(null)
@@ -148,7 +165,7 @@ export function SimpleTypeList({
       <SimpleTypeFormSheet
         open={sheetOpen}
         onOpenChange={setSheetOpen}
-        icon={icon}
+        icon={Icon}
         label={label}
         hasSlug={hasSlug}
         hasRate={hasRate}
