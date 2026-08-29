@@ -35,6 +35,7 @@ export const onboardGym = async (gym: OnboardingInput, userId: string) => {
       userId,
     });
 
+
     return gymRecord;
   });
 };
@@ -72,3 +73,13 @@ export const updateGym = async (input: UpdateGymInput, userId: string) => {
 
   return gymRecord;
 };
+export const getGymBySlug = async (slug: string) => {
+  const [gym] = await db
+    .select()
+    .from(gyms)
+    .where(eq(gyms.slug, slug))
+    .limit(1);
+
+  return gym;
+};
+

@@ -9,6 +9,7 @@ import { logger } from "./lib/logger";
 import { handleError } from "./lib/errors";
 import gymRoutes from "./modules/gym/gym.routes";
 import plansRoutes from "./modules/plans/plans.routes";
+import staffRoutes from "./modules/staff/staff.routes";
 
 const isDev = process.env.NODE_ENV === "development";
 
@@ -40,6 +41,7 @@ app.all("/api/v1/auth/*splat", toNodeHandler(auth));
 app.use(express.json({ limit: "10kb" }));
 
 app.use("/api/v1/gyms", gymRoutes);
+app.use("/api/v1/gyms/:slug/staff", staffRoutes);
 app.use("/api/v1/plans", plansRoutes);
 
 app.get("/health", (_req, res) => {
