@@ -40,7 +40,6 @@ export async function createStaffWithUser(data: NewStaffWithUser,gymId:string) {
         userId: newUser.id,
         role: input.role,
         isActive: input.isActive,
-        allowAdminAccess: input.allowAdminAccess,
         phone: input.phone,
         dateOfBirth: input.dateOfBirth,
         gender: input.gender,
@@ -53,7 +52,6 @@ export async function createStaffWithUser(data: NewStaffWithUser,gymId:string) {
         canBeBooked: input.canBeBooked,
         visibility: input.visibility,
         maxConcurrentBookings: input.maxConcurrentBookings,
-        activeInstructor: input.activeInstructor,
       })
       .returning();
 
@@ -82,7 +80,6 @@ export const getAll = async (gymId: string, query: StaffListQuery) => {
       userId: staff.userId,
       role: staff.role,
       isActive: staff.isActive,
-      allowAdminAccess: staff.allowAdminAccess,
       phone: staff.phone,
       dateOfBirth: staff.dateOfBirth,
       gender: staff.gender,
@@ -95,7 +92,6 @@ export const getAll = async (gymId: string, query: StaffListQuery) => {
       canBeBooked: staff.canBeBooked,
       visibility: staff.visibility,
       maxConcurrentBookings: staff.maxConcurrentBookings,
-      activeInstructor: staff.activeInstructor,
       createdAt: staff.createdAt,
       updatedAt: staff.updatedAt,
       user: {

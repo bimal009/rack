@@ -27,7 +27,6 @@ export const staffSchema = z.object({
   role: gymRoleEnumSchema,
   isActive: z.boolean().default(true),
 
-  allowAdminAccess: z.boolean().default(false),
   phone: z.string().nullable(),
   dateOfBirth: z.string().nullable(),
   gender: staffGenderEnumSchema.nullable(),
@@ -35,12 +34,11 @@ export const staffSchema = z.object({
   payType: payTypeEnumSchema.nullable(),
   payRate: z.number().nullable(),
   instructorTypeId: z.string().uuid().nullable(),
-  experience: z.string().nullable(),
+  experience: z.number().int().nullable(),
   certifications: z.string().nullable(),
   canBeBooked: z.boolean().default(false),
   visibility: staffVisibilityEnumSchema.default("Public"),
   maxConcurrentBookings: z.number().int().positive().default(1),
-  activeInstructor: z.boolean().default(true),
 
   createdAt: z.date(),
   updatedAt: z.date(),
@@ -75,7 +73,6 @@ export const staffWithUserInsertSchema = z.object({
 
   role: gymRoleEnumSchema,
   isActive: z.boolean().default(true),
-  allowAdminAccess: z.boolean().default(false),
 
   phone: z
     .string()
@@ -94,12 +91,14 @@ export const staffWithUserInsertSchema = z.object({
     .union([z.string().uuid(), z.literal(""), z.null()])
     .optional()
     .transform((value) => (value ? value : null)),
-  experience: optionalText,
+  experience: z
+    .union([z.number().int().nonnegative(), z.null()])
+    .optional()
+    .transform((value) => (value == null ? null : value)),
   certifications: optionalText,
   canBeBooked: z.boolean().default(false),
   visibility: staffVisibilityEnumSchema.default("Public"),
   maxConcurrentBookings: z.number().int().positive().default(1),
-  activeInstructor: z.boolean().default(true),
 });
 
 export type NewStaffWithUser = z.infer<typeof staffWithUserInsertSchema>;

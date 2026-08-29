@@ -32,7 +32,6 @@ export const staff = pgTable("staff", {
   role: gymRoleEnum("role").notNull(),
   isActive: boolean("is_active").notNull().default(true),
 
-  allowAdminAccess: boolean("allow_admin_access").notNull().default(false),
   phone: varchar("phone", { length: 20 }),
   dateOfBirth: date("date_of_birth", { mode: "string" }),
   gender: staffGenderEnum("gender"),
@@ -42,12 +41,11 @@ export const staff = pgTable("staff", {
   instructorTypeId: uuid("instructor_type_id").references(() => instructorType.id, {
     onDelete: "set null",
   }),
-  experience: text("experience"),
+  experience: integer("experience"),
   certifications: text("certifications"),
   canBeBooked: boolean("can_be_booked").notNull().default(false),
   visibility: staffVisibilityEnum("visibility").notNull().default("Public"),
   maxConcurrentBookings: integer("max_concurrent_bookings").notNull().default(1),
-  activeInstructor: boolean("active_instructor").notNull().default(true),
 
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),

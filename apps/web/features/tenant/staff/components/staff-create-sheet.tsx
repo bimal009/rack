@@ -69,7 +69,6 @@ const GYM_ROLES = ["admin", "manager", "instructor", "frontdesk"] as const
 interface StaffFormValues {
   image: string
   isActive: boolean
-  allowAdminAccess: boolean
   firstName: string
   lastName: string
   email: string
@@ -86,13 +85,11 @@ interface StaffFormValues {
   canBeBooked: boolean
   visibility: StaffVisibility
   maxConcurrentBookings: string
-  activeInstructor: boolean
 }
 
 const emptyForm: StaffFormValues = {
   image: "",
   isActive: true,
-  allowAdminAccess: false,
   firstName: "",
   lastName: "",
   email: "",
@@ -109,7 +106,6 @@ const emptyForm: StaffFormValues = {
   canBeBooked: false,
   visibility: "Public",
   maxConcurrentBookings: "1",
-  activeInstructor: true,
 }
 
 interface StaffCreateSheetProps {
@@ -163,6 +159,7 @@ function StaffCreateForm({
       payType: values.payType || undefined,
       payRate: Number(values.payRate),
       instructorTypeId: values.instructorTypeId || undefined,
+      experience: values.experience ? Number(values.experience) : null,
       maxConcurrentBookings: Number(values.maxConcurrentBookings),
     })
 
@@ -196,8 +193,8 @@ function StaffCreateForm({
       <SheetBody className="flex flex-col gap-7">
         <FormSection
           icon={ShieldCheck}
-          title="Portal access"
-          description="Controls whether this person can sign in."
+          title="Status"
+          description="Inactive members stay on record but are hidden from most views."
         >
           <Field orientation="horizontal">
             <Switch
@@ -205,28 +202,7 @@ function StaffCreateForm({
               checked={values.isActive}
               onCheckedChange={(checked) => set("isActive", checked)}
             />
-            <div>
-              <FieldLabel htmlFor="staff-active">Active staff member</FieldLabel>
-              <FieldDescription>
-                Inactive members stay on record but are hidden from most views.
-              </FieldDescription>
-            </div>
-          </Field>
-
-          <Field orientation="horizontal">
-            <Switch
-              id="staff-admin-access"
-              checked={values.allowAdminAccess}
-              onCheckedChange={(checked) => set("allowAdminAccess", checked)}
-            />
-            <div>
-              <FieldLabel htmlFor="staff-admin-access">
-                Allow admin portal access
-              </FieldLabel>
-              <FieldDescription>
-                Off keeps them as a bookable resource only, with no login.
-              </FieldDescription>
-            </div>
+            <FieldLabel htmlFor="staff-active">Active staff member</FieldLabel>
           </Field>
         </FormSection>
 
@@ -249,6 +225,7 @@ function StaffCreateForm({
               </FieldLabel>
               <Input
                 id="staff-first-name"
+                placeholder="Jane"
                 value={values.firstName}
                 aria-invalid={Boolean(errors.firstName)}
                 onChange={(e) => set("firstName", e.target.value)}
@@ -262,6 +239,7 @@ function StaffCreateForm({
               </FieldLabel>
               <Input
                 id="staff-last-name"
+                placeholder="Doe"
                 value={values.lastName}
                 aria-invalid={Boolean(errors.lastName)}
                 onChange={(e) => set("lastName", e.target.value)}
@@ -278,6 +256,7 @@ function StaffCreateForm({
               <Input
                 id="staff-email"
                 type="email"
+                placeholder="jane@example.com"
                 value={values.email}
                 aria-invalid={Boolean(errors.email)}
                 onChange={(e) => set("email", e.target.value)}
@@ -480,14 +459,22 @@ function StaffCreateForm({
                 )}
               </Field>
 
-              <Field>
-                <FieldLabel htmlFor="staff-experience">Experience</FieldLabel>
+              <Field data-invalid={Boolean(errors.experience)}>
+                <FieldLabel htmlFor="staff-experience">
+                  Experience (years)
+                </FieldLabel>
                 <Input
                   id="staff-experience"
-                  placeholder="5 years"
+                  type="number"
+                  inputMode="numeric"
+                  min="0"
+                  step="1"
+                  placeholder="5"
                   value={values.experience}
+                  aria-invalid={Boolean(errors.experience)}
                   onChange={(e) => set("experience", e.target.value)}
                 />
+                <FieldError>{errors.experience}</FieldError>
               </Field>
             </div>
 
@@ -561,23 +548,6 @@ function StaffCreateForm({
                 <FieldError>{errors.maxConcurrentBookings}</FieldError>
               </Field>
             </div>
-
-            <Field orientation="horizontal">
-              <Switch
-                id="staff-active-instructor"
-                checked={values.activeInstructor}
-                onCheckedChange={(checked) => set("activeInstructor", checked)}
-              />
-              <div>
-                <FieldLabel htmlFor="staff-active-instructor">
-                  Active instructor
-                </FieldLabel>
-                <FieldDescription>
-                  Inactive instructors stay on past bookings but cannot be
-                  assigned.
-                </FieldDescription>
-              </div>
-            </Field>
           </FormSection>
         )}
       </SheetBody>
