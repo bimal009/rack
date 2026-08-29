@@ -390,7 +390,43 @@ function PayRateFormBody({ policy, onSubmit, onCancel }: PayRateFormBodyProps) {
             </FieldDescription>
           </Field>
 
-    
+          <Field>
+            <FieldLabel htmlFor="pay-rate-entrance-method">
+              Entrance method
+            </FieldLabel>
+            <Select
+              value={values.entranceMethod}
+              onValueChange={(value) =>
+                setValues((v) => ({
+                  ...v,
+                  entranceMethod: value as PayRateEntranceMethod,
+                }))
+              }
+            >
+              <SelectTrigger
+                id="pay-rate-entrance-method"
+                className="w-full"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {payRateEntranceMethodGroups.map((group, index) => (
+                  <SelectGroup key={group.label ?? `group-${index}`}>
+                    {group.label && <SelectLabel>{group.label}</SelectLabel>}
+                    {group.options.map((option) => (
+                      <SelectItem key={option} value={option}>
+                        {option}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                ))}
+              </SelectContent>
+            </Select>
+            <FieldDescription>
+              How the member paid for or accessed the session, not how they
+              checked in at the door.
+            </FieldDescription>
+          </Field>
         </FormSection>
       </SheetBody>
 
