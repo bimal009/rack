@@ -1,8 +1,10 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import { useParams } from "next/navigation"
 import { MoreHorizontal, PenSquare, Plus, Trash2 } from "lucide-react"
 import { toast } from "sonner"
+import type { ClassType, NewClassType } from "@repo/types"
 
 import { Badge } from "@repo/ui/components/ui/badge"
 import { Button } from "@repo/ui/components/ui/button"
@@ -20,8 +22,12 @@ import {
 
 import { DeleteConfirmDialog } from "@/features/tenant/components/delete-confirm-dialog"
 
-import { generateTypeId, initialClassTypes } from "../lib/data"
-import type { ClassType, ClassTypeInput } from "../lib/schema"
+import {
+  useClassTypesQuery,
+  useCreateClassType,
+  useDeleteClassType,
+  useUpdateClassType,
+} from "../hooks/use-class-types"
 import { ClassTypeFormSheet } from "./class-type-form-sheet"
 
 const currency = new Intl.NumberFormat("en-US", {
@@ -31,40 +37,39 @@ const currency = new Intl.NumberFormat("en-US", {
 })
 
 export function ClassTypesList() {
-  const [classes, setClasses] = useState<ClassType[]>(initialClassTypes)
+  const tenant = useParams<{ tenant: string }>().tenant
+  const query = useClassTypesQuery(tenant)
+  const create = useCreateClassType(tenant)
+  const update = useUpdateClassType(tenant)
+  const remove = useDeleteClassType(tenant)
+
   const [sheetOpen, setSheetOpen] = useState(false)
   const [editing, setEditing] = useState<ClassType | null>(null)
   const [deleting, setDeleting] = useState<ClassType | null>(null)
 
-  function handleAdd() {
-    setEditing(null)
-    setSheetOpen(true)
-  }
-
-  function handleEdit(cls: ClassType) {
-    setEditing(cls)
-    setSheetOpen(true)
-  }
-
-  function handleSubmit(values: ClassTypeInput) {
+  function handleSubmit(values: NewClassType) {
     if (editing) {
-      setClasses((prev) =>
-        prev.map((c) => (c.id === editing.id ? { ...c, ...values } : c))
+      update.mutate(
+        { id: editing.id, input: values },
+        {
+          onSuccess: () => toast.success(`${values.name} updated`),
+          onError: (error) => toast.error(error.message),
+        }
       )
-      toast.success(`${values.name} updated`)
     } else {
-      setClasses((prev) => [
-        { ...values, id: generateTypeId("class") },
-        ...prev,
-      ])
-      toast.success(`${values.name} added`)
+      create.mutate(values, {
+        onSuccess: () => toast.success(`${values.name} added`),
+        onError: (error) => toast.error(error.message),
+      })
     }
   }
 
   function handleDelete() {
     if (!deleting) return
-    setClasses((prev) => prev.filter((c) => c.id !== deleting.id))
-    toast.success(`${deleting.name} removed`)
+    remove.mutate(deleting.id, {
+      onSuccess: () => toast.success(`${deleting.name} removed`),
+      onError: (error) => toast.error(error.message),
+    })
     setDeleting(null)
   }
 
@@ -73,13 +78,6 @@ export function ClassTypesList() {
     return columnHelper.columns([
       createIndexColumn(columnHelper),
       columnHelper.accessor("name", { header: "Name" }),
-      columnHelper.accessor("slug", {
-        header: "Slug",
-        enableGlobalFilter: false,
-        cell: ({ getValue }) => (
-          <span className="text-muted-foreground">{getValue()}</span>
-        ),
-      }),
       columnHelper.accessor("availableForBooking", {
         header: "Bookable",
         enableGlobalFilter: false,
@@ -88,26 +86,18 @@ export function ClassTypesList() {
             variant={getValue() ? "default" : "secondary"}
             className="rounded-full"
           >
-            {getValue() ? "Active" : "Inactive"}
+            {getValue() ? "Yes" : "No"}
           </Badge>
         ),
       }),
       columnHelper.accessor("pricePerClass", {
-        header: "Price/Class",
+        header: "Price / class",
         enableGlobalFilter: false,
         cell: ({ getValue }) => currency.format(getValue()),
       }),
-      columnHelper.accessor("sports", {
-        header: "Sport",
+      columnHelper.accessor("maxParticipants", {
+        header: "Max Participants",
         enableGlobalFilter: false,
-        cell: ({ getValue }) =>
-          getValue() ? (
-            <Badge variant="outline" className="rounded-full font-normal">
-              {getValue()}
-            </Badge>
-          ) : (
-            <span className="text-muted-foreground">—</span>
-          ),
       }),
       columnHelper.display({
         id: "actions",
@@ -117,7 +107,12 @@ export function ClassTypesList() {
               <MoreHorizontal className="size-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => handleEdit(row.original)}>
+              <DropdownMenuItem
+                onClick={() => {
+                  setEditing(row.original)
+                  setSheetOpen(true)
+                }}
+              >
                 <PenSquare />
                 Edit
               </DropdownMenuItem>
@@ -139,11 +134,22 @@ export function ClassTypesList() {
     <div className="flex flex-col gap-4">
       <DataTable
         columns={columns}
-        data={classes}
+        data={query.data ?? []}
         getRowId={(row) => row.id}
+        isLoading={query.isLoading}
         searchPlaceholder="Search class types..."
+        emptyMessage={
+          query.isError
+            ? (query.error as Error).message
+            : "No class types yet."
+        }
         toolbar={
-          <Button onClick={handleAdd}>
+          <Button
+            onClick={() => {
+              setEditing(null)
+              setSheetOpen(true)
+            }}
+          >
             <Plus className="size-4" />
             Add Class Type
           </Button>
@@ -153,7 +159,8 @@ export function ClassTypesList() {
       <ClassTypeFormSheet
         open={sheetOpen}
         onOpenChange={setSheetOpen}
-        cls={editing}
+        type={editing}
+        pending={create.isPending || update.isPending}
         onSubmit={handleSubmit}
       />
 

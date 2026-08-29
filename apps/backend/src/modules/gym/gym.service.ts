@@ -1,7 +1,7 @@
 import { OnboardingInput, onboardingSchema, UpdateGymInput, updateGymSchema } from "@repo/types";
 import { eq } from "drizzle-orm";
 import { InternalServerError, NotFoundError, ValidationError } from "../../lib/errors";
-import { gyms, staff, user } from "../../db/schema";
+import { gymSport, gyms, staff, user } from "../../db/schema";
 import { db } from "../../db";
 
 export const onboardGym = async (gym: OnboardingInput, userId: string) => {
@@ -35,6 +35,9 @@ export const onboardGym = async (gym: OnboardingInput, userId: string) => {
       userId,
     });
 
+    await tx.insert(gymSport).values(
+      result.data.specialties.map((name) => ({ gymId: gymRecord.id, name }))
+    );
 
     return gymRecord;
   });

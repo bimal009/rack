@@ -2,14 +2,10 @@
 
 import { useState, type FormEvent } from "react"
 import type { LucideIcon } from "lucide-react"
+import { z } from "zod"
 
 import { Button } from "@repo/ui/components/ui/button"
-import {
-  Field,
-  FieldDescription,
-  FieldError,
-  FieldLabel,
-} from "@repo/ui/components/ui/field"
+import { Field, FieldError, FieldLabel } from "@repo/ui/components/ui/field"
 import { Input } from "@repo/ui/components/ui/input"
 import {
   InputGroup,
@@ -28,63 +24,45 @@ import {
 import { FormSection, FormSheetHeader } from "@/features/tenant/components/form-section"
 
 import { fieldErrors } from "../lib/validation"
-import { simpleTypeSchema, type SimpleType, type SimpleTypeInput } from "../lib/schema"
+import type { SimpleRow, SimpleTypeInput } from "./simple-type-list"
 
-function slugify(value: string) {
-  return value
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-}
+const schema = z.object({
+  name: z.string().trim().min(1, "Enter a name").max(120),
+  rate: z.number().min(0).max(100).optional(),
+})
 
-interface SimpleTypeFormValues {
-  name: string
-  slug: string
-  rate: string
-}
-
-function toFormValues(item?: SimpleType | null): SimpleTypeFormValues {
-  return {
-    name: item?.name ?? "",
-    slug: item?.slug ?? "",
-    rate: item?.rate !== undefined ? String(item.rate) : "",
-  }
-}
-
-interface SimpleTypeFormBodyProps {
+interface FormBodyProps {
   icon: LucideIcon
   label: string
-  hasSlug: boolean
   hasRate: boolean
-  item?: SimpleType | null
+  item?: SimpleRow | null
+  pending?: boolean
   onSubmit: (values: SimpleTypeInput) => void
   onCancel: () => void
 }
 
-function SimpleTypeFormBody({
+function FormBody({
   icon,
   label,
-  hasSlug,
   hasRate,
   item,
+  pending,
   onSubmit,
   onCancel,
-}: SimpleTypeFormBodyProps) {
-  const [values, setValues] = useState<SimpleTypeFormValues>(() =>
-    toFormValues(item)
+}: FormBodyProps) {
+  const [name, setName] = useState(item?.name ?? "")
+  const [rate, setRate] = useState(
+    item?.rate !== undefined ? String(item.rate) : ""
   )
   const [errors, setErrors] = useState<Record<string, string>>({})
-  const [slugTouched, setSlugTouched] = useState(Boolean(item))
   const isEdit = Boolean(item)
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault()
 
-    const result = simpleTypeSchema.safeParse({
-      name: values.name,
-      slug: hasSlug ? values.slug : undefined,
-      rate: hasRate ? Number(values.rate) : undefined,
+    const result = schema.safeParse({
+      name,
+      rate: hasRate ? Number(rate) : undefined,
     })
 
     if (!result.success) {
@@ -118,38 +96,12 @@ function SimpleTypeFormBody({
             </FieldLabel>
             <Input
               id="simple-type-name"
-              value={values.name}
+              value={name}
               aria-invalid={Boolean(errors.name)}
-              onChange={(e) => {
-                const name = e.target.value
-                setValues((v) => ({
-                  ...v,
-                  name,
-                  slug: slugTouched ? v.slug : slugify(name),
-                }))
-              }}
+              onChange={(e) => setName(e.target.value)}
             />
             <FieldError>{errors.name}</FieldError>
           </Field>
-
-          {hasSlug && (
-            <Field data-invalid={Boolean(errors.slug)}>
-              <FieldLabel htmlFor="simple-type-slug">Slug</FieldLabel>
-              <Input
-                id="simple-type-slug"
-                value={values.slug}
-                aria-invalid={Boolean(errors.slug)}
-                onChange={(e) => {
-                  setSlugTouched(true)
-                  setValues((v) => ({ ...v, slug: e.target.value }))
-                }}
-              />
-              <FieldDescription>
-                Lowercase letters, numbers, and hyphens only.
-              </FieldDescription>
-              <FieldError>{errors.slug}</FieldError>
-            </Field>
-          )}
 
           {hasRate && (
             <Field data-invalid={Boolean(errors.rate)}>
@@ -162,11 +114,9 @@ function SimpleTypeFormBody({
                   min="0"
                   max="100"
                   step="0.1"
-                  value={values.rate}
+                  value={rate}
                   aria-invalid={Boolean(errors.rate)}
-                  onChange={(e) =>
-                    setValues((v) => ({ ...v, rate: e.target.value }))
-                  }
+                  onChange={(e) => setRate(e.target.value)}
                 />
                 <InputGroupAddon align="inline-end">
                   <InputGroupText>%</InputGroupText>
@@ -182,20 +132,22 @@ function SimpleTypeFormBody({
         <Button type="button" variant="outline" onClick={onCancel}>
           Cancel
         </Button>
-        <Button type="submit">{isEdit ? "Save changes" : `Add ${label.toLowerCase()}`}</Button>
+        <Button type="submit" disabled={pending}>
+          {isEdit ? "Save changes" : `Add ${label.toLowerCase()}`}
+        </Button>
       </SheetFooter>
     </form>
   )
 }
 
-interface SimpleTypeFormSheetProps {
+interface SheetProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   icon: LucideIcon
   label: string
-  hasSlug: boolean
   hasRate: boolean
-  item?: SimpleType | null
+  item?: SimpleRow | null
+  pending?: boolean
   onSubmit: (values: SimpleTypeInput) => void
 }
 
@@ -204,22 +156,22 @@ export function SimpleTypeFormSheet({
   onOpenChange,
   icon,
   label,
-  hasSlug,
   hasRate,
   item,
+  pending,
   onSubmit,
-}: SimpleTypeFormSheetProps) {
+}: SheetProps) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="sm:max-w-md">
         {open && (
-          <SimpleTypeFormBody
+          <FormBody
             key={item?.id ?? "new"}
             icon={icon}
             label={label}
-            hasSlug={hasSlug}
             hasRate={hasRate}
             item={item}
+            pending={pending}
             onSubmit={(values) => {
               onSubmit(values)
               onOpenChange(false)

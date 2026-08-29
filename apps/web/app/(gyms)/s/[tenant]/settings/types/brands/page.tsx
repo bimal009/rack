@@ -1,21 +1,11 @@
 import type { Metadata } from "next"
 
-import { initialBrands } from "@/features/tenant/settings/types/lib/data"
-import { SimpleTypeList } from "@/features/tenant/settings/types/components/simple-type-list"
+import { BrandsList } from "@/features/tenant/settings/types/components/brands-list"
 
 export const metadata: Metadata = {
   title: "Brands",
 }
 
 export default function Page() {
-  return (
-    <SimpleTypeList
-      icon="Tag"
-      label="Brand"
-      idPrefix="brand"
-      hasSlug
-      hasRate={false}
-      initialItems={initialBrands}
-    />
-  )
+  return <BrandsList />
 }

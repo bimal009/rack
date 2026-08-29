@@ -8,7 +8,7 @@ import { DEFAULT_OPENING_HOURS, onboardingSchema, type OnboardingInput } from "@
 import { AuthHeader } from "@/features/auth/components/auth-header"
 import { StepNav } from "@/features/auth/onboarding/step-nav"
 import { ClubTypeStep } from "@/features/auth/onboarding/steps/club-type-step"
-import { SpecialtiesStep } from "@/features/auth/onboarding/steps/specialties-step"
+import { SportsStep } from "@/features/auth/onboarding/steps/sports-step"
 import { BusinessDetailsStep } from "@/features/auth/onboarding/steps/business-details-step"
 import { OpeningHoursStep } from "@/features/auth/onboarding/steps/opening-hours-step"
 import { useOnboardingMutation } from "@/features/auth/onboarding/hooks/useOnboarding"
@@ -153,7 +153,7 @@ export function OnboardingWizard() {
             />
           )}
           {step === 1 && (
-            <SpecialtiesStep
+            <SportsStep
               businessTypeLabel={selectedType?.title}
               value={data.specialties}
               error={errors.specialties}

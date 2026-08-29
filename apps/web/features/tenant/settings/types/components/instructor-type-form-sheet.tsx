@@ -2,6 +2,8 @@
 
 import { useState, type FormEvent } from "react"
 import { IdCard } from "lucide-react"
+import type { InstructorTypeRecord, NewInstructorType } from "@repo/types"
+import { instructorTypeInsertSchema } from "@repo/types"
 
 import { Button } from "@repo/ui/components/ui/button"
 import {
@@ -23,69 +25,39 @@ import { Textarea } from "@repo/ui/components/ui/textarea"
 import { FormSection, FormSheetHeader } from "@/features/tenant/components/form-section"
 
 import { fieldErrors } from "../lib/validation"
-import {
-  instructorTypeSchema,
-  type InstructorTypeInput,
-  type InstructorTypeRecord,
-} from "../lib/schema"
 
-interface InstructorTypeFormValues {
+interface FormValues {
   name: string
-  slug: string
   description: string
   maxConcurrentBookings: string
 }
 
-function slugify(value: string) {
-  return value
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-}
-
-function toFormValues(
-  type?: InstructorTypeRecord | null
-): InstructorTypeFormValues {
-  if (!type) {
-    return {
-      name: "",
-      slug: "",
-      description: "",
-      maxConcurrentBookings: "1",
-    }
-  }
+function toFormValues(type?: InstructorTypeRecord | null): FormValues {
   return {
-    name: type.name,
-    slug: type.slug,
-    description: type.description ?? "",
-    maxConcurrentBookings: String(type.maxConcurrentBookings),
+    name: type?.name ?? "",
+    description: type?.description ?? "",
+    maxConcurrentBookings: String(type?.maxConcurrentBookings ?? 1),
   }
 }
 
-interface InstructorTypeFormBodyProps {
+interface FormBodyProps {
   type?: InstructorTypeRecord | null
-  onSubmit: (values: InstructorTypeInput) => void
+  pending?: boolean
+  onSubmit: (values: NewInstructorType) => void
   onCancel: () => void
 }
 
-function InstructorTypeFormBody({
-  type,
-  onSubmit,
-  onCancel,
-}: InstructorTypeFormBodyProps) {
-  const [values, setValues] = useState<InstructorTypeFormValues>(() =>
-    toFormValues(type)
-  )
+function FormBody({ type, pending, onSubmit, onCancel }: FormBodyProps) {
+  const [values, setValues] = useState<FormValues>(() => toFormValues(type))
   const [errors, setErrors] = useState<Record<string, string>>({})
-  const [slugTouched, setSlugTouched] = useState(Boolean(type))
   const isEdit = Boolean(type)
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault()
 
-    const result = instructorTypeSchema.safeParse({
-      ...values,
+    const result = instructorTypeInsertSchema.safeParse({
+      name: values.name,
+      description: values.description || undefined,
       maxConcurrentBookings: Number(values.maxConcurrentBookings),
     })
 
@@ -118,41 +90,15 @@ function InstructorTypeFormBody({
               id="inst-type-name"
               value={values.name}
               aria-invalid={Boolean(errors.name)}
-              onChange={(e) => {
-                const name = e.target.value
-                setValues((v) => ({
-                  ...v,
-                  name,
-                  slug: slugTouched ? v.slug : slugify(name),
-                }))
-              }}
+              onChange={(e) =>
+                setValues((v) => ({ ...v, name: e.target.value }))
+              }
             />
             <FieldError>{errors.name}</FieldError>
           </Field>
 
-          <Field data-invalid={Boolean(errors.slug)}>
-            <FieldLabel htmlFor="inst-type-slug">
-              Slug <span className="text-destructive">*</span>
-            </FieldLabel>
-            <Input
-              id="inst-type-slug"
-              value={values.slug}
-              aria-invalid={Boolean(errors.slug)}
-              onChange={(e) => {
-                setSlugTouched(true)
-                setValues((v) => ({ ...v, slug: e.target.value }))
-              }}
-            />
-            <FieldDescription>
-              Lowercase letters, numbers, and hyphens only.
-            </FieldDescription>
-            <FieldError>{errors.slug}</FieldError>
-          </Field>
-
           <Field>
-            <FieldLabel htmlFor="inst-type-description">
-              Description
-            </FieldLabel>
+            <FieldLabel htmlFor="inst-type-description">Description</FieldLabel>
             <Textarea
               id="inst-type-description"
               value={values.description}
@@ -162,7 +108,7 @@ function InstructorTypeFormBody({
             />
           </Field>
 
-          <Field>
+          <Field data-invalid={Boolean(errors.maxConcurrentBookings)}>
             <FieldLabel htmlFor="inst-type-max-bookings">
               Max Concurrent Bookings
             </FieldLabel>
@@ -173,6 +119,7 @@ function InstructorTypeFormBody({
               min="1"
               step="1"
               value={values.maxConcurrentBookings}
+              aria-invalid={Boolean(errors.maxConcurrentBookings)}
               onChange={(e) =>
                 setValues((v) => ({
                   ...v,
@@ -181,10 +128,10 @@ function InstructorTypeFormBody({
               }
             />
             <FieldDescription>
-              How many bookings an instructor of this type can hold in the
-              same time slot (e.g. 3 for a personal trainer with small
-              groups). Defaults to 1.
+              How many bookings an instructor of this type can hold in the same
+              time slot. Defaults to 1.
             </FieldDescription>
+            <FieldError>{errors.maxConcurrentBookings}</FieldError>
           </Field>
         </FormSection>
       </SheetBody>
@@ -193,7 +140,7 @@ function InstructorTypeFormBody({
         <Button type="button" variant="outline" onClick={onCancel}>
           Cancel
         </Button>
-        <Button type="submit">
+        <Button type="submit" disabled={pending}>
           {isEdit ? "Save changes" : "Add instructor type"}
         </Button>
       </SheetFooter>
@@ -201,26 +148,29 @@ function InstructorTypeFormBody({
   )
 }
 
-interface InstructorTypeFormSheetProps {
+interface SheetProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   type?: InstructorTypeRecord | null
-  onSubmit: (values: InstructorTypeInput) => void
+  pending?: boolean
+  onSubmit: (values: NewInstructorType) => void
 }
 
 export function InstructorTypeFormSheet({
   open,
   onOpenChange,
   type,
+  pending,
   onSubmit,
-}: InstructorTypeFormSheetProps) {
+}: SheetProps) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="sm:max-w-xl">
         {open && (
-          <InstructorTypeFormBody
+          <FormBody
             key={type?.id ?? "new"}
             type={type}
+            pending={pending}
             onSubmit={(values) => {
               onSubmit(values)
               onOpenChange(false)

@@ -1,7 +1,10 @@
 "use client"
 
 import { useState, type FormEvent } from "react"
-import { Banknote, Dumbbell, Info } from "lucide-react"
+import { useParams } from "next/navigation"
+import { Banknote, Check, Dumbbell } from "lucide-react"
+import { classTypeInsertSchema } from "@repo/types"
+import type { ClassType, NewClassType } from "@repo/types"
 
 import { Button } from "@repo/ui/components/ui/button"
 import {
@@ -26,79 +29,66 @@ import {
 } from "@repo/ui/components/ui/sheet"
 import { Switch } from "@repo/ui/components/ui/switch"
 import { Textarea } from "@repo/ui/components/ui/textarea"
+import { cn } from "@repo/ui/lib/utils"
 
 import { FormSection, FormSheetHeader } from "@/features/tenant/components/form-section"
 
+import { useGymSportsQuery } from "../hooks/use-gym-sports"
 import { fieldErrors } from "../lib/validation"
-import {
-  classTypeSchema,
-  type ClassType,
-  type ClassTypeInput,
-} from "../lib/schema"
 
-interface ClassTypeFormValues {
+interface FormValues {
   name: string
-  slug: string
   description: string
-  sports: string
+  sports: string[]
   availableForBooking: boolean
   pricePerClass: string
   maxParticipants: string
   maxConcurrentBookings: string
 }
 
-function slugify(value: string) {
-  return value
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-}
-
-function toFormValues(cls?: ClassType | null): ClassTypeFormValues {
-  if (!cls) {
-    return {
-      name: "",
-      slug: "",
-      description: "",
-      sports: "",
-      availableForBooking: true,
-      pricePerClass: "0",
-      maxParticipants: "1",
-      maxConcurrentBookings: "1",
-    }
-  }
+function toFormValues(type?: ClassType | null): FormValues {
   return {
-    name: cls.name,
-    slug: cls.slug,
-    description: cls.description ?? "",
-    sports: cls.sports ?? "",
-    availableForBooking: cls.availableForBooking,
-    pricePerClass: String(cls.pricePerClass),
-    maxParticipants: String(cls.maxParticipants),
-    maxConcurrentBookings: String(cls.maxConcurrentBookings),
+    name: type?.name ?? "",
+    description: type?.description ?? "",
+    sports: type?.sports ?? [],
+    availableForBooking: type?.availableForBooking ?? true,
+    pricePerClass: String(type?.pricePerClass ?? 0),
+    maxParticipants: String(type?.maxParticipants ?? 1),
+    maxConcurrentBookings: String(type?.maxConcurrentBookings ?? 1),
   }
 }
 
-interface ClassTypeFormBodyProps {
-  cls?: ClassType | null
-  onSubmit: (values: ClassTypeInput) => void
+interface FormBodyProps {
+  type?: ClassType | null
+  pending?: boolean
+  onSubmit: (values: NewClassType) => void
   onCancel: () => void
 }
 
-function ClassTypeFormBody({ cls, onSubmit, onCancel }: ClassTypeFormBodyProps) {
-  const [values, setValues] = useState<ClassTypeFormValues>(() =>
-    toFormValues(cls)
-  )
+function FormBody({ type, pending, onSubmit, onCancel }: FormBodyProps) {
+  const tenant = useParams<{ tenant: string }>().tenant
+  const sportsQuery = useGymSportsQuery(tenant)
+  const [values, setValues] = useState<FormValues>(() => toFormValues(type))
   const [errors, setErrors] = useState<Record<string, string>>({})
-  const [slugTouched, setSlugTouched] = useState(Boolean(cls))
-  const isEdit = Boolean(cls)
+  const isEdit = Boolean(type)
+
+  function toggleSport(name: string) {
+    setValues((v) => ({
+      ...v,
+      sports: v.sports.includes(name)
+        ? v.sports.filter((s) => s !== name)
+        : [...v.sports, name],
+    }))
+  }
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault()
 
-    const result = classTypeSchema.safeParse({
-      ...values,
+    const result = classTypeInsertSchema.safeParse({
+      name: values.name,
+      description: values.description || undefined,
+      sports: values.sports,
+      availableForBooking: values.availableForBooking,
       pricePerClass: Number(values.pricePerClass),
       maxParticipants: Number(values.maxParticipants),
       maxConcurrentBookings: Number(values.maxConcurrentBookings),
@@ -119,52 +109,26 @@ function ClassTypeFormBody({ cls, onSubmit, onCancel }: ClassTypeFormBodyProps) 
         <FormSheetHeader
           icon={Dumbbell}
           title={isEdit ? "Edit class type" : "Add class type"}
-          description="Define a class, its pricing, and capacity."
+          description="A class members can book, like Yoga Flow or CrossFit WOD."
         />
       </SheetHeader>
 
       <SheetBody className="flex flex-col gap-7">
-        <FormSection icon={Info} title="Basic information">
-          <div className="grid grid-cols-2 gap-4">
-            <Field data-invalid={Boolean(errors.name)}>
-              <FieldLabel htmlFor="class-name">
-                Name <span className="text-destructive">*</span>
-              </FieldLabel>
-              <Input
-                id="class-name"
-                value={values.name}
-                aria-invalid={Boolean(errors.name)}
-                onChange={(e) => {
-                  const name = e.target.value
-                  setValues((v) => ({
-                    ...v,
-                    name,
-                    slug: slugTouched ? v.slug : slugify(name),
-                  }))
-                }}
-              />
-              <FieldError>{errors.name}</FieldError>
-            </Field>
-
-            <Field data-invalid={Boolean(errors.slug)}>
-              <FieldLabel htmlFor="class-slug">
-                Slug <span className="text-destructive">*</span>
-              </FieldLabel>
-              <Input
-                id="class-slug"
-                value={values.slug}
-                aria-invalid={Boolean(errors.slug)}
-                onChange={(e) => {
-                  setSlugTouched(true)
-                  setValues((v) => ({ ...v, slug: e.target.value }))
-                }}
-              />
-              <FieldDescription>
-                Lowercase letters, numbers, and hyphens only.
-              </FieldDescription>
-              <FieldError>{errors.slug}</FieldError>
-            </Field>
-          </div>
+        <FormSection icon={Dumbbell} title="Details">
+          <Field data-invalid={Boolean(errors.name)}>
+            <FieldLabel htmlFor="class-name">
+              Name <span className="text-destructive">*</span>
+            </FieldLabel>
+            <Input
+              id="class-name"
+              value={values.name}
+              aria-invalid={Boolean(errors.name)}
+              onChange={(e) =>
+                setValues((v) => ({ ...v, name: e.target.value }))
+              }
+            />
+            <FieldError>{errors.name}</FieldError>
+          </Field>
 
           <Field>
             <FieldLabel htmlFor="class-description">Description</FieldLabel>
@@ -178,15 +142,32 @@ function ClassTypeFormBody({ cls, onSubmit, onCancel }: ClassTypeFormBodyProps) 
           </Field>
 
           <Field>
-            <FieldLabel htmlFor="class-sports">Sports</FieldLabel>
-            <Input
-              id="class-sports"
-              placeholder="Yoga, CrossFit..."
-              value={values.sports}
-              onChange={(e) =>
-                setValues((v) => ({ ...v, sports: e.target.value }))
-              }
-            />
+            <FieldLabel>Sports</FieldLabel>
+            <div className="flex flex-wrap gap-1.5">
+              {(sportsQuery.data ?? []).map((sport) => {
+                const selected = values.sports.includes(sport.name)
+                return (
+                  <button
+                    key={sport.id}
+                    type="button"
+                    aria-pressed={selected}
+                    onClick={() => toggleSport(sport.name)}
+                    className={cn(
+                      "flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+                      selected
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border text-foreground hover:bg-muted/50"
+                    )}
+                  >
+                    {selected && <Check className="size-3" />}
+                    {sport.name}
+                  </button>
+                )
+              })}
+            </div>
+            <FieldDescription>
+              Pick from the sports you set up for your gym.
+            </FieldDescription>
           </Field>
         </FormSection>
 
@@ -210,10 +191,8 @@ function ClassTypeFormBody({ cls, onSubmit, onCancel }: ClassTypeFormBodyProps) 
           </Field>
 
           <div className="grid grid-cols-2 gap-4">
-            <Field>
-              <FieldLabel htmlFor="class-price">
-                Default Price per Class
-              </FieldLabel>
+            <Field data-invalid={Boolean(errors.pricePerClass)}>
+              <FieldLabel htmlFor="class-price">Default Price per Class</FieldLabel>
               <InputGroup>
                 <InputGroupAddon>
                   <InputGroupText>NPR</InputGroupText>
@@ -226,18 +205,16 @@ function ClassTypeFormBody({ cls, onSubmit, onCancel }: ClassTypeFormBodyProps) 
                   step="1"
                   value={values.pricePerClass}
                   onChange={(e) =>
-                    setValues((v) => ({
-                      ...v,
-                      pricePerClass: e.target.value,
-                    }))
+                    setValues((v) => ({ ...v, pricePerClass: e.target.value }))
                   }
                 />
               </InputGroup>
+              <FieldError>{errors.pricePerClass}</FieldError>
             </Field>
 
-            <Field>
+            <Field data-invalid={Boolean(errors.maxParticipants)}>
               <FieldLabel htmlFor="class-max-participants">
-                Default Max Participants
+                Max Participants
               </FieldLabel>
               <Input
                 id="class-max-participants"
@@ -247,16 +224,14 @@ function ClassTypeFormBody({ cls, onSubmit, onCancel }: ClassTypeFormBodyProps) 
                 step="1"
                 value={values.maxParticipants}
                 onChange={(e) =>
-                  setValues((v) => ({
-                    ...v,
-                    maxParticipants: e.target.value,
-                  }))
+                  setValues((v) => ({ ...v, maxParticipants: e.target.value }))
                 }
               />
+              <FieldError>{errors.maxParticipants}</FieldError>
             </Field>
           </div>
 
-          <Field>
+          <Field data-invalid={Boolean(errors.maxConcurrentBookings)}>
             <FieldLabel htmlFor="class-max-bookings">
               Max Concurrent Bookings
             </FieldLabel>
@@ -274,6 +249,7 @@ function ClassTypeFormBody({ cls, onSubmit, onCancel }: ClassTypeFormBodyProps) 
                 }))
               }
             />
+            <FieldError>{errors.maxConcurrentBookings}</FieldError>
           </Field>
         </FormSection>
       </SheetBody>
@@ -282,32 +258,37 @@ function ClassTypeFormBody({ cls, onSubmit, onCancel }: ClassTypeFormBodyProps) 
         <Button type="button" variant="outline" onClick={onCancel}>
           Cancel
         </Button>
-        <Button type="submit">{isEdit ? "Save changes" : "Add class type"}</Button>
+        <Button type="submit" disabled={pending}>
+          {isEdit ? "Save changes" : "Add class type"}
+        </Button>
       </SheetFooter>
     </form>
   )
 }
 
-interface ClassTypeFormSheetProps {
+interface SheetProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  cls?: ClassType | null
-  onSubmit: (values: ClassTypeInput) => void
+  type?: ClassType | null
+  pending?: boolean
+  onSubmit: (values: NewClassType) => void
 }
 
 export function ClassTypeFormSheet({
   open,
   onOpenChange,
-  cls,
+  type,
+  pending,
   onSubmit,
-}: ClassTypeFormSheetProps) {
+}: SheetProps) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="sm:max-w-xl">
         {open && (
-          <ClassTypeFormBody
-            key={cls?.id ?? "new"}
-            cls={cls}
+          <FormBody
+            key={type?.id ?? "new"}
+            type={type}
+            pending={pending}
             onSubmit={(values) => {
               onSubmit(values)
               onOpenChange(false)

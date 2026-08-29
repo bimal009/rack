@@ -1,8 +1,10 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import { useParams } from "next/navigation"
 import { MoreHorizontal, PenSquare, Plus, Trash2 } from "lucide-react"
 import { toast } from "sonner"
+import type { InstructorTypeRecord, NewInstructorType } from "@repo/types"
 
 import { Button } from "@repo/ui/components/ui/button"
 import {
@@ -19,50 +21,48 @@ import {
 
 import { DeleteConfirmDialog } from "@/features/tenant/components/delete-confirm-dialog"
 
-import { generateTypeId, initialInstructorTypes } from "../lib/data"
-import type {
-  InstructorTypeInput,
-  InstructorTypeRecord,
-} from "../lib/schema"
+import {
+  useCreateInstructorType,
+  useDeleteInstructorType,
+  useInstructorTypesQuery,
+  useUpdateInstructorType,
+} from "../hooks/use-instructor-types"
 import { InstructorTypeFormSheet } from "./instructor-type-form-sheet"
 
 export function InstructorTypesList() {
-  const [types, setTypes] = useState<InstructorTypeRecord[]>(
-    initialInstructorTypes
-  )
+  const tenant = useParams<{ tenant: string }>().tenant
+  const query = useInstructorTypesQuery(tenant)
+  const create = useCreateInstructorType(tenant)
+  const update = useUpdateInstructorType(tenant)
+  const remove = useDeleteInstructorType(tenant)
+
   const [sheetOpen, setSheetOpen] = useState(false)
   const [editing, setEditing] = useState<InstructorTypeRecord | null>(null)
   const [deleting, setDeleting] = useState<InstructorTypeRecord | null>(null)
 
-  function handleAdd() {
-    setEditing(null)
-    setSheetOpen(true)
-  }
-
-  function handleEdit(type: InstructorTypeRecord) {
-    setEditing(type)
-    setSheetOpen(true)
-  }
-
-  function handleSubmit(values: InstructorTypeInput) {
+  function handleSubmit(values: NewInstructorType) {
     if (editing) {
-      setTypes((prev) =>
-        prev.map((t) => (t.id === editing.id ? { ...t, ...values } : t))
+      update.mutate(
+        { id: editing.id, input: values },
+        {
+          onSuccess: () => toast.success(`${values.name} updated`),
+          onError: (error) => toast.error(error.message),
+        }
       )
-      toast.success(`${values.name} updated`)
     } else {
-      setTypes((prev) => [
-        { ...values, id: generateTypeId("inst") },
-        ...prev,
-      ])
-      toast.success(`${values.name} added`)
+      create.mutate(values, {
+        onSuccess: () => toast.success(`${values.name} added`),
+        onError: (error) => toast.error(error.message),
+      })
     }
   }
 
   function handleDelete() {
     if (!deleting) return
-    setTypes((prev) => prev.filter((t) => t.id !== deleting.id))
-    toast.success(`${deleting.name} removed`)
+    remove.mutate(deleting.id, {
+      onSuccess: () => toast.success(`${deleting.name} removed`),
+      onError: (error) => toast.error(error.message),
+    })
     setDeleting(null)
   }
 
@@ -71,13 +71,6 @@ export function InstructorTypesList() {
     return columnHelper.columns([
       createIndexColumn(columnHelper),
       columnHelper.accessor("name", { header: "Name" }),
-      columnHelper.accessor("slug", {
-        header: "Slug",
-        enableGlobalFilter: false,
-        cell: ({ getValue }) => (
-          <span className="text-muted-foreground">{getValue()}</span>
-        ),
-      }),
       columnHelper.accessor("maxConcurrentBookings", {
         header: "Max Concurrent Bookings",
         enableGlobalFilter: false,
@@ -90,7 +83,12 @@ export function InstructorTypesList() {
               <MoreHorizontal className="size-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => handleEdit(row.original)}>
+              <DropdownMenuItem
+                onClick={() => {
+                  setEditing(row.original)
+                  setSheetOpen(true)
+                }}
+              >
                 <PenSquare />
                 Edit
               </DropdownMenuItem>
@@ -112,11 +110,22 @@ export function InstructorTypesList() {
     <div className="flex flex-col gap-4">
       <DataTable
         columns={columns}
-        data={types}
+        data={query.data ?? []}
         getRowId={(row) => row.id}
+        isLoading={query.isLoading}
         searchPlaceholder="Search instructor types..."
+        emptyMessage={
+          query.isError
+            ? (query.error as Error).message
+            : "No instructor types yet."
+        }
         toolbar={
-          <Button onClick={handleAdd}>
+          <Button
+            onClick={() => {
+              setEditing(null)
+              setSheetOpen(true)
+            }}
+          >
             <Plus className="size-4" />
             Add Instructor Type
           </Button>
@@ -127,6 +136,7 @@ export function InstructorTypesList() {
         open={sheetOpen}
         onOpenChange={setSheetOpen}
         type={editing}
+        pending={create.isPending || update.isPending}
         onSubmit={handleSubmit}
       />
 

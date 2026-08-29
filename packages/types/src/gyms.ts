@@ -83,8 +83,8 @@ export const onboardingSchema = z.object({
     "something-else",
   ]),
   specialties: z
-    .array(z.enum(SPECIALTY_OPTIONS))
-    .min(1, "Select at least one specialty"),
+    .array(z.string().trim().min(1).max(50))
+    .min(1, "Add at least one sport"),
   slug: z
     .string()
     .min(1, "Slug is required")

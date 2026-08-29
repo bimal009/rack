@@ -1,7 +1,10 @@
 "use client"
 
 import { useState, type FormEvent } from "react"
-import { Banknote, Info, LayoutGrid } from "lucide-react"
+import { useParams } from "next/navigation"
+import { Banknote, Check, LayoutGrid } from "lucide-react"
+import { areaTypeInsertSchema } from "@repo/types"
+import type { AreaType, NewAreaType } from "@repo/types"
 
 import { Button } from "@repo/ui/components/ui/button"
 import {
@@ -26,79 +29,66 @@ import {
 } from "@repo/ui/components/ui/sheet"
 import { Switch } from "@repo/ui/components/ui/switch"
 import { Textarea } from "@repo/ui/components/ui/textarea"
+import { cn } from "@repo/ui/lib/utils"
 
 import { FormSection, FormSheetHeader } from "@/features/tenant/components/form-section"
 
+import { useGymSportsQuery } from "../hooks/use-gym-sports"
 import { fieldErrors } from "../lib/validation"
-import {
-  areaTypeSchema,
-  type AreaType,
-  type AreaTypeInput,
-} from "../lib/schema"
 
-interface AreaTypeFormValues {
+interface FormValues {
   name: string
-  slug: string
   description: string
-  sports: string
+  sports: string[]
   availableForBooking: boolean
   pricePerHour: string
   maxPlayers: string
   maxConcurrentBookings: string
 }
 
-function slugify(value: string) {
-  return value
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-}
-
-function toFormValues(area?: AreaType | null): AreaTypeFormValues {
-  if (!area) {
-    return {
-      name: "",
-      slug: "",
-      description: "",
-      sports: "",
-      availableForBooking: true,
-      pricePerHour: "0",
-      maxPlayers: "1",
-      maxConcurrentBookings: "1",
-    }
-  }
+function toFormValues(area?: AreaType | null): FormValues {
   return {
-    name: area.name,
-    slug: area.slug,
-    description: area.description ?? "",
-    sports: area.sports ?? "",
-    availableForBooking: area.availableForBooking,
-    pricePerHour: String(area.pricePerHour),
-    maxPlayers: String(area.maxPlayers),
-    maxConcurrentBookings: String(area.maxConcurrentBookings),
+    name: area?.name ?? "",
+    description: area?.description ?? "",
+    sports: area?.sports ?? [],
+    availableForBooking: area?.availableForBooking ?? true,
+    pricePerHour: String(area?.pricePerHour ?? 0),
+    maxPlayers: String(area?.maxPlayers ?? 1),
+    maxConcurrentBookings: String(area?.maxConcurrentBookings ?? 1),
   }
 }
 
-interface AreaTypeFormBodyProps {
+interface FormBodyProps {
   area?: AreaType | null
-  onSubmit: (values: AreaTypeInput) => void
+  pending?: boolean
+  onSubmit: (values: NewAreaType) => void
   onCancel: () => void
 }
 
-function AreaTypeFormBody({ area, onSubmit, onCancel }: AreaTypeFormBodyProps) {
-  const [values, setValues] = useState<AreaTypeFormValues>(() =>
-    toFormValues(area)
-  )
+function FormBody({ area, pending, onSubmit, onCancel }: FormBodyProps) {
+  const tenant = useParams<{ tenant: string }>().tenant
+  const sportsQuery = useGymSportsQuery(tenant)
+  const [values, setValues] = useState<FormValues>(() => toFormValues(area))
   const [errors, setErrors] = useState<Record<string, string>>({})
-  const [slugTouched, setSlugTouched] = useState(Boolean(area))
   const isEdit = Boolean(area)
+
+  function toggleSport(name: string) {
+    setValues((v) => ({
+      ...v,
+      sports: v.sports.includes(name)
+        ? v.sports.filter((s) => s !== name)
+        : [...v.sports, name],
+    }))
+  }
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault()
 
-    const result = areaTypeSchema.safeParse({
-      ...values,
+    const result = areaTypeInsertSchema.safeParse({
+      name: values.name,
+      description: values.description || undefined,
+      sports: values.sports,
+      availableForBooking: values.availableForBooking,
       pricePerHour: Number(values.pricePerHour),
       maxPlayers: Number(values.maxPlayers),
       maxConcurrentBookings: Number(values.maxConcurrentBookings),
@@ -119,52 +109,26 @@ function AreaTypeFormBody({ area, onSubmit, onCancel }: AreaTypeFormBodyProps) {
         <FormSheetHeader
           icon={LayoutGrid}
           title={isEdit ? "Edit area type" : "Add area type"}
-          description="Define a bookable area, its pricing, and capacity."
+          description="A bookable space like a cycling studio or a strength floor."
         />
       </SheetHeader>
 
       <SheetBody className="flex flex-col gap-7">
-        <FormSection icon={Info} title="Basic information">
-          <div className="grid grid-cols-2 gap-4">
-            <Field data-invalid={Boolean(errors.name)}>
-              <FieldLabel htmlFor="area-name">
-                Name <span className="text-destructive">*</span>
-              </FieldLabel>
-              <Input
-                id="area-name"
-                value={values.name}
-                aria-invalid={Boolean(errors.name)}
-                onChange={(e) => {
-                  const name = e.target.value
-                  setValues((v) => ({
-                    ...v,
-                    name,
-                    slug: slugTouched ? v.slug : slugify(name),
-                  }))
-                }}
-              />
-              <FieldError>{errors.name}</FieldError>
-            </Field>
-
-            <Field data-invalid={Boolean(errors.slug)}>
-              <FieldLabel htmlFor="area-slug">
-                Slug <span className="text-destructive">*</span>
-              </FieldLabel>
-              <Input
-                id="area-slug"
-                value={values.slug}
-                aria-invalid={Boolean(errors.slug)}
-                onChange={(e) => {
-                  setSlugTouched(true)
-                  setValues((v) => ({ ...v, slug: e.target.value }))
-                }}
-              />
-              <FieldDescription>
-                Lowercase letters, numbers, and hyphens only.
-              </FieldDescription>
-              <FieldError>{errors.slug}</FieldError>
-            </Field>
-          </div>
+        <FormSection icon={LayoutGrid} title="Details">
+          <Field data-invalid={Boolean(errors.name)}>
+            <FieldLabel htmlFor="area-name">
+              Name <span className="text-destructive">*</span>
+            </FieldLabel>
+            <Input
+              id="area-name"
+              value={values.name}
+              aria-invalid={Boolean(errors.name)}
+              onChange={(e) =>
+                setValues((v) => ({ ...v, name: e.target.value }))
+              }
+            />
+            <FieldError>{errors.name}</FieldError>
+          </Field>
 
           <Field>
             <FieldLabel htmlFor="area-description">Description</FieldLabel>
@@ -178,15 +142,32 @@ function AreaTypeFormBody({ area, onSubmit, onCancel }: AreaTypeFormBodyProps) {
           </Field>
 
           <Field>
-            <FieldLabel htmlFor="area-sports">Sports</FieldLabel>
-            <Input
-              id="area-sports"
-              placeholder="Indoor Cycling, Strength Training..."
-              value={values.sports}
-              onChange={(e) =>
-                setValues((v) => ({ ...v, sports: e.target.value }))
-              }
-            />
+            <FieldLabel>Sports</FieldLabel>
+            <div className="flex flex-wrap gap-1.5">
+              {(sportsQuery.data ?? []).map((sport) => {
+                const selected = values.sports.includes(sport.name)
+                return (
+                  <button
+                    key={sport.id}
+                    type="button"
+                    aria-pressed={selected}
+                    onClick={() => toggleSport(sport.name)}
+                    className={cn(
+                      "flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+                      selected
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border text-foreground hover:bg-muted/50"
+                    )}
+                  >
+                    {selected && <Check className="size-3" />}
+                    {sport.name}
+                  </button>
+                )
+              })}
+            </div>
+            <FieldDescription>
+              Pick from the sports you set up for your gym.
+            </FieldDescription>
           </Field>
         </FormSection>
 
@@ -210,10 +191,8 @@ function AreaTypeFormBody({ area, onSubmit, onCancel }: AreaTypeFormBodyProps) {
           </Field>
 
           <div className="grid grid-cols-2 gap-4">
-            <Field>
-              <FieldLabel htmlFor="area-price">
-                Default Price per Hour
-              </FieldLabel>
+            <Field data-invalid={Boolean(errors.pricePerHour)}>
+              <FieldLabel htmlFor="area-price">Default Price per Hour</FieldLabel>
               <InputGroup>
                 <InputGroupAddon>
                   <InputGroupText>NPR</InputGroupText>
@@ -230,12 +209,11 @@ function AreaTypeFormBody({ area, onSubmit, onCancel }: AreaTypeFormBodyProps) {
                   }
                 />
               </InputGroup>
+              <FieldError>{errors.pricePerHour}</FieldError>
             </Field>
 
-            <Field>
-              <FieldLabel htmlFor="area-max-players">
-                Default Max Players
-              </FieldLabel>
+            <Field data-invalid={Boolean(errors.maxPlayers)}>
+              <FieldLabel htmlFor="area-max-players">Max Players</FieldLabel>
               <Input
                 id="area-max-players"
                 type="number"
@@ -247,13 +225,11 @@ function AreaTypeFormBody({ area, onSubmit, onCancel }: AreaTypeFormBodyProps) {
                   setValues((v) => ({ ...v, maxPlayers: e.target.value }))
                 }
               />
-              <FieldDescription>
-                Default number of players that can use areas of this type.
-              </FieldDescription>
+              <FieldError>{errors.maxPlayers}</FieldError>
             </Field>
           </div>
 
-          <Field>
+          <Field data-invalid={Boolean(errors.maxConcurrentBookings)}>
             <FieldLabel htmlFor="area-max-bookings">
               Max Concurrent Bookings
             </FieldLabel>
@@ -271,11 +247,7 @@ function AreaTypeFormBody({ area, onSubmit, onCancel }: AreaTypeFormBodyProps) {
                 }))
               }
             />
-            <FieldDescription>
-              How many bookings can share the same time slot for areas of
-              this type (e.g. 3 for a small-group room). Defaults to 1
-              (exclusive).
-            </FieldDescription>
+            <FieldError>{errors.maxConcurrentBookings}</FieldError>
           </Field>
         </FormSection>
       </SheetBody>
@@ -284,32 +256,37 @@ function AreaTypeFormBody({ area, onSubmit, onCancel }: AreaTypeFormBodyProps) {
         <Button type="button" variant="outline" onClick={onCancel}>
           Cancel
         </Button>
-        <Button type="submit">{isEdit ? "Save changes" : "Add area type"}</Button>
+        <Button type="submit" disabled={pending}>
+          {isEdit ? "Save changes" : "Add area type"}
+        </Button>
       </SheetFooter>
     </form>
   )
 }
 
-interface AreaTypeFormSheetProps {
+interface SheetProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   area?: AreaType | null
-  onSubmit: (values: AreaTypeInput) => void
+  pending?: boolean
+  onSubmit: (values: NewAreaType) => void
 }
 
 export function AreaTypeFormSheet({
   open,
   onOpenChange,
   area,
+  pending,
   onSubmit,
-}: AreaTypeFormSheetProps) {
+}: SheetProps) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="sm:max-w-xl">
         {open && (
-          <AreaTypeFormBody
+          <FormBody
             key={area?.id ?? "new"}
             area={area}
+            pending={pending}
             onSubmit={(values) => {
               onSubmit(values)
               onOpenChange(false)

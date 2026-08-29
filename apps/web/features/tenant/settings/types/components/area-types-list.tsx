@@ -1,8 +1,10 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import { useParams } from "next/navigation"
 import { MoreHorizontal, PenSquare, Plus, Trash2 } from "lucide-react"
 import { toast } from "sonner"
+import type { AreaType, NewAreaType } from "@repo/types"
 
 import { Badge } from "@repo/ui/components/ui/badge"
 import { Button } from "@repo/ui/components/ui/button"
@@ -20,8 +22,12 @@ import {
 
 import { DeleteConfirmDialog } from "@/features/tenant/components/delete-confirm-dialog"
 
-import { generateTypeId, initialAreaTypes } from "../lib/data"
-import type { AreaType, AreaTypeInput } from "../lib/schema"
+import {
+  useAreaTypesQuery,
+  useCreateAreaType,
+  useDeleteAreaType,
+  useUpdateAreaType,
+} from "../hooks/use-area-types"
 import { AreaTypeFormSheet } from "./area-type-form-sheet"
 
 const currency = new Intl.NumberFormat("en-US", {
@@ -31,40 +37,39 @@ const currency = new Intl.NumberFormat("en-US", {
 })
 
 export function AreaTypesList() {
-  const [areas, setAreas] = useState<AreaType[]>(initialAreaTypes)
+  const tenant = useParams<{ tenant: string }>().tenant
+  const query = useAreaTypesQuery(tenant)
+  const create = useCreateAreaType(tenant)
+  const update = useUpdateAreaType(tenant)
+  const remove = useDeleteAreaType(tenant)
+
   const [sheetOpen, setSheetOpen] = useState(false)
   const [editing, setEditing] = useState<AreaType | null>(null)
   const [deleting, setDeleting] = useState<AreaType | null>(null)
 
-  function handleAdd() {
-    setEditing(null)
-    setSheetOpen(true)
-  }
-
-  function handleEdit(area: AreaType) {
-    setEditing(area)
-    setSheetOpen(true)
-  }
-
-  function handleSubmit(values: AreaTypeInput) {
+  function handleSubmit(values: NewAreaType) {
     if (editing) {
-      setAreas((prev) =>
-        prev.map((a) => (a.id === editing.id ? { ...a, ...values } : a))
+      update.mutate(
+        { id: editing.id, input: values },
+        {
+          onSuccess: () => toast.success(`${values.name} updated`),
+          onError: (error) => toast.error(error.message),
+        }
       )
-      toast.success(`${values.name} updated`)
     } else {
-      setAreas((prev) => [
-        { ...values, id: generateTypeId("area") },
-        ...prev,
-      ])
-      toast.success(`${values.name} added`)
+      create.mutate(values, {
+        onSuccess: () => toast.success(`${values.name} added`),
+        onError: (error) => toast.error(error.message),
+      })
     }
   }
 
   function handleDelete() {
     if (!deleting) return
-    setAreas((prev) => prev.filter((a) => a.id !== deleting.id))
-    toast.success(`${deleting.name} removed`)
+    remove.mutate(deleting.id, {
+      onSuccess: () => toast.success(`${deleting.name} removed`),
+      onError: (error) => toast.error(error.message),
+    })
     setDeleting(null)
   }
 
@@ -73,13 +78,6 @@ export function AreaTypesList() {
     return columnHelper.columns([
       createIndexColumn(columnHelper),
       columnHelper.accessor("name", { header: "Name" }),
-      columnHelper.accessor("slug", {
-        header: "Slug",
-        enableGlobalFilter: false,
-        cell: ({ getValue }) => (
-          <span className="text-muted-foreground">{getValue()}</span>
-        ),
-      }),
       columnHelper.accessor("availableForBooking", {
         header: "Bookable",
         enableGlobalFilter: false,
@@ -88,26 +86,18 @@ export function AreaTypesList() {
             variant={getValue() ? "default" : "secondary"}
             className="rounded-full"
           >
-            {getValue() ? "Active" : "Inactive"}
+            {getValue() ? "Yes" : "No"}
           </Badge>
         ),
       }),
       columnHelper.accessor("pricePerHour", {
-        header: "Price/Hour",
+        header: "Price / hour",
         enableGlobalFilter: false,
         cell: ({ getValue }) => currency.format(getValue()),
       }),
-      columnHelper.accessor("sports", {
-        header: "Sport",
+      columnHelper.accessor("maxPlayers", {
+        header: "Max Players",
         enableGlobalFilter: false,
-        cell: ({ getValue }) =>
-          getValue() ? (
-            <Badge variant="outline" className="rounded-full font-normal">
-              {getValue()}
-            </Badge>
-          ) : (
-            <span className="text-muted-foreground">—</span>
-          ),
       }),
       columnHelper.display({
         id: "actions",
@@ -117,7 +107,12 @@ export function AreaTypesList() {
               <MoreHorizontal className="size-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => handleEdit(row.original)}>
+              <DropdownMenuItem
+                onClick={() => {
+                  setEditing(row.original)
+                  setSheetOpen(true)
+                }}
+              >
                 <PenSquare />
                 Edit
               </DropdownMenuItem>
@@ -139,11 +134,22 @@ export function AreaTypesList() {
     <div className="flex flex-col gap-4">
       <DataTable
         columns={columns}
-        data={areas}
+        data={query.data ?? []}
         getRowId={(row) => row.id}
+        isLoading={query.isLoading}
         searchPlaceholder="Search area types..."
+        emptyMessage={
+          query.isError
+            ? (query.error as Error).message
+            : "No area types yet."
+        }
         toolbar={
-          <Button onClick={handleAdd}>
+          <Button
+            onClick={() => {
+              setEditing(null)
+              setSheetOpen(true)
+            }}
+          >
             <Plus className="size-4" />
             Add Area Type
           </Button>
@@ -154,6 +160,7 @@ export function AreaTypesList() {
         open={sheetOpen}
         onOpenChange={setSheetOpen}
         area={editing}
+        pending={create.isPending || update.isPending}
         onSubmit={handleSubmit}
       />
 

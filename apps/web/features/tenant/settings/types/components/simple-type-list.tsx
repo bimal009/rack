@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import { useParams } from "next/navigation"
 import {
   LayoutGrid,
   MoreHorizontal,
@@ -28,89 +29,101 @@ import {
 
 import { DeleteConfirmDialog } from "@/features/tenant/components/delete-confirm-dialog"
 
-import { generateTypeId } from "../lib/data"
-import type { SimpleType, SimpleTypeInput } from "../lib/schema"
 import { SimpleTypeFormSheet } from "./simple-type-form-sheet"
 
-const iconMap = {
-  LayoutGrid,
-  Percent,
-  Tag,
-} satisfies Record<string, LucideIcon>
-
+const iconMap = { LayoutGrid, Percent, Tag } satisfies Record<string, LucideIcon>
 export type SimpleTypeIconName = keyof typeof iconMap
 
+export interface SimpleRow {
+  id: string
+  name: string
+  rate?: number
+}
+
+export interface SimpleTypeInput {
+  name: string
+  rate?: number
+}
+
+type QueryLike = {
+  data?: SimpleRow[]
+  isLoading: boolean
+  isError: boolean
+  error: unknown
+}
+
+type MutationLike<TVars> = {
+  mutate: (
+    vars: TVars,
+    opts?: { onSuccess?: () => void; onError?: (error: Error) => void }
+  ) => void
+  isPending: boolean
+}
+
 interface SimpleTypeListProps {
-  icon: SimpleTypeIconName
   label: string
-  idPrefix: string
-  hasSlug: boolean
-  hasRate: boolean
-  initialItems: SimpleType[]
+  icon: SimpleTypeIconName
+  hasRate?: boolean
+  useList: (tenant: string) => QueryLike
+  useCreate: (tenant: string) => MutationLike<SimpleTypeInput>
+  useUpdate: (
+    tenant: string
+  ) => MutationLike<{ id: string; input: Partial<SimpleTypeInput> }>
+  useDelete: (tenant: string) => MutationLike<string>
 }
 
 export function SimpleTypeList({
-  icon,
   label,
-  idPrefix,
-  hasSlug,
-  hasRate,
-  initialItems,
+  icon,
+  hasRate = false,
+  useList,
+  useCreate,
+  useUpdate,
+  useDelete,
 }: SimpleTypeListProps) {
   const Icon = iconMap[icon]
-  const [items, setItems] = useState<SimpleType[]>(initialItems)
+  const tenant = useParams<{ tenant: string }>().tenant
+
+  const query = useList(tenant)
+  const create = useCreate(tenant)
+  const update = useUpdate(tenant)
+  const remove = useDelete(tenant)
+
   const [sheetOpen, setSheetOpen] = useState(false)
-  const [editing, setEditing] = useState<SimpleType | null>(null)
-  const [deleting, setDeleting] = useState<SimpleType | null>(null)
-
-  function handleAdd() {
-    setEditing(null)
-    setSheetOpen(true)
-  }
-
-  function handleEdit(item: SimpleType) {
-    setEditing(item)
-    setSheetOpen(true)
-  }
+  const [editing, setEditing] = useState<SimpleRow | null>(null)
+  const [deleting, setDeleting] = useState<SimpleRow | null>(null)
 
   function handleSubmit(values: SimpleTypeInput) {
     if (editing) {
-      setItems((prev) =>
-        prev.map((i) => (i.id === editing.id ? { ...i, ...values } : i))
+      update.mutate(
+        { id: editing.id, input: values },
+        {
+          onSuccess: () => toast.success(`${values.name} updated`),
+          onError: (error) => toast.error(error.message),
+        }
       )
-      toast.success(`${values.name} updated`)
     } else {
-      setItems((prev) => [
-        { ...values, id: generateTypeId(idPrefix) },
-        ...prev,
-      ])
-      toast.success(`${values.name} added`)
+      create.mutate(values, {
+        onSuccess: () => toast.success(`${values.name} added`),
+        onError: (error) => toast.error(error.message),
+      })
     }
   }
 
   function handleDelete() {
     if (!deleting) return
-    setItems((prev) => prev.filter((i) => i.id !== deleting.id))
-    toast.success(`${deleting.name} removed`)
+    remove.mutate(deleting.id, {
+      onSuccess: () => toast.success(`${deleting.name} removed`),
+      onError: (error) => toast.error(error.message),
+    })
     setDeleting(null)
   }
 
   const columns = useMemo(() => {
-    const columnHelper = createDataTableColumnHelper<SimpleType>()
+    const columnHelper = createDataTableColumnHelper<SimpleRow>()
     return columnHelper.columns([
       createIndexColumn(columnHelper),
       columnHelper.accessor("name", { header: "Name" }),
-      ...(hasSlug
-        ? [
-            columnHelper.accessor("slug", {
-              header: "Slug",
-              enableGlobalFilter: false,
-              cell: ({ getValue }: { getValue: () => string | undefined }) => (
-                <span className="text-muted-foreground">{getValue()}</span>
-              ),
-            }),
-          ]
-        : []),
       ...(hasRate
         ? [
             columnHelper.accessor("rate", {
@@ -129,7 +142,12 @@ export function SimpleTypeList({
               <MoreHorizontal className="size-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => handleEdit(row.original)}>
+              <DropdownMenuItem
+                onClick={() => {
+                  setEditing(row.original)
+                  setSheetOpen(true)
+                }}
+              >
                 <PenSquare />
                 Edit
               </DropdownMenuItem>
@@ -145,17 +163,28 @@ export function SimpleTypeList({
         ),
       }),
     ])
-  }, [hasSlug, hasRate])
+  }, [hasRate])
 
   return (
     <div className="flex flex-col gap-4">
       <DataTable
         columns={columns}
-        data={items}
+        data={query.data ?? []}
         getRowId={(row) => row.id}
+        isLoading={query.isLoading}
         searchPlaceholder={`Search ${label.toLowerCase()}s...`}
+        emptyMessage={
+          query.isError
+            ? (query.error as Error).message
+            : `No ${label.toLowerCase()}s yet.`
+        }
         toolbar={
-          <Button onClick={handleAdd}>
+          <Button
+            onClick={() => {
+              setEditing(null)
+              setSheetOpen(true)
+            }}
+          >
             <Plus className="size-4" />
             Add {label}
           </Button>
@@ -167,9 +196,9 @@ export function SimpleTypeList({
         onOpenChange={setSheetOpen}
         icon={Icon}
         label={label}
-        hasSlug={hasSlug}
         hasRate={hasRate}
         item={editing}
+        pending={create.isPending || update.isPending}
         onSubmit={handleSubmit}
       />
 
