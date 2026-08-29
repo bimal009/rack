@@ -13,7 +13,6 @@ export const SPECIALTY_OPTIONS = [
   "Group Classes",
 ] as const;
 
-export type Specialty = (typeof SPECIALTY_OPTIONS)[number];
 
 export const CURRENCY_OPTIONS = ["NPR", "USD", "INR", "EUR", "GBP"] as const;
 export type Currency = (typeof CURRENCY_OPTIONS)[number];
