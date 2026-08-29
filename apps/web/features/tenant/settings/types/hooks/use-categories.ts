@@ -1,7 +1,12 @@
 "use client"
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import type { NewProductCategory } from "@repo/types"
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query"
+import type { NewProductCategory, ProductCategoryListQuery } from "@repo/types"
 
 import {
   createCategory,
@@ -10,11 +15,15 @@ import {
   updateCategory,
 } from "../api/category"
 
-export function useCategoriesQuery(tenant: string) {
+export function useCategoriesQuery(
+  tenant: string,
+  query: Partial<ProductCategoryListQuery> = {}
+) {
   return useQuery({
-    queryKey: ["settings", "categories", tenant],
-    queryFn: () => listCategories(tenant),
+    queryKey: [...["settings", "categories", tenant], query],
+    queryFn: () => listCategories(tenant, query),
     enabled: Boolean(tenant),
+    placeholderData: keepPreviousData,
   })
 }
 

@@ -12,17 +12,9 @@ import {
 import { gyms } from "./gym.schema";
 import { user } from "./user.schema";
 import { gymRoleEnum } from "./roles.schema";
+import { instructorType } from "./instructorType.schema";
 
 export const payTypeEnum = pgEnum("pay_type", ["Hourly", "Monthly", "Per Class"]);
-
-export const instructorTypeEnum = pgEnum("instructor_type", [
-  "None",
-  "Boxing Coach",
-  "Group Fitness Instructor",
-  "Personal Trainer",
-  "Yoga Instructor",
-  "Strength Coach",
-]);
 
 export const staffGenderEnum = pgEnum("staff_gender", [
   "Male",
@@ -47,7 +39,9 @@ export const staff = pgTable("staff", {
   address: text("address"),
   payType: payTypeEnum("pay_type"),
   payRate: integer("pay_rate"),
-  instructorType: instructorTypeEnum("instructor_type").notNull().default("None"),
+  instructorTypeId: uuid("instructor_type_id").references(() => instructorType.id, {
+    onDelete: "set null",
+  }),
   experience: text("experience"),
   certifications: text("certifications"),
   canBeBooked: boolean("can_be_booked").notNull().default(false),

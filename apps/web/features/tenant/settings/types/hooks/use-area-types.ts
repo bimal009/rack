@@ -1,7 +1,12 @@
 "use client"
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import type { NewAreaType } from "@repo/types"
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query"
+import type { NewAreaType, AreaTypeListQuery } from "@repo/types"
 
 import {
   createAreaType,
@@ -10,11 +15,15 @@ import {
   updateAreaType,
 } from "../api/area-type"
 
-export function useAreaTypesQuery(tenant: string) {
+export function useAreaTypesQuery(
+  tenant: string,
+  query: Partial<AreaTypeListQuery> = {}
+) {
   return useQuery({
-    queryKey: ["settings", "area-types", tenant],
-    queryFn: () => listAreaTypes(tenant),
+    queryKey: [...["settings", "area-types", tenant], query],
+    queryFn: () => listAreaTypes(tenant, query),
     enabled: Boolean(tenant),
+    placeholderData: keepPreviousData,
   })
 }
 

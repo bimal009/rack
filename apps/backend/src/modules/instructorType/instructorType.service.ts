@@ -1,20 +1,40 @@
 import {
+  InstructorTypeListQuery,
   NewInstructorType,
   UpdateInstructorType,
   instructorTypeInsertSchema,
   instructorTypeUpdateSchema,
 } from "@repo/types";
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, count, desc, eq, ilike } from "drizzle-orm";
 import { db } from "../../db";
 import { instructorType } from "../../db/schema";
 import { NotFoundError, ValidationError } from "../../lib/errors";
 
-export const listInstructorTypes = async (gymId: string) => {
-  return db
-    .select()
-    .from(instructorType)
-    .where(eq(instructorType.gymId, gymId))
-    .orderBy(asc(instructorType.name));
+export const listInstructorTypes = async (
+  gymId: string,
+  query: InstructorTypeListQuery
+) => {
+  const { page, limit, search, sortOrder } = query;
+  const where = and(
+    eq(instructorType.gymId, gymId),
+    search ? ilike(instructorType.name, `%${search}%`) : undefined
+  );
+
+  const [data, [totalRow]] = await Promise.all([
+    db
+      .select()
+      .from(instructorType)
+      .where(where)
+      .orderBy(
+        sortOrder === "asc" ? asc(instructorType.name) : desc(instructorType.name)
+      )
+      .limit(limit)
+      .offset((page - 1) * limit),
+    db.select({ total: count() }).from(instructorType).where(where),
+  ]);
+
+  const total = totalRow?.total ?? 0;
+  return { data, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
 };
 
 export const createInstructorType = async (

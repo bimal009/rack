@@ -1,13 +1,23 @@
 import { apiClient } from "@/api-client"
-import type { GymSport, NewGymSport } from "@repo/types"
+import type {
+  GymSport,
+  GymSportListQuery,
+  GymSportListResponse,
+  NewGymSport,
+} from "@repo/types"
 import { isAxiosError } from "axios"
 
 const base = (tenant: string) => `/api/v1/gyms/${tenant}/sports`
 
-export async function listGymSports(tenant: string): Promise<GymSport[]> {
+export async function listGymSports(
+  tenant: string,
+  query: Partial<GymSportListQuery> = {}
+): Promise<GymSportListResponse> {
   try {
-    const { data } = await apiClient.get<{ data: GymSport[] }>(base(tenant))
-    return data.data
+    const { data } = await apiClient.get<GymSportListResponse>(base(tenant), {
+      params: query,
+    })
+    return { data: data.data, meta: data.meta }
   } catch (error) {
     if (isAxiosError<{ message?: string }>(error)) {
       throw new Error(error.response?.data?.message ?? "Could not load sports.")

@@ -11,12 +11,12 @@ export class StaffError extends Error {}
 
 export async function getStaffList(
   tenant: string,
-  params: StaffListQuery
+  query: Partial<StaffListQuery>
 ): Promise<StaffListResponse> {
   try {
     const { data } = await apiClient.get<StaffListResponse>(
       `/api/v1/gyms/${tenant}/staff`,
-      { params }
+      { params: query }
     )
     return { data: data.data, meta: data.meta }
   } catch (error) {

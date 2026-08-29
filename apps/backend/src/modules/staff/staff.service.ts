@@ -1,5 +1,9 @@
 import { randomUUID } from "node:crypto";
-import { NewStaffWithUser, StaffPagination, staffWithUserInsertSchema } from "@repo/types";
+import {
+  NewStaffWithUser,
+  StaffListQuery,
+  staffWithUserInsertSchema,
+} from "@repo/types";
 import { ValidationError } from "../../lib/errors";
 import { db } from "../../db";
 import { staff, user } from "../../db/schema";
@@ -43,7 +47,7 @@ export async function createStaffWithUser(data: NewStaffWithUser,gymId:string) {
         address: input.address,
         payType: input.payType,
         payRate: input.payRate,
-        instructorType: input.instructorType,
+        instructorTypeId: input.instructorTypeId,
         experience: input.experience,
         certifications: input.certifications,
         canBeBooked: input.canBeBooked,
@@ -58,73 +62,68 @@ export async function createStaffWithUser(data: NewStaffWithUser,gymId:string) {
 }
 
 
-export const getAll = async (gymId: string, pagination: StaffPagination) => {
-  const { page, limit, sortOrder, search, status, role } = pagination;
+export const getAll = async (gymId: string, query: StaffListQuery) => {
+  const { page, limit, sortOrder, search, role, status } = query;
 
-  const filters = [
+  const where = and(
     eq(staff.gymId, gymId),
     role ? eq(staff.role, role) : undefined,
     status ? eq(staff.isActive, status === "active") : undefined,
     search
       ? or(ilike(user.name, `%${search}%`), ilike(user.email, `%${search}%`))
-      : undefined,
-  ];
-  const whereClause = and(...filters);
+      : undefined
+  );
 
   const [data, [totalRow]] = await Promise.all([
     db
       .select({
-        id: staff.id,
-        gymId: staff.gymId,
-        userId: staff.userId,
-        role: staff.role,
-        isActive: staff.isActive,
-        allowAdminAccess: staff.allowAdminAccess,
-        phone: staff.phone,
-        dateOfBirth: staff.dateOfBirth,
-        gender: staff.gender,
-        address: staff.address,
-        payType: staff.payType,
-        payRate: staff.payRate,
-        instructorType: staff.instructorType,
-        experience: staff.experience,
-        certifications: staff.certifications,
-        canBeBooked: staff.canBeBooked,
-        visibility: staff.visibility,
-        maxConcurrentBookings: staff.maxConcurrentBookings,
-        activeInstructor: staff.activeInstructor,
-        createdAt: staff.createdAt,
-        updatedAt: staff.updatedAt,
-        user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          image: user.image,
-        },
+      id: staff.id,
+      gymId: staff.gymId,
+      userId: staff.userId,
+      role: staff.role,
+      isActive: staff.isActive,
+      allowAdminAccess: staff.allowAdminAccess,
+      phone: staff.phone,
+      dateOfBirth: staff.dateOfBirth,
+      gender: staff.gender,
+      address: staff.address,
+      payType: staff.payType,
+      payRate: staff.payRate,
+      instructorTypeId: staff.instructorTypeId,
+      experience: staff.experience,
+      certifications: staff.certifications,
+      canBeBooked: staff.canBeBooked,
+      visibility: staff.visibility,
+      maxConcurrentBookings: staff.maxConcurrentBookings,
+      activeInstructor: staff.activeInstructor,
+      createdAt: staff.createdAt,
+      updatedAt: staff.updatedAt,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        image: user.image,
+      },
       })
       .from(staff)
       .innerJoin(user, eq(staff.userId, user.id))
-      .where(whereClause)
-      .orderBy(sortOrder === "asc" ? asc(staff.createdAt) : desc(staff.createdAt))
+      .where(where)
+      .orderBy(
+        sortOrder === "asc" ? asc(staff.createdAt) : desc(staff.createdAt)
+      )
       .limit(limit)
       .offset((page - 1) * limit),
     db
       .select({ total: count() })
       .from(staff)
       .innerJoin(user, eq(staff.userId, user.id))
-      .where(whereClause),
+      .where(where),
   ]);
 
   const total = totalRow?.total ?? 0;
-
   return {
     data,
-    pagination: {
-      page,
-      limit,
-      total,
-      totalPages: Math.ceil(total / limit),
-    },
+    meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
   };
 };
 

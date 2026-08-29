@@ -10,12 +10,15 @@ import type { NewStaffWithUser, StaffListQuery } from "@repo/types"
 
 import { createStaff, getStaffList } from "../api/staff"
 
-export function useStaffListQuery(tenant: string, params: StaffListQuery) {
+export function useStaffListQuery(
+  tenant: string,
+  query: Partial<StaffListQuery>
+) {
   return useQuery({
-    queryKey: ["staff", tenant, params],
-    queryFn: () => getStaffList(tenant, params),
-    placeholderData: keepPreviousData,
+    queryKey: ["staff", tenant, query],
+    queryFn: () => getStaffList(tenant, query),
     enabled: Boolean(tenant),
+    placeholderData: keepPreviousData,
   })
 }
 

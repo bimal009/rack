@@ -1,58 +1,69 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo, useState, type ReactNode } from "react"
 import { useParams } from "next/navigation"
 import {
-  LayoutGrid,
+  ChevronLeft,
+  ChevronRight,
+  ListFilter,
   MoreHorizontal,
   PenSquare,
-  Percent,
   Plus,
-  Tag,
+  SearchIcon,
   Trash2,
 } from "lucide-react"
-import type { LucideIcon } from "lucide-react"
 import { toast } from "sonner"
+import type { PaginatedResponse } from "@repo/types"
 
 import { Button } from "@repo/ui/components/ui/button"
 import {
   createDataTableColumnHelper,
   createIndexColumn,
   DataTable,
+  type DataTableColumnDef,
 } from "@repo/ui/components/ui/data-table"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@repo/ui/components/ui/dropdown-menu"
+import { Input } from "@repo/ui/components/ui/input"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@repo/ui/components/ui/select"
 
+import { useDebounce } from "@/hooks/use-debounce"
 import { DeleteConfirmDialog } from "@/features/tenant/components/delete-confirm-dialog"
 
-import { TypeFormSheet } from "./type-form-sheet"
+import { useTypeFilters } from "../hooks/use-type-filters"
 
-const iconMap = { LayoutGrid, Percent, Tag } satisfies Record<string, LucideIcon>
-export type TypeIconName = keyof typeof iconMap
+const PAGE_SIZES = [10, 20, 30, 50]
 
-export interface TypeRow {
-  id: string
-  name: string
-  rate?: number
+export type ListQuery = {
+  page: number
+  limit: number
+  search?: string
+  sortOrder: "asc" | "desc"
 }
 
-export interface TypeInput {
-  name: string
-  rate?: number
-}
-
-type QueryLike = {
-  data?: TypeRow[]
+export type QueryLike<TRow> = {
+  data?: PaginatedResponse<TRow>
   isLoading: boolean
   isError: boolean
+  isPlaceholderData: boolean
   error: unknown
 }
 
-type MutationLike<TVars> = {
+export type MutationLike<TVars> = {
   mutate: (
     vars: TVars,
     opts?: { onSuccess?: () => void; onError?: (error: Error) => void }
@@ -60,51 +71,75 @@ type MutationLike<TVars> = {
   isPending: boolean
 }
 
-interface TypeListProps {
-  label: string
-  icon: TypeIconName
-  hasRate?: boolean
-  useList: (tenant: string) => QueryLike
-  useCreate: (tenant: string) => MutationLike<TypeInput>
-  useUpdate: (
-    tenant: string
-  ) => MutationLike<{ id: string; input: Partial<TypeInput> }>
-  useDelete: (tenant: string) => MutationLike<string>
+export interface RowActions<TRow> {
+  onEdit: (row: TRow) => void
+  onDelete: (row: TRow) => void
 }
 
-export function TypeList({
+export interface FormRenderProps<TRow, TInput> {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  item: TRow | null
+  pending: boolean
+  onSubmit: (values: TInput) => void
+}
+
+interface TypeListProps<TRow extends { id: string; name: string }, TInput> {
+  label: string
+  buildColumns: (actions: RowActions<TRow>) => DataTableColumnDef<TRow>[]
+  useList: (tenant: string, query: ListQuery) => QueryLike<TRow>
+  useCreate: (tenant: string) => MutationLike<TInput>
+  useUpdate: (
+    tenant: string
+  ) => MutationLike<{ id: string; input: Partial<TInput> }>
+  useDelete: (tenant: string) => MutationLike<string>
+  renderForm: (props: FormRenderProps<TRow, TInput>) => ReactNode
+}
+
+export function TypeList<TRow extends { id: string; name: string }, TInput>({
   label,
-  icon,
-  hasRate = false,
+  buildColumns,
   useList,
   useCreate,
   useUpdate,
   useDelete,
-}: TypeListProps) {
-  const Icon = iconMap[icon]
+  renderForm,
+}: TypeListProps<TRow, TInput>) {
   const tenant = useParams<{ tenant: string }>().tenant
 
-  const query = useList(tenant)
+  const [filters, setFilters] = useTypeFilters()
+  const debouncedSearch = useDebounce(filters.search, 350)
+
+  const query = useList(tenant, {
+    page: filters.page,
+    limit: filters.limit,
+    search: debouncedSearch || undefined,
+    sortOrder: filters.sort,
+  })
   const create = useCreate(tenant)
   const update = useUpdate(tenant)
   const remove = useDelete(tenant)
 
   const [sheetOpen, setSheetOpen] = useState(false)
-  const [editing, setEditing] = useState<TypeRow | null>(null)
-  const [deleting, setDeleting] = useState<TypeRow | null>(null)
+  const [editing, setEditing] = useState<TRow | null>(null)
+  const [deleting, setDeleting] = useState<TRow | null>(null)
 
-  function handleSubmit(values: TypeInput) {
+  const rows = query.data?.data ?? []
+  const meta = query.data?.meta
+  const totalPages = Math.max(meta?.totalPages ?? 1, 1)
+
+  function handleSubmit(values: TInput) {
     if (editing) {
       update.mutate(
         { id: editing.id, input: values },
         {
-          onSuccess: () => toast.success(`${values.name} updated`),
+          onSuccess: () => toast.success(`${editing.name} updated`),
           onError: (error) => toast.error(error.message),
         }
       )
     } else {
       create.mutate(values, {
-        onSuccess: () => toast.success(`${values.name} added`),
+        onSuccess: () => toast.success(`${label} added`),
         onError: (error) => toast.error(error.message),
       })
     }
@@ -120,20 +155,16 @@ export function TypeList({
   }
 
   const columns = useMemo(() => {
-    const columnHelper = createDataTableColumnHelper<TypeRow>()
-    return columnHelper.columns([
+    const columnHelper = createDataTableColumnHelper<TRow>()
+    return [
       createIndexColumn(columnHelper),
-      columnHelper.accessor("name", { header: "Name" }),
-      ...(hasRate
-        ? [
-            columnHelper.accessor("rate", {
-              header: "Rate",
-              enableGlobalFilter: false,
-              cell: ({ getValue }: { getValue: () => number | undefined }) =>
-                `${getValue() ?? 0}%`,
-            }),
-          ]
-        : []),
+      ...buildColumns({
+        onEdit: (row) => {
+          setEditing(row)
+          setSheetOpen(true)
+        },
+        onDelete: (row) => setDeleting(row),
+      }),
       columnHelper.display({
         id: "actions",
         cell: ({ row }) => (
@@ -162,45 +193,127 @@ export function TypeList({
           </DropdownMenu>
         ),
       }),
-    ])
-  }, [hasRate])
+    ]
+  }, [buildColumns])
 
   return (
     <div className="flex flex-col gap-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative min-w-0 flex-1 sm:max-w-xs">
+          <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={filters.search}
+            onChange={(e) => setFilters({ search: e.target.value, page: 1 })}
+            placeholder={`Search ${label.toLowerCase()}s...`}
+            className="rounded-full pl-9 shadow-none"
+          />
+        </div>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger render={<Button variant="outline" />}>
+            <ListFilter className="size-4" />
+            Filter
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Sort order</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuRadioGroup
+              value={filters.sort}
+              onValueChange={(value) =>
+                setFilters({ sort: value as "asc" | "desc", page: 1 })
+              }
+            >
+              <DropdownMenuRadioItem value="asc">A → Z</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="desc">Z → A</DropdownMenuRadioItem>
+            </DropdownMenuRadioGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <Button
+          className="ml-auto"
+          onClick={() => {
+            setEditing(null)
+            setSheetOpen(true)
+          }}
+        >
+          <Plus className="size-4" />
+          Add {label}
+        </Button>
+      </div>
+
       <DataTable
         columns={columns}
-        data={query.data ?? []}
+        data={rows}
         getRowId={(row) => row.id}
         isLoading={query.isLoading}
-        searchPlaceholder={`Search ${label.toLowerCase()}s...`}
+        enableSearch={false}
+        enablePagination={false}
         emptyMessage={
           query.isError
             ? (query.error as Error).message
             : `No ${label.toLowerCase()}s yet.`
         }
-        toolbar={
-          <Button
-            onClick={() => {
-              setEditing(null)
-              setSheetOpen(true)
-            }}
-          >
-            <Plus className="size-4" />
-            Add {label}
-          </Button>
-        }
       />
 
-      <TypeFormSheet
-        open={sheetOpen}
-        onOpenChange={setSheetOpen}
-        icon={Icon}
-        label={label}
-        hasRate={hasRate}
-        item={editing}
-        pending={create.isPending || update.isPending}
-        onSubmit={handleSubmit}
-      />
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">Rows per page</span>
+          <Select
+            value={String(filters.limit)}
+            onValueChange={(value) =>
+              setFilters({ limit: Number(value), page: 1 })
+            }
+          >
+            <SelectTrigger size="sm" className="w-18">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {PAGE_SIZES.map((size) => (
+                <SelectItem key={size} value={String(size)}>
+                  {size}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+        </div>
+
+        <div className="flex items-center gap-3">
+          <span className="text-sm font-medium whitespace-nowrap">
+            Page {meta?.page ?? filters.page} of {totalPages}
+          </span>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="outline"
+              size="icon-sm"
+              disabled={(meta?.page ?? 1) <= 1 || query.isPlaceholderData}
+              onClick={() => setFilters({ page: filters.page - 1 })}
+            >
+              <span className="sr-only">Previous page</span>
+              <ChevronLeft className="size-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon-sm"
+              disabled={
+                (meta?.page ?? 1) >= totalPages || query.isPlaceholderData
+              }
+              onClick={() => setFilters({ page: filters.page + 1 })}
+            >
+              <span className="sr-only">Next page</span>
+              <ChevronRight className="size-4" />
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {renderForm({
+        open: sheetOpen,
+        onOpenChange: setSheetOpen,
+        item: editing,
+        pending: create.isPending || update.isPending,
+        onSubmit: handleSubmit,
+      })}
 
       <DeleteConfirmDialog
         open={Boolean(deleting)}

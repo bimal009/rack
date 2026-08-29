@@ -1,26 +1,9 @@
 "use client"
 
-import { useMemo, useState } from "react"
-import { useParams } from "next/navigation"
-import { MoreHorizontal, PenSquare, Plus, Trash2 } from "lucide-react"
-import { toast } from "sonner"
 import type { AreaType, NewAreaType } from "@repo/types"
 
 import { Badge } from "@repo/ui/components/ui/badge"
-import { Button } from "@repo/ui/components/ui/button"
-import {
-  createDataTableColumnHelper,
-  createIndexColumn,
-  DataTable,
-} from "@repo/ui/components/ui/data-table"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@repo/ui/components/ui/dropdown-menu"
-
-import { DeleteConfirmDialog } from "@/features/tenant/components/delete-confirm-dialog"
+import { createDataTableColumnHelper } from "@repo/ui/components/ui/data-table"
 
 import {
   useAreaTypesQuery,
@@ -29,6 +12,7 @@ import {
   useUpdateAreaType,
 } from "../hooks/use-area-types"
 import { AreaTypeFormSheet } from "./area-type-form-sheet"
+import { TypeList } from "./type-list"
 
 const currency = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -36,143 +20,47 @@ const currency = new Intl.NumberFormat("en-US", {
   currencyDisplay: "code",
 })
 
+function buildColumns() {
+  const columnHelper = createDataTableColumnHelper<AreaType>()
+  return columnHelper.columns([
+    columnHelper.accessor("name", { header: "Name" }),
+    columnHelper.accessor("availableForBooking", {
+      header: "Bookable",
+      cell: ({ getValue }) => (
+        <Badge
+          variant={getValue() ? "default" : "secondary"}
+          className="rounded-full"
+        >
+          {getValue() ? "Yes" : "No"}
+        </Badge>
+      ),
+    }),
+    columnHelper.accessor("pricePerHour", {
+      header: "Price / hour",
+      cell: ({ getValue }) => currency.format(getValue()),
+    }),
+    columnHelper.accessor("maxPlayers", { header: "Max Players" }),
+  ])
+}
+
 export function AreaTypesList() {
-  const tenant = useParams<{ tenant: string }>().tenant
-  const query = useAreaTypesQuery(tenant)
-  const create = useCreateAreaType(tenant)
-  const update = useUpdateAreaType(tenant)
-  const remove = useDeleteAreaType(tenant)
-
-  const [sheetOpen, setSheetOpen] = useState(false)
-  const [editing, setEditing] = useState<AreaType | null>(null)
-  const [deleting, setDeleting] = useState<AreaType | null>(null)
-
-  function handleSubmit(values: NewAreaType) {
-    if (editing) {
-      update.mutate(
-        { id: editing.id, input: values },
-        {
-          onSuccess: () => toast.success(`${values.name} updated`),
-          onError: (error) => toast.error(error.message),
-        }
-      )
-    } else {
-      create.mutate(values, {
-        onSuccess: () => toast.success(`${values.name} added`),
-        onError: (error) => toast.error(error.message),
-      })
-    }
-  }
-
-  function handleDelete() {
-    if (!deleting) return
-    remove.mutate(deleting.id, {
-      onSuccess: () => toast.success(`${deleting.name} removed`),
-      onError: (error) => toast.error(error.message),
-    })
-    setDeleting(null)
-  }
-
-  const columns = useMemo(() => {
-    const columnHelper = createDataTableColumnHelper<AreaType>()
-    return columnHelper.columns([
-      createIndexColumn(columnHelper),
-      columnHelper.accessor("name", { header: "Name" }),
-      columnHelper.accessor("availableForBooking", {
-        header: "Bookable",
-        enableGlobalFilter: false,
-        cell: ({ getValue }) => (
-          <Badge
-            variant={getValue() ? "default" : "secondary"}
-            className="rounded-full"
-          >
-            {getValue() ? "Yes" : "No"}
-          </Badge>
-        ),
-      }),
-      columnHelper.accessor("pricePerHour", {
-        header: "Price / hour",
-        enableGlobalFilter: false,
-        cell: ({ getValue }) => currency.format(getValue()),
-      }),
-      columnHelper.accessor("maxPlayers", {
-        header: "Max Players",
-        enableGlobalFilter: false,
-      }),
-      columnHelper.display({
-        id: "actions",
-        cell: ({ row }) => (
-          <DropdownMenu>
-            <DropdownMenuTrigger className="flex size-7 items-center justify-center rounded-md text-muted-foreground outline-none hover:bg-muted hover:text-foreground">
-              <MoreHorizontal className="size-4" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                onClick={() => {
-                  setEditing(row.original)
-                  setSheetOpen(true)
-                }}
-              >
-                <PenSquare />
-                Edit
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                variant="destructive"
-                onClick={() => setDeleting(row.original)}
-              >
-                <Trash2 />
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        ),
-      }),
-    ])
-  }, [])
-
   return (
-    <div className="flex flex-col gap-4">
-      <DataTable
-        columns={columns}
-        data={query.data ?? []}
-        getRowId={(row) => row.id}
-        isLoading={query.isLoading}
-        searchPlaceholder="Search area types..."
-        emptyMessage={
-          query.isError
-            ? (query.error as Error).message
-            : "No area types yet."
-        }
-        toolbar={
-          <Button
-            onClick={() => {
-              setEditing(null)
-              setSheetOpen(true)
-            }}
-          >
-            <Plus className="size-4" />
-            Add Area Type
-          </Button>
-        }
-      />
-
-      <AreaTypeFormSheet
-        open={sheetOpen}
-        onOpenChange={setSheetOpen}
-        area={editing}
-        pending={create.isPending || update.isPending}
-        onSubmit={handleSubmit}
-      />
-
-      <DeleteConfirmDialog
-        open={Boolean(deleting)}
-        onOpenChange={(open) => !open && setDeleting(null)}
-        title="Delete area type?"
-        description={
-          deleting ? `"${deleting.name}" will be permanently removed.` : ""
-        }
-        onConfirm={handleDelete}
-      />
-    </div>
+    <TypeList<AreaType, NewAreaType>
+      label="Area Type"
+      buildColumns={buildColumns}
+      useList={useAreaTypesQuery}
+      useCreate={useCreateAreaType}
+      useUpdate={useUpdateAreaType}
+      useDelete={useDeleteAreaType}
+      renderForm={(props) => (
+        <AreaTypeFormSheet
+          open={props.open}
+          onOpenChange={props.onOpenChange}
+          area={props.item}
+          pending={props.pending}
+          onSubmit={props.onSubmit}
+        />
+      )}
+    />
   )
 }

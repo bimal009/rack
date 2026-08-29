@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, type FormEvent } from "react"
-import type { LucideIcon } from "lucide-react"
+import { Tag } from "lucide-react"
 import { z } from "zod"
 
 import { Button } from "@repo/ui/components/ui/button"
@@ -24,32 +24,33 @@ import {
 import { FormSection, FormSheetHeader } from "@/features/tenant/components/form-section"
 
 import { fieldErrors } from "../lib/validation"
-import type { TypeRow, TypeInput } from "./type-list"
 
 const schema = z.object({
   name: z.string().trim().min(1, "Enter a name").max(120),
   rate: z.number().min(0).max(100).optional(),
 })
 
-interface FormBodyProps {
-  icon: LucideIcon
+export type SimpleItem = { id: string; name: string; rate?: number }
+export type SimpleValues = { name: string; rate?: number }
+
+interface Props {
+  open: boolean
+  onOpenChange: (open: boolean) => void
   label: string
-  hasRate: boolean
-  item?: TypeRow | null
+  hasRate?: boolean
+  item: SimpleItem | null
   pending?: boolean
-  onSubmit: (values: TypeInput) => void
-  onCancel: () => void
+  onSubmit: (values: SimpleValues) => void
 }
 
-function FormBody({
-  icon,
+function Body({
   label,
   hasRate,
   item,
   pending,
   onSubmit,
   onCancel,
-}: FormBodyProps) {
+}: Omit<Props, "open" | "onOpenChange"> & { onCancel: () => void }) {
   const [name, setName] = useState(item?.name ?? "")
   const [rate, setRate] = useState(
     item?.rate !== undefined ? String(item.rate) : ""
@@ -59,17 +60,14 @@ function FormBody({
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault()
-
     const result = schema.safeParse({
       name,
       rate: hasRate ? Number(rate) : undefined,
     })
-
     if (!result.success) {
       setErrors(fieldErrors(result.error))
       return
     }
-
     setErrors({})
     onSubmit(result.data)
   }
@@ -78,7 +76,7 @@ function FormBody({
     <form onSubmit={handleSubmit} className="flex h-full flex-col">
       <SheetHeader>
         <FormSheetHeader
-          icon={icon}
+          icon={Tag}
           title={isEdit ? `Edit ${label}` : `Add ${label}`}
           description={
             isEdit
@@ -89,13 +87,13 @@ function FormBody({
       </SheetHeader>
 
       <SheetBody className="flex flex-col gap-7">
-        <FormSection icon={icon} title="Details">
+        <FormSection icon={Tag} title="Details">
           <Field data-invalid={Boolean(errors.name)}>
-            <FieldLabel htmlFor="simple-type-name">
+            <FieldLabel htmlFor="type-name">
               Name <span className="text-destructive">*</span>
             </FieldLabel>
             <Input
-              id="simple-type-name"
+              id="type-name"
               value={name}
               aria-invalid={Boolean(errors.name)}
               onChange={(e) => setName(e.target.value)}
@@ -105,10 +103,10 @@ function FormBody({
 
           {hasRate && (
             <Field data-invalid={Boolean(errors.rate)}>
-              <FieldLabel htmlFor="simple-type-rate">Rate</FieldLabel>
+              <FieldLabel htmlFor="type-rate">Rate</FieldLabel>
               <InputGroup>
                 <InputGroupInput
-                  id="simple-type-rate"
+                  id="type-rate"
                   type="number"
                   inputMode="decimal"
                   min="0"
@@ -140,34 +138,21 @@ function FormBody({
   )
 }
 
-interface SheetProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  icon: LucideIcon
-  label: string
-  hasRate: boolean
-  item?: TypeRow | null
-  pending?: boolean
-  onSubmit: (values: TypeInput) => void
-}
-
 export function TypeFormSheet({
   open,
   onOpenChange,
-  icon,
   label,
   hasRate,
   item,
   pending,
   onSubmit,
-}: SheetProps) {
+}: Props) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="sm:max-w-md">
         {open && (
-          <FormBody
+          <Body
             key={item?.id ?? "new"}
-            icon={icon}
             label={label}
             hasRate={hasRate}
             item={item}

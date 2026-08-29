@@ -1,20 +1,35 @@
 import {
+  GymSportListQuery,
   NewGymSport,
   UpdateGymSport,
   gymSportInsertSchema,
   gymSportUpdateSchema,
 } from "@repo/types";
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, count, desc, eq, ilike } from "drizzle-orm";
 import { db } from "../../db";
 import { gymSport } from "../../db/schema";
 import { NotFoundError, ValidationError } from "../../lib/errors";
 
-export const listSports = async (gymId: string) => {
-  return db
-    .select()
-    .from(gymSport)
-    .where(eq(gymSport.gymId, gymId))
-    .orderBy(asc(gymSport.name));
+export const listSports = async (gymId: string, query: GymSportListQuery) => {
+  const { page, limit, search, sortOrder } = query;
+  const where = and(
+    eq(gymSport.gymId, gymId),
+    search ? ilike(gymSport.name, `%${search}%`) : undefined
+  );
+
+  const [data, [totalRow]] = await Promise.all([
+    db
+      .select()
+      .from(gymSport)
+      .where(where)
+      .orderBy(sortOrder === "asc" ? asc(gymSport.name) : desc(gymSport.name))
+      .limit(limit)
+      .offset((page - 1) * limit),
+    db.select({ total: count() }).from(gymSport).where(where),
+  ]);
+
+  const total = totalRow?.total ?? 0;
+  return { data, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
 };
 
 export const createSport = async (gymId: string, input: NewGymSport) => {

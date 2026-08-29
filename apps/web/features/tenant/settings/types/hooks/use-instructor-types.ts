@@ -1,7 +1,12 @@
 "use client"
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import type { NewInstructorType } from "@repo/types"
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query"
+import type { NewInstructorType, InstructorTypeListQuery } from "@repo/types"
 
 import {
   createInstructorType,
@@ -10,11 +15,15 @@ import {
   updateInstructorType,
 } from "../api/instructor-type"
 
-export function useInstructorTypesQuery(tenant: string) {
+export function useInstructorTypesQuery(
+  tenant: string,
+  query: Partial<InstructorTypeListQuery> = {}
+) {
   return useQuery({
-    queryKey: ["settings", "instructor-types", tenant],
-    queryFn: () => listInstructorTypes(tenant),
+    queryKey: [...["settings", "instructor-types", tenant], query],
+    queryFn: () => listInstructorTypes(tenant, query),
     enabled: Boolean(tenant),
+    placeholderData: keepPreviousData,
   })
 }
 

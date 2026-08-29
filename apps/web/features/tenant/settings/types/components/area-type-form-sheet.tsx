@@ -144,7 +144,7 @@ function FormBody({ area, pending, onSubmit, onCancel }: FormBodyProps) {
           <Field>
             <FieldLabel>Sports</FieldLabel>
             <div className="flex flex-wrap gap-1.5">
-              {(sportsQuery.data ?? []).map((sport) => {
+              {(sportsQuery.data?.data ?? []).map((sport) => {
                 const selected = values.sports.includes(sport.name)
                 return (
                   <button

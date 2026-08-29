@@ -1,13 +1,23 @@
 import { apiClient } from "@/api-client"
-import type { ClassType, NewClassType } from "@repo/types"
+import type {
+  ClassType,
+  ClassTypeListQuery,
+  ClassTypeListResponse,
+  NewClassType,
+} from "@repo/types"
 import { isAxiosError } from "axios"
 
 const base = (tenant: string) => `/api/v1/gyms/${tenant}/settings/class-types`
 
-export async function listClassTypes(tenant: string): Promise<ClassType[]> {
+export async function listClassTypes(
+  tenant: string,
+  query: Partial<ClassTypeListQuery>
+): Promise<ClassTypeListResponse> {
   try {
-    const { data } = await apiClient.get<{ data: ClassType[] }>(base(tenant))
-    return data.data
+    const { data } = await apiClient.get<ClassTypeListResponse>(base(tenant), {
+      params: query,
+    })
+    return { data: data.data, meta: data.meta }
   } catch (error) {
     if (isAxiosError<{ message?: string }>(error)) {
       throw new Error(error.response?.data?.message ?? "Could not load class types.")

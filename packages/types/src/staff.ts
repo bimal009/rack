@@ -1,24 +1,13 @@
 import { z } from "zod";
-import { basePaginationSchema, type PaginatedResponse } from "./pagination";
+import { paginationFields, type PaginatedResponse } from "./pagination";
 
 export const gymRoleEnumSchema = z.enum(["admin", "manager", "instructor", "frontdesk"]);
 
 export type GymRole = z.infer<typeof gymRoleEnumSchema>;
 
-// --- staff profile enums (shared by the frontend form, the API and the DB) ---
 
 export const payTypeEnumSchema = z.enum(["Hourly", "Monthly", "Per Class"]);
 export type PayType = z.infer<typeof payTypeEnumSchema>;
-
-export const instructorTypeEnumSchema = z.enum([
-  "None",
-  "Boxing Coach",
-  "Group Fitness Instructor",
-  "Personal Trainer",
-  "Yoga Instructor",
-  "Strength Coach",
-]);
-export type InstructorType = z.infer<typeof instructorTypeEnumSchema>;
 
 export const staffGenderEnumSchema = z.enum([
   "Male",
@@ -45,7 +34,7 @@ export const staffSchema = z.object({
   address: z.string().nullable(),
   payType: payTypeEnumSchema.nullable(),
   payRate: z.number().nullable(),
-  instructorType: instructorTypeEnumSchema.default("None"),
+  instructorTypeId: z.string().uuid().nullable(),
   experience: z.string().nullable(),
   certifications: z.string().nullable(),
   canBeBooked: z.boolean().default(false),
@@ -101,7 +90,10 @@ export const staffWithUserInsertSchema = z.object({
   payType: payTypeEnumSchema,
   payRate: z.number().positive("Enter a pay rate"),
 
-  instructorType: instructorTypeEnumSchema.default("None"),
+  instructorTypeId: z
+    .union([z.string().uuid(), z.literal(""), z.null()])
+    .optional()
+    .transform((value) => (value ? value : null)),
   experience: optionalText,
   certifications: optionalText,
   canBeBooked: z.boolean().default(false),
@@ -112,14 +104,6 @@ export const staffWithUserInsertSchema = z.object({
 
 export type NewStaffWithUser = z.infer<typeof staffWithUserInsertSchema>;
 
-// --- list query + responses ---
-
-export const staffPaginationSchema = basePaginationSchema.extend({
-  status: z.enum(["active", "inactive"]).optional(),
-  role: gymRoleEnumSchema.optional(),
-});
-
-export type StaffPagination = z.infer<typeof staffPaginationSchema>;
 
 export type StaffMemberUser = {
   id: string;
@@ -134,9 +118,13 @@ export type StaffWithUser = Omit<Staff, "createdAt" | "updatedAt"> & {
   user: StaffMemberUser;
 };
 
-export type StaffListQuery = Partial<
-  Pick<StaffPagination, "page" | "limit" | "sortOrder" | "search" | "status" | "role">
->;
+export const staffListQuerySchema = z.object({
+  ...paginationFields,
+  role: gymRoleEnumSchema.optional(),
+  status: z.enum(["active", "inactive"]).optional(),
+});
+
+export type StaffListQuery = z.infer<typeof staffListQuerySchema>;
 
 export type StaffListResponse = PaginatedResponse<StaffWithUser>;
 

@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
-import { handleError } from "../../lib/errors";
+import { taxRateListQuerySchema } from "@repo/types";
+import { ValidationError, handleError } from "../../lib/errors";
 import { AppResponse, RESPONSE_STATUS } from "../../lib/response";
 import { gymId, pathId } from "../../lib/helper";
 import {
@@ -11,10 +12,14 @@ import {
 
 export const getTaxRates = async (req: Request, res: Response) => {
   try {
-    const data = await listTaxRates(gymId(req));
+    const query = taxRateListQuerySchema.safeParse(req.query);
+    if (!query.success) {
+      throw new ValidationError("Invalid query params", query.error.flatten());
+    }
+    const { data, meta } = await listTaxRates(gymId(req), query.data);
     return res
       .status(RESPONSE_STATUS.ok)
-      .json(AppResponse.ok(data, "Tax rates fetched"));
+      .json(AppResponse.paginated(data, meta, "Tax rates fetched"));
   } catch (error) {
     const { status, body } = handleError("getTaxRates", error);
     return res.status(status).json(body);

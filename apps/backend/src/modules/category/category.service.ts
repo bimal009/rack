@@ -1,20 +1,42 @@
 import {
+  ProductCategoryListQuery,
   NewProductCategory,
   UpdateProductCategory,
   productCategoryInsertSchema,
   productCategoryUpdateSchema,
 } from "@repo/types";
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, count, desc, eq, ilike } from "drizzle-orm";
 import { db } from "../../db";
 import { productCategory } from "../../db/schema";
 import { NotFoundError, ValidationError } from "../../lib/errors";
 
-export const listCategories = async (gymId: string) => {
-  return db
-    .select()
-    .from(productCategory)
-    .where(eq(productCategory.gymId, gymId))
-    .orderBy(asc(productCategory.name));
+export const listCategories = async (
+  gymId: string,
+  query: ProductCategoryListQuery
+) => {
+  const { page, limit, search, sortOrder } = query;
+  const where = and(
+    eq(productCategory.gymId, gymId),
+    search ? ilike(productCategory.name, `%${search}%`) : undefined
+  );
+
+  const [data, [totalRow]] = await Promise.all([
+    db
+      .select()
+      .from(productCategory)
+      .where(where)
+      .orderBy(
+        sortOrder === "asc"
+          ? asc(productCategory.name)
+          : desc(productCategory.name)
+      )
+      .limit(limit)
+      .offset((page - 1) * limit),
+    db.select({ total: count() }).from(productCategory).where(where),
+  ]);
+
+  const total = totalRow?.total ?? 0;
+  return { data, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
 };
 
 export const createCategory = async (

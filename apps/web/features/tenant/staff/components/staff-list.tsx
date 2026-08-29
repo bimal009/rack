@@ -27,12 +27,11 @@ export function StaffList() {
 
   const debouncedSearch = useDebounce(filters.search, 350)
 
-  const params: StaffListQuery = {
+  const params: Partial<StaffListQuery> = {
     page: filters.page,
     search: debouncedSearch || undefined,
     role: filters.role ?? undefined,
     status: filters.status ?? undefined,
-    sortOrder: filters.sortOrder,
   }
 
   const query = useStaffListQuery(tenant, params)

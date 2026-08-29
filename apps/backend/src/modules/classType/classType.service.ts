@@ -1,20 +1,38 @@
 import {
+  ClassTypeListQuery,
   NewClassType,
   UpdateClassType,
   classTypeInsertSchema,
   classTypeUpdateSchema,
 } from "@repo/types";
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, count, desc, eq, ilike } from "drizzle-orm";
 import { db } from "../../db";
 import { classType } from "../../db/schema";
 import { NotFoundError, ValidationError } from "../../lib/errors";
 
-export const listClassTypes = async (gymId: string) => {
-  return db
-    .select()
-    .from(classType)
-    .where(eq(classType.gymId, gymId))
-    .orderBy(asc(classType.name));
+export const listClassTypes = async (
+  gymId: string,
+  query: ClassTypeListQuery
+) => {
+  const { page, limit, search, sortOrder } = query;
+  const where = and(
+    eq(classType.gymId, gymId),
+    search ? ilike(classType.name, `%${search}%`) : undefined
+  );
+
+  const [data, [totalRow]] = await Promise.all([
+    db
+      .select()
+      .from(classType)
+      .where(where)
+      .orderBy(sortOrder === "asc" ? asc(classType.name) : desc(classType.name))
+      .limit(limit)
+      .offset((page - 1) * limit),
+    db.select({ total: count() }).from(classType).where(where),
+  ]);
+
+  const total = totalRow?.total ?? 0;
+  return { data, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
 };
 
 export const createClassType = async (gymId: string, input: NewClassType) => {

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { paginationFields, type PaginatedResponse } from "./pagination";
 
 export const gymSportSchema = z.object({
   id: z.string().uuid(),
@@ -19,3 +20,9 @@ export type NewGymSport = z.infer<typeof gymSportInsertSchema>;
 export const gymSportUpdateSchema = gymSportInsertSchema.partial();
 
 export type UpdateGymSport = z.infer<typeof gymSportUpdateSchema>;
+
+export const gymSportListQuerySchema = z.object({ ...paginationFields });
+
+export type GymSportListQuery = z.infer<typeof gymSportListQuerySchema>;
+
+export type GymSportListResponse = PaginatedResponse<GymSport>;

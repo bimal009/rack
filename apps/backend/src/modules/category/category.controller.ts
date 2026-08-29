@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
-import { handleError } from "../../lib/errors";
+import { productCategoryListQuerySchema } from "@repo/types";
+import { ValidationError, handleError } from "../../lib/errors";
 import { AppResponse, RESPONSE_STATUS } from "../../lib/response";
 import { gymId, pathId } from "../../lib/helper";
 import {
@@ -11,10 +12,14 @@ import {
 
 export const getCategories = async (req: Request, res: Response) => {
   try {
-    const data = await listCategories(gymId(req));
+    const query = productCategoryListQuerySchema.safeParse(req.query);
+    if (!query.success) {
+      throw new ValidationError("Invalid query params", query.error.flatten());
+    }
+    const { data, meta } = await listCategories(gymId(req), query.data);
     return res
       .status(RESPONSE_STATUS.ok)
-      .json(AppResponse.ok(data, "Categories fetched"));
+      .json(AppResponse.paginated(data, meta, "Categories fetched"));
   } catch (error) {
     const { status, body } = handleError("getCategories", error);
     return res.status(status).json(body);

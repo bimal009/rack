@@ -1,17 +1,24 @@
 import { apiClient } from "@/api-client"
-import type { NewProductCategory, ProductCategory } from "@repo/types"
+import type {
+  NewProductCategory,
+  ProductCategory,
+  ProductCategoryListQuery,
+  ProductCategoryListResponse,
+} from "@repo/types"
 import { isAxiosError } from "axios"
 
 const base = (tenant: string) => `/api/v1/gyms/${tenant}/settings/categories`
 
 export async function listCategories(
-  tenant: string
-): Promise<ProductCategory[]> {
+  tenant: string,
+  query: Partial<ProductCategoryListQuery>
+): Promise<ProductCategoryListResponse> {
   try {
-    const { data } = await apiClient.get<{ data: ProductCategory[] }>(
-      base(tenant)
+    const { data } = await apiClient.get<ProductCategoryListResponse>(
+      base(tenant),
+      { params: query }
     )
-    return data.data
+    return { data: data.data, meta: data.meta }
   } catch (error) {
     if (isAxiosError<{ message?: string }>(error)) {
       throw new Error(error.response?.data?.message ?? "Could not load categories.")

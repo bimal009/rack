@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
-import { handleError } from "../../lib/errors";
+import { gymSportListQuerySchema } from "@repo/types";
+import { ValidationError, handleError } from "../../lib/errors";
 import { AppResponse, RESPONSE_STATUS } from "../../lib/response";
 import { gymId, pathId } from "../../lib/helper";
 import {
@@ -11,8 +12,14 @@ import {
 
 export const getSports = async (req: Request, res: Response) => {
   try {
-    const data = await listSports(gymId(req));
-    return res.status(RESPONSE_STATUS.ok).json(AppResponse.ok(data, "Sports fetched"));
+    const query = gymSportListQuerySchema.safeParse(req.query);
+    if (!query.success) {
+      throw new ValidationError("Invalid query params", query.error.flatten());
+    }
+    const { data, meta } = await listSports(gymId(req), query.data);
+    return res
+      .status(RESPONSE_STATUS.ok)
+      .json(AppResponse.paginated(data, meta, "Sports fetched"));
   } catch (error) {
     const { status, body } = handleError("getSports", error);
     return res.status(status).json(body);

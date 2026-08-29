@@ -1,7 +1,12 @@
 "use client"
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import type { NewGymSport } from "@repo/types"
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query"
+import type { GymSportListQuery, NewGymSport } from "@repo/types"
 
 import {
   createGymSport,
@@ -10,11 +15,15 @@ import {
   updateGymSport,
 } from "../api/gym-sport"
 
-export function useGymSportsQuery(tenant: string) {
+export function useGymSportsQuery(
+  tenant: string,
+  query: Partial<GymSportListQuery> = {}
+) {
   return useQuery({
-    queryKey: ["settings", "sports", tenant],
-    queryFn: () => listGymSports(tenant),
+    queryKey: ["settings", "sports", tenant, query],
+    queryFn: () => listGymSports(tenant, query),
     enabled: Boolean(tenant),
+    placeholderData: keepPreviousData,
   })
 }
 

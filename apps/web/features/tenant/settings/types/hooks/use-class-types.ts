@@ -1,7 +1,12 @@
 "use client"
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import type { NewClassType } from "@repo/types"
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query"
+import type { NewClassType, ClassTypeListQuery } from "@repo/types"
 
 import {
   createClassType,
@@ -10,11 +15,15 @@ import {
   updateClassType,
 } from "../api/class-type"
 
-export function useClassTypesQuery(tenant: string) {
+export function useClassTypesQuery(
+  tenant: string,
+  query: Partial<ClassTypeListQuery> = {}
+) {
   return useQuery({
-    queryKey: ["settings", "class-types", tenant],
-    queryFn: () => listClassTypes(tenant),
+    queryKey: [...["settings", "class-types", tenant], query],
+    queryFn: () => listClassTypes(tenant, query),
     enabled: Boolean(tenant),
+    placeholderData: keepPreviousData,
   })
 }
 

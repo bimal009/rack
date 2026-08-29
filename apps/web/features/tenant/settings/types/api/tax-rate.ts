@@ -1,13 +1,23 @@
 import { apiClient } from "@/api-client"
-import type { NewTaxRate, TaxRate } from "@repo/types"
+import type {
+  NewTaxRate,
+  TaxRate,
+  TaxRateListQuery,
+  TaxRateListResponse,
+} from "@repo/types"
 import { isAxiosError } from "axios"
 
 const base = (tenant: string) => `/api/v1/gyms/${tenant}/settings/tax-rates`
 
-export async function listTaxRates(tenant: string): Promise<TaxRate[]> {
+export async function listTaxRates(
+  tenant: string,
+  query: Partial<TaxRateListQuery>
+): Promise<TaxRateListResponse> {
   try {
-    const { data } = await apiClient.get<{ data: TaxRate[] }>(base(tenant))
-    return data.data
+    const { data } = await apiClient.get<TaxRateListResponse>(base(tenant), {
+      params: query,
+    })
+    return { data: data.data, meta: data.meta }
   } catch (error) {
     if (isAxiosError<{ message?: string }>(error)) {
       throw new Error(error.response?.data?.message ?? "Could not load tax rates.")

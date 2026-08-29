@@ -76,18 +76,10 @@ export function createStaffDirectoryColumns() {
     }),
     columnHelper.accessor("role", {
       header: "Role",
-      cell: ({ row }) => (
-        <div>
-          <Badge variant="outline" className="rounded-full font-normal">
-            {gymRoleLabel(row.original.role)}
-          </Badge>
-          {row.original.role === "instructor" &&
-            row.original.instructorType !== "None" && (
-              <p className="mt-1 truncate text-xs text-muted-foreground">
-                {row.original.instructorType}
-              </p>
-            )}
-        </div>
+      cell: ({ getValue }) => (
+        <Badge variant="outline" className="rounded-full font-normal">
+          {gymRoleLabel(getValue())}
+        </Badge>
       ),
     }),
     columnHelper.accessor("payRate", {

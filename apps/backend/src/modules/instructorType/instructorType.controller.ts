@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
-import { handleError } from "../../lib/errors";
+import { instructorTypeListQuerySchema } from "@repo/types";
+import { ValidationError, handleError } from "../../lib/errors";
 import { AppResponse, RESPONSE_STATUS } from "../../lib/response";
 import { gymId, pathId } from "../../lib/helper";
 import {
@@ -11,10 +12,14 @@ import {
 
 export const getInstructorTypes = async (req: Request, res: Response) => {
   try {
-    const data = await listInstructorTypes(gymId(req));
+    const query = instructorTypeListQuerySchema.safeParse(req.query);
+    if (!query.success) {
+      throw new ValidationError("Invalid query params", query.error.flatten());
+    }
+    const { data, meta } = await listInstructorTypes(gymId(req), query.data);
     return res
       .status(RESPONSE_STATUS.ok)
-      .json(AppResponse.ok(data, "Instructor types fetched"));
+      .json(AppResponse.paginated(data, meta, "Instructor types fetched"));
   } catch (error) {
     const { status, body } = handleError("getInstructorTypes", error);
     return res.status(status).json(body);

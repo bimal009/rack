@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { staffPaginationSchema } from "@repo/types";
+import { staffListQuerySchema } from "@repo/types";
 import { ForbiddenError, ValidationError, handleError } from "../../lib/errors";
 import { AppResponse, RESPONSE_STATUS } from "../../lib/response";
 import { createStaffWithUser, getAll } from "./staff.service";
@@ -25,16 +25,15 @@ export const getStaff = async (req: Request, res: Response) => {
     const gym = req.gym;
     if (!gym) throw new ForbiddenError("Gym context is missing");
 
-    const parsed = staffPaginationSchema.safeParse(req.query);
-    if (!parsed.success) {
-      throw new ValidationError("Invalid pagination params", parsed.error.flatten());
+    const query = staffListQuerySchema.safeParse(req.query);
+    if (!query.success) {
+      throw new ValidationError("Invalid query params", query.error.flatten());
     }
-
-    const { data, pagination } = await getAll(gym.id, parsed.data);
+    const { data, meta } = await getAll(gym.id, query.data);
 
     return res
       .status(RESPONSE_STATUS.ok)
-      .json(AppResponse.paginated(data, pagination, "Staff fetched successfully"));
+      .json(AppResponse.paginated(data, meta, "Staff fetched successfully"));
   } catch (error) {
     const { status, body } = handleError("getStaff", error);
     return res.status(status).json(body);

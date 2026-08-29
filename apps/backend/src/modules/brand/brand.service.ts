@@ -1,20 +1,35 @@
 import {
+  BrandListQuery,
   NewBrand,
   UpdateBrand,
   brandInsertSchema,
   brandUpdateSchema,
 } from "@repo/types";
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, count, desc, eq, ilike } from "drizzle-orm";
 import { db } from "../../db";
 import { brand } from "../../db/schema";
 import { NotFoundError, ValidationError } from "../../lib/errors";
 
-export const listBrands = async (gymId: string) => {
-  return db
-    .select()
-    .from(brand)
-    .where(eq(brand.gymId, gymId))
-    .orderBy(asc(brand.name));
+export const listBrands = async (gymId: string, query: BrandListQuery) => {
+  const { page, limit, search, sortOrder } = query;
+  const where = and(
+    eq(brand.gymId, gymId),
+    search ? ilike(brand.name, `%${search}%`) : undefined
+  );
+
+  const [data, [totalRow]] = await Promise.all([
+    db
+      .select()
+      .from(brand)
+      .where(where)
+      .orderBy(sortOrder === "asc" ? asc(brand.name) : desc(brand.name))
+      .limit(limit)
+      .offset((page - 1) * limit),
+    db.select({ total: count() }).from(brand).where(where),
+  ]);
+
+  const total = totalRow?.total ?? 0;
+  return { data, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
 };
 
 export const createBrand = async (gymId: string, input: NewBrand) => {

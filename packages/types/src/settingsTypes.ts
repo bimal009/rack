@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { paginationFields, type PaginatedResponse } from "./pagination";
 
 const rowBase = {
   id: z.string().uuid(),
@@ -119,3 +120,27 @@ export const taxRateInsertSchema = z.object({
 export type NewTaxRate = z.infer<typeof taxRateInsertSchema>;
 export const taxRateUpdateSchema = taxRateInsertSchema.partial();
 export type UpdateTaxRate = z.infer<typeof taxRateUpdateSchema>;
+
+export const areaTypeListQuerySchema = z.object({ ...paginationFields });
+export type AreaTypeListQuery = z.infer<typeof areaTypeListQuerySchema>;
+export type AreaTypeListResponse = PaginatedResponse<AreaType>;
+
+export const instructorTypeListQuerySchema = z.object({ ...paginationFields });
+export type InstructorTypeListQuery = z.infer<typeof instructorTypeListQuerySchema>;
+export type InstructorTypeListResponse = PaginatedResponse<InstructorTypeRecord>;
+
+export const classTypeListQuerySchema = z.object({ ...paginationFields });
+export type ClassTypeListQuery = z.infer<typeof classTypeListQuerySchema>;
+export type ClassTypeListResponse = PaginatedResponse<ClassType>;
+
+export const brandListQuerySchema = z.object({ ...paginationFields });
+export type BrandListQuery = z.infer<typeof brandListQuerySchema>;
+export type BrandListResponse = PaginatedResponse<Brand>;
+
+export const productCategoryListQuerySchema = z.object({ ...paginationFields });
+export type ProductCategoryListQuery = z.infer<typeof productCategoryListQuerySchema>;
+export type ProductCategoryListResponse = PaginatedResponse<ProductCategory>;
+
+export const taxRateListQuerySchema = z.object({ ...paginationFields });
+export type TaxRateListQuery = z.infer<typeof taxRateListQuerySchema>;
+export type TaxRateListResponse = PaginatedResponse<TaxRate>;

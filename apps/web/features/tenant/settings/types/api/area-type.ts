@@ -1,13 +1,23 @@
 import { apiClient } from "@/api-client"
-import type { AreaType, NewAreaType } from "@repo/types"
+import type {
+  AreaType,
+  AreaTypeListQuery,
+  AreaTypeListResponse,
+  NewAreaType,
+} from "@repo/types"
 import { isAxiosError } from "axios"
 
 const base = (tenant: string) => `/api/v1/gyms/${tenant}/settings/area-types`
 
-export async function listAreaTypes(tenant: string): Promise<AreaType[]> {
+export async function listAreaTypes(
+  tenant: string,
+  query: Partial<AreaTypeListQuery>
+): Promise<AreaTypeListResponse> {
   try {
-    const { data } = await apiClient.get<{ data: AreaType[] }>(base(tenant))
-    return data.data
+    const { data } = await apiClient.get<AreaTypeListResponse>(base(tenant), {
+      params: query,
+    })
+    return { data: data.data, meta: data.meta }
   } catch (error) {
     if (isAxiosError<{ message?: string }>(error)) {
       throw new Error(error.response?.data?.message ?? "Could not load area types.")

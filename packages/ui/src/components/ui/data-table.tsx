@@ -59,6 +59,11 @@ export const dataTableFeatures = tableFeatures({
 
 export type DataTableFeatures = typeof dataTableFeatures
 
+export type DataTableColumnDef<TData extends RowData> = ColumnDef<
+  DataTableFeatures,
+  TData
+>
+
 export function createDataTableColumnHelper<TData extends RowData>() {
   return createColumnHelper<DataTableFeatures, TData>()
 }

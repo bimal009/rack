@@ -1,18 +1,25 @@
 import { apiClient } from "@/api-client"
-import type { InstructorTypeRecord, NewInstructorType } from "@repo/types"
+import type {
+  InstructorTypeListQuery,
+  InstructorTypeListResponse,
+  InstructorTypeRecord,
+  NewInstructorType,
+} from "@repo/types"
 import { isAxiosError } from "axios"
 
 const base = (tenant: string) =>
   `/api/v1/gyms/${tenant}/settings/instructor-types`
 
 export async function listInstructorTypes(
-  tenant: string
-): Promise<InstructorTypeRecord[]> {
+  tenant: string,
+  query: Partial<InstructorTypeListQuery>
+): Promise<InstructorTypeListResponse> {
   try {
-    const { data } = await apiClient.get<{ data: InstructorTypeRecord[] }>(
-      base(tenant)
+    const { data } = await apiClient.get<InstructorTypeListResponse>(
+      base(tenant),
+      { params: query }
     )
-    return data.data
+    return { data: data.data, meta: data.meta }
   } catch (error) {
     if (isAxiosError<{ message?: string }>(error)) {
       throw new Error(

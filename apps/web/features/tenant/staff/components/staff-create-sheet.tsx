@@ -1,24 +1,24 @@
 "use client"
 
 import { useState, type FormEvent } from "react"
+import { useRouter } from "next/navigation"
 import {
   Briefcase,
   Dumbbell,
   IdCard,
   MapPin,
+  Plus,
   ShieldCheck,
   UserRound,
   UserRoundCog,
 } from "lucide-react"
 import { toast } from "sonner"
 import {
-  instructorTypeEnumSchema,
   payTypeEnumSchema,
   staffGenderEnumSchema,
   staffVisibilityEnumSchema,
   staffWithUserInsertSchema,
   type GymRole,
-  type InstructorType,
   type PayType,
   type StaffGender,
   type StaffVisibility,
@@ -58,6 +58,8 @@ import { Switch } from "@repo/ui/components/ui/switch"
 import { FormSection, FormSheetHeader } from "@/features/tenant/components/form-section"
 import { ImageUpload } from "@/features/media"
 
+import { useInstructorTypesQuery } from "@/features/tenant/settings/types/hooks/use-instructor-types"
+
 import { useCreateStaffMutation } from "../hooks/use-staff"
 import { GYM_ROLE_LABELS } from "../lib/roles"
 import { fieldErrors } from "../lib/validation"
@@ -78,7 +80,7 @@ interface StaffFormValues {
   role: GymRole | ""
   payType: PayType | ""
   payRate: string
-  instructorType: InstructorType
+  instructorTypeId: string
   experience: string
   certifications: string
   canBeBooked: boolean
@@ -101,7 +103,7 @@ const emptyForm: StaffFormValues = {
   role: "",
   payType: "",
   payRate: "",
-  instructorType: "None",
+  instructorTypeId: "",
   experience: "",
   certifications: "",
   canBeBooked: false,
@@ -141,7 +143,9 @@ function StaffCreateForm({
 }) {
   const [values, setValues] = useState<StaffFormValues>(emptyForm)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const router = useRouter()
   const createStaff = useCreateStaffMutation(tenant)
+  const instructorTypes = useInstructorTypesQuery(tenant, { limit: 100 })
 
   const isInstructor = values.role === "instructor"
 
@@ -158,6 +162,7 @@ function StaffCreateForm({
       role: values.role || undefined,
       payType: values.payType || undefined,
       payRate: Number(values.payRate),
+      instructorTypeId: values.instructorTypeId || undefined,
       maxConcurrentBookings: Number(values.maxConcurrentBookings),
     })
 
@@ -434,23 +439,45 @@ function StaffCreateForm({
                 <FieldLabel htmlFor="staff-instructor-type">
                   Instructor Type
                 </FieldLabel>
-                <Select
-                  value={values.instructorType}
-                  onValueChange={(value) =>
-                    set("instructorType", value as InstructorType)
-                  }
-                >
-                  <SelectTrigger id="staff-instructor-type" className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {instructorTypeEnumSchema.options.map((type) => (
-                      <SelectItem key={type} value={type}>
-                        {type}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {instructorTypes.isSuccess &&
+                instructorTypes.data.data.length === 0 ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full justify-start font-normal text-muted-foreground"
+                    onClick={() =>
+                      router.push(
+                        `/s/${tenant}/settings/types/instructor-types`
+                      )
+                    }
+                  >
+                    <Plus className="size-4" />
+                    Add an instructor type
+                  </Button>
+                ) : (
+                  <Select
+                    value={values.instructorTypeId}
+                    onValueChange={(value) =>
+                      set("instructorTypeId", value ?? "")
+                    }
+                  >
+                    <SelectTrigger id="staff-instructor-type" className="w-full">
+                      <SelectValue placeholder="Select a type">
+                        {(value: string | null) =>
+                          instructorTypes.data?.data.find((t) => t.id === value)
+                            ?.name ?? "Select a type"
+                        }
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(instructorTypes.data?.data ?? []).map((type) => (
+                        <SelectItem key={type.id} value={type.id}>
+                          {type.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </Field>
 
               <Field>

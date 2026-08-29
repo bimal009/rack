@@ -1,7 +1,12 @@
 "use client"
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import type { NewTaxRate } from "@repo/types"
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query"
+import type { NewTaxRate, TaxRateListQuery } from "@repo/types"
 
 import {
   createTaxRate,
@@ -10,11 +15,15 @@ import {
   updateTaxRate,
 } from "../api/tax-rate"
 
-export function useTaxRatesQuery(tenant: string) {
+export function useTaxRatesQuery(
+  tenant: string,
+  query: Partial<TaxRateListQuery> = {}
+) {
   return useQuery({
-    queryKey: ["settings", "tax-rates", tenant],
-    queryFn: () => listTaxRates(tenant),
+    queryKey: [...["settings", "tax-rates", tenant], query],
+    queryFn: () => listTaxRates(tenant, query),
     enabled: Boolean(tenant),
+    placeholderData: keepPreviousData,
   })
 }
 
