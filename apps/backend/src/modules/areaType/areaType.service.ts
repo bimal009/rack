@@ -9,8 +9,31 @@ import { and, asc, count, desc, eq, ilike } from "drizzle-orm";
 import { db } from "../../db";
 import { areaType } from "../../db/schema";
 import { NotFoundError, ValidationError } from "../../lib/errors";
+import { CACHE_KEYS, CACHE_TTL, redis, deleteByPattern } from "../../lib/redis";
 
-export const listAreaTypes = async (gymId: string, query: AreaTypeListQuery) => {
+const areaTypeListKey = (gymId: string, query: AreaTypeListQuery): string => {
+  const { page, limit, search, sortOrder } = query;
+  return `${CACHE_KEYS.AREA_TYPE}:${gymId}:list:${page}:${limit}:${search ?? ""}:${sortOrder}`;
+};
+
+const areaTypeItemKey = (gymId: string, id: string): string =>
+  `${CACHE_KEYS.AREA_TYPE}:${gymId}:item:${id}`;
+
+const invalidateAreaTypeCache = async (gymId: string): Promise<void> => {
+  await deleteByPattern(`${CACHE_KEYS.AREA_TYPE}:${gymId}:*`);
+};
+
+export const listAreaTypes = async (
+  gymId: string,
+  query: AreaTypeListQuery
+) => {
+  const cacheKey = areaTypeListKey(gymId, query);
+
+  const cached = await redis.get(cacheKey);
+  if (cached) {
+    return JSON.parse(cached);
+  }
+
   const { page, limit, search, sortOrder } = query;
   const where = and(
     eq(areaType.gymId, gymId),
@@ -29,7 +52,35 @@ export const listAreaTypes = async (gymId: string, query: AreaTypeListQuery) => 
   ]);
 
   const total = totalRow?.total ?? 0;
-  return { data, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
+  const result = {
+    data,
+    meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
+  };
+
+  await redis.set(cacheKey, JSON.stringify(result), "EX", CACHE_TTL.MEDIUM);
+
+  return result;
+};
+
+export const getAreaType = async (gymId: string, id: string) => {
+  const cacheKey = areaTypeItemKey(gymId, id);
+
+  const cached = await redis.get(cacheKey);
+  if (cached) {
+    return JSON.parse(cached);
+  }
+
+  const [record] = await db
+    .select()
+    .from(areaType)
+    .where(and(eq(areaType.gymId, gymId), eq(areaType.id, id)))
+    .limit(1);
+
+  if (!record) throw new NotFoundError("Area type not found");
+
+  await redis.set(cacheKey, JSON.stringify(record), "EX", CACHE_TTL.MEDIUM);
+
+  return record;
 };
 
 export const createAreaType = async (gymId: string, input: NewAreaType) => {
@@ -42,6 +93,8 @@ export const createAreaType = async (gymId: string, input: NewAreaType) => {
     .insert(areaType)
     .values({ gymId, ...result.data })
     .returning();
+
+  await invalidateAreaTypeCache(gymId);
 
   return record;
 };
@@ -63,6 +116,9 @@ export const updateAreaType = async (
     .returning();
 
   if (!record) throw new NotFoundError("Area type not found");
+
+  await invalidateAreaTypeCache(gymId);
+
   return record;
 };
 
@@ -73,5 +129,8 @@ export const deleteAreaType = async (gymId: string, id: string) => {
     .returning();
 
   if (!record) throw new NotFoundError("Area type not found");
+
+  await invalidateAreaTypeCache(gymId);
+
   return record;
 };

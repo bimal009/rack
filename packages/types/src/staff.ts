@@ -99,6 +99,24 @@ export const staffWithUserInsertSchema = z.object({
   canBeBooked: z.boolean().default(false),
   visibility: staffVisibilityEnumSchema.default("Public"),
   maxConcurrentBookings: z.number().int().positive().default(1),
+}).superRefine((data, ctx) => {
+  if (data.role !== "instructor") return;
+
+  if (!data.instructorTypeId) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["instructorTypeId"],
+      message: "Select an instructor type",
+    });
+  }
+
+  if (data.experience == null) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["experience"],
+      message: "Enter years of experience",
+    });
+  }
 });
 
 export type NewStaffWithUser = z.infer<typeof staffWithUserInsertSchema>;

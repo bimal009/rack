@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, type FormEvent } from "react"
-import { CalendarClock, Ticket } from "lucide-react"
+import { CalendarClock, Check, Ticket } from "lucide-react"
 
 import { Button } from "@repo/ui/components/ui/button"
 import {
@@ -12,7 +12,12 @@ import {
   ComboboxItem,
   ComboboxList,
 } from "@repo/ui/components/ui/combobox"
-import { Field, FieldError, FieldLabel } from "@repo/ui/components/ui/field"
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldLabel,
+} from "@repo/ui/components/ui/field"
 import { Input } from "@repo/ui/components/ui/input"
 import {
   Select,
@@ -28,7 +33,9 @@ import {
   SheetFooter,
   SheetHeader,
 } from "@repo/ui/components/ui/sheet"
+import { Switch } from "@repo/ui/components/ui/switch"
 import { Textarea } from "@repo/ui/components/ui/textarea"
+import { cn } from "@repo/ui/lib/utils"
 
 import { TimeSelect } from "@/components/time-select"
 import { FormSection, FormSheetHeader } from "@/features/tenant/components/form-section"
@@ -37,7 +44,17 @@ import { initialMembers } from "@/features/tenant/members/lib/data"
 import { initialAreaTypes } from "@/features/tenant/settings/types/lib/data"
 
 import { fieldErrors } from "../lib/validation"
-import { bookingSchema, type Booking, type BookingInput } from "../lib/booking-schema"
+import {
+  bookingSchema,
+  repeatEndModes,
+  repeatFrequencies,
+  weekdays,
+  type Booking,
+  type BookingInput,
+  type RepeatEndMode,
+  type RepeatFrequency,
+  type Weekday,
+} from "../lib/booking-schema"
 
 interface BookingFormValues {
   memberId: string
@@ -46,6 +63,13 @@ interface BookingFormValues {
   startTime: string
   endTime: string
   notes: string
+  repeat: boolean
+  repeatEvery: string
+  repeatFrequency: RepeatFrequency
+  repeatWeekdays: Weekday[]
+  repeatEndMode: RepeatEndMode
+  repeatEndDate: string
+  repeatEndOccurrences: string
 }
 
 function toFormValues(booking?: Booking | null): BookingFormValues {
@@ -56,6 +80,15 @@ function toFormValues(booking?: Booking | null): BookingFormValues {
     startTime: booking?.startTime ?? "09:00",
     endTime: booking?.endTime ?? "10:00",
     notes: booking?.notes ?? "",
+    repeat: booking?.repeat ?? false,
+    repeatEvery: booking?.repeatEvery ? String(booking.repeatEvery) : "1",
+    repeatFrequency: booking?.repeatFrequency ?? "Week",
+    repeatWeekdays: booking?.repeatWeekdays ?? [],
+    repeatEndMode: booking?.repeatEndMode ?? "Never",
+    repeatEndDate: booking?.repeatEndDate ?? "",
+    repeatEndOccurrences: booking?.repeatEndOccurrences
+      ? String(booking.repeatEndOccurrences)
+      : "",
   }
 }
 
@@ -72,10 +105,36 @@ function BookingFormBody({ booking, onSubmit, onCancel }: BookingFormBodyProps) 
   const [errors, setErrors] = useState<Record<string, string>>({})
   const isEdit = Boolean(booking)
 
+  function toggleWeekday(day: Weekday) {
+    setValues((v) => ({
+      ...v,
+      repeatWeekdays: v.repeatWeekdays.includes(day)
+        ? v.repeatWeekdays.filter((d) => d !== day)
+        : [...v.repeatWeekdays, day],
+    }))
+  }
+
   function handleSubmit(event: FormEvent) {
     event.preventDefault()
 
-    const result = bookingSchema.safeParse(values)
+    const result = bookingSchema.safeParse({
+      ...values,
+      repeatEvery: values.repeat ? Number(values.repeatEvery) : undefined,
+      repeatFrequency: values.repeat ? values.repeatFrequency : undefined,
+      repeatWeekdays:
+        values.repeat && values.repeatFrequency === "Week"
+          ? values.repeatWeekdays
+          : undefined,
+      repeatEndMode: values.repeat ? values.repeatEndMode : undefined,
+      repeatEndDate:
+        values.repeat && values.repeatEndMode === "Until date"
+          ? values.repeatEndDate
+          : undefined,
+      repeatEndOccurrences:
+        values.repeat && values.repeatEndMode === "After occurrences"
+          ? Number(values.repeatEndOccurrences)
+          : undefined,
+    })
 
     if (!result.success) {
       setErrors(fieldErrors(result.error))
@@ -215,6 +274,167 @@ function BookingFormBody({ booking, onSubmit, onCancel }: BookingFormBodyProps) 
               <FieldError>{errors.endTime}</FieldError>
             </Field>
           </div>
+
+          <Field orientation="horizontal">
+            <Switch
+              id="booking-repeat"
+              checked={values.repeat}
+              onCheckedChange={(checked) =>
+                setValues((v) => ({ ...v, repeat: checked }))
+              }
+            />
+            <FieldLabel htmlFor="booking-repeat">Repeat</FieldLabel>
+          </Field>
+
+          {values.repeat && (
+            <>
+              <div className="grid grid-cols-2 gap-4">
+                <Field>
+                  <FieldLabel htmlFor="booking-repeat-every">
+                    Repeat every
+                  </FieldLabel>
+                  <Input
+                    id="booking-repeat-every"
+                    type="number"
+                    inputMode="numeric"
+                    min="1"
+                    step="1"
+                    value={values.repeatEvery}
+                    onChange={(e) =>
+                      setValues((v) => ({ ...v, repeatEvery: e.target.value }))
+                    }
+                  />
+                </Field>
+
+                <Field>
+                  <FieldLabel htmlFor="booking-repeat-frequency">
+                    Frequency
+                  </FieldLabel>
+                  <Select
+                    value={values.repeatFrequency}
+                    onValueChange={(value) =>
+                      setValues((v) => ({
+                        ...v,
+                        repeatFrequency: value as RepeatFrequency,
+                      }))
+                    }
+                  >
+                    <SelectTrigger
+                      id="booking-repeat-frequency"
+                      className="w-full"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {repeatFrequencies.map((freq) => (
+                        <SelectItem key={freq} value={freq}>
+                          {freq}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Field>
+              </div>
+
+              {values.repeatFrequency === "Week" && (
+                <Field>
+                  <FieldLabel>Repeat on</FieldLabel>
+                  <div className="flex flex-wrap gap-1.5">
+                    {weekdays.map((day) => {
+                      const selected = values.repeatWeekdays.includes(day)
+                      return (
+                        <button
+                          key={day}
+                          type="button"
+                          aria-pressed={selected}
+                          onClick={() => toggleWeekday(day)}
+                          className={cn(
+                            "flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+                            selected
+                              ? "border-primary bg-primary text-primary-foreground"
+                              : "border-border text-foreground hover:bg-muted/50"
+                          )}
+                        >
+                          {selected && <Check className="size-3" />}
+                          {day}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </Field>
+              )}
+
+              <Field>
+                <FieldLabel htmlFor="booking-repeat-ends">Ends</FieldLabel>
+                <Select
+                  value={values.repeatEndMode}
+                  onValueChange={(value) =>
+                    setValues((v) => ({
+                      ...v,
+                      repeatEndMode: value as RepeatEndMode,
+                    }))
+                  }
+                >
+                  <SelectTrigger id="booking-repeat-ends" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {repeatEndModes.map((mode) => (
+                      <SelectItem key={mode} value={mode}>
+                        {mode}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {values.repeatEndMode === "Never" && (
+                  <FieldDescription>
+                    Bookings will be created automatically on a rolling basis.
+                  </FieldDescription>
+                )}
+              </Field>
+
+              {values.repeatEndMode === "Until date" && (
+                <Field>
+                  <FieldLabel htmlFor="booking-repeat-end-date">
+                    Until date
+                  </FieldLabel>
+                  <Input
+                    id="booking-repeat-end-date"
+                    type="date"
+                    value={values.repeatEndDate}
+                    onChange={(e) =>
+                      setValues((v) => ({
+                        ...v,
+                        repeatEndDate: e.target.value,
+                      }))
+                    }
+                  />
+                </Field>
+              )}
+
+              {values.repeatEndMode === "After occurrences" && (
+                <Field>
+                  <FieldLabel htmlFor="booking-repeat-occurrences">
+                    Occurrences
+                  </FieldLabel>
+                  <Input
+                    id="booking-repeat-occurrences"
+                    type="number"
+                    inputMode="numeric"
+                    min="1"
+                    step="1"
+                    value={values.repeatEndOccurrences}
+                    onChange={(e) =>
+                      setValues((v) => ({
+                        ...v,
+                        repeatEndOccurrences: e.target.value,
+                      }))
+                    }
+                  />
+                </Field>
+              )}
+            </>
+          )}
         </FormSection>
       </SheetBody>
 

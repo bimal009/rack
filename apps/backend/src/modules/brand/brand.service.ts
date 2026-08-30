@@ -9,8 +9,28 @@ import { and, asc, count, desc, eq, ilike } from "drizzle-orm";
 import { db } from "../../db";
 import { brand } from "../../db/schema";
 import { NotFoundError, ValidationError } from "../../lib/errors";
+import { CACHE_KEYS, CACHE_TTL, redis, deleteByPattern } from "../../lib/redis";
+
+const brandListKey = (gymId: string, query: BrandListQuery): string => {
+  const { page, limit, search, sortOrder } = query;
+  return `${CACHE_KEYS.BRANDS}:${gymId}:list:${page}:${limit}:${search ?? ""}:${sortOrder}`;
+};
+
+const brandItemKey = (gymId: string, id: string): string =>
+  `${CACHE_KEYS.BRANDS}:${gymId}:item:${id}`;
+
+const invalidateBrandCache = async (gymId: string): Promise<void> => {
+  await deleteByPattern(`${CACHE_KEYS.BRANDS}:${gymId}:*`);
+};
 
 export const listBrands = async (gymId: string, query: BrandListQuery) => {
+  const cacheKey = brandListKey(gymId, query);
+
+  const cached = await redis.get(cacheKey);
+  if (cached) {
+    return JSON.parse(cached);
+  }
+
   const { page, limit, search, sortOrder } = query;
   const where = and(
     eq(brand.gymId, gymId),
@@ -29,7 +49,35 @@ export const listBrands = async (gymId: string, query: BrandListQuery) => {
   ]);
 
   const total = totalRow?.total ?? 0;
-  return { data, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
+  const result = {
+    data,
+    meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
+  };
+
+  await redis.set(cacheKey, JSON.stringify(result), "EX", CACHE_TTL.MEDIUM);
+
+  return result;
+};
+
+export const getBrand = async (gymId: string, id: string) => {
+  const cacheKey = brandItemKey(gymId, id);
+
+  const cached = await redis.get(cacheKey);
+  if (cached) {
+    return JSON.parse(cached);
+  }
+
+  const [record] = await db
+    .select()
+    .from(brand)
+    .where(and(eq(brand.gymId, gymId), eq(brand.id, id)))
+    .limit(1);
+
+  if (!record) throw new NotFoundError("Brand not found");
+
+  await redis.set(cacheKey, JSON.stringify(record), "EX", CACHE_TTL.MEDIUM);
+
+  return record;
 };
 
 export const createBrand = async (gymId: string, input: NewBrand) => {
@@ -42,6 +90,8 @@ export const createBrand = async (gymId: string, input: NewBrand) => {
     .insert(brand)
     .values({ gymId, name: result.data.name })
     .returning();
+
+  await invalidateBrandCache(gymId);
 
   return record;
 };
@@ -63,6 +113,9 @@ export const updateBrand = async (
     .returning();
 
   if (!record) throw new NotFoundError("Brand not found");
+
+  await invalidateBrandCache(gymId);
+
   return record;
 };
 
@@ -73,5 +126,8 @@ export const deleteBrand = async (gymId: string, id: string) => {
     .returning();
 
   if (!record) throw new NotFoundError("Brand not found");
+
+  await invalidateBrandCache(gymId);
+
   return record;
 };

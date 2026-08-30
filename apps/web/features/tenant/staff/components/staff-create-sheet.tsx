@@ -166,7 +166,8 @@ function StaffCreateForm({
       payType: values.payType || undefined,
       payRate: Number(values.payRate),
       instructorTypeId: values.instructorTypeId || undefined,
-      experience: values.experience ? Number(values.experience) : null,
+      experience:
+        values.experience.trim() === "" ? null : Number(values.experience),
       maxConcurrentBookings: Number(values.maxConcurrentBookings),
     })
 
@@ -466,9 +467,9 @@ function StaffCreateForm({
             description="Shown on the schedule and booking pages."
           >
             <div className="grid grid-cols-2 gap-4">
-              <Field>
+              <Field data-invalid={Boolean(errors.instructorTypeId)}>
                 <FieldLabel htmlFor="staff-instructor-type">
-                  Instructor Type
+                  Instructor Type <span className="text-destructive">*</span>
                 </FieldLabel>
                 {instructorTypes.isSuccess &&
                 instructorTypes.data.data.length === 0 ? (
@@ -509,11 +510,12 @@ function StaffCreateForm({
                     </SelectContent>
                   </Select>
                 )}
+                <FieldError>{errors.instructorTypeId}</FieldError>
               </Field>
 
               <Field data-invalid={Boolean(errors.experience)}>
                 <FieldLabel htmlFor="staff-experience">
-                  Experience (years)
+                  Experience (years) <span className="text-destructive">*</span>
                 </FieldLabel>
                 <Input
                   id="staff-experience"

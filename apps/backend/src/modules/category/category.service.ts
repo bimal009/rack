@@ -9,11 +9,34 @@ import { and, asc, count, desc, eq, ilike } from "drizzle-orm";
 import { db } from "../../db";
 import { productCategory } from "../../db/schema";
 import { NotFoundError, ValidationError } from "../../lib/errors";
+import { CACHE_KEYS, CACHE_TTL, redis, deleteByPattern } from "../../lib/redis";
+
+const categoryListKey = (
+  gymId: string,
+  query: ProductCategoryListQuery
+): string => {
+  const { page, limit, search, sortOrder } = query;
+  return `${CACHE_KEYS.CATEGORY}:${gymId}:list:${page}:${limit}:${search ?? ""}:${sortOrder}`;
+};
+
+const categoryItemKey = (gymId: string, id: string): string =>
+  `${CACHE_KEYS.CATEGORY}:${gymId}:item:${id}`;
+
+const invalidateCategoryCache = async (gymId: string): Promise<void> => {
+  await deleteByPattern(`${CACHE_KEYS.CATEGORY}:${gymId}:*`);
+};
 
 export const listCategories = async (
   gymId: string,
   query: ProductCategoryListQuery
 ) => {
+  const cacheKey = categoryListKey(gymId, query);
+
+  const cached = await redis.get(cacheKey);
+  if (cached) {
+    return JSON.parse(cached);
+  }
+
   const { page, limit, search, sortOrder } = query;
   const where = and(
     eq(productCategory.gymId, gymId),
@@ -36,7 +59,35 @@ export const listCategories = async (
   ]);
 
   const total = totalRow?.total ?? 0;
-  return { data, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
+  const result = {
+    data,
+    meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
+  };
+
+  await redis.set(cacheKey, JSON.stringify(result), "EX", CACHE_TTL.MEDIUM);
+
+  return result;
+};
+
+export const getCategory = async (gymId: string, id: string) => {
+  const cacheKey = categoryItemKey(gymId, id);
+
+  const cached = await redis.get(cacheKey);
+  if (cached) {
+    return JSON.parse(cached);
+  }
+
+  const [record] = await db
+    .select()
+    .from(productCategory)
+    .where(and(eq(productCategory.gymId, gymId), eq(productCategory.id, id)))
+    .limit(1);
+
+  if (!record) throw new NotFoundError("Category not found");
+
+  await redis.set(cacheKey, JSON.stringify(record), "EX", CACHE_TTL.MEDIUM);
+
+  return record;
 };
 
 export const createCategory = async (
@@ -52,6 +103,8 @@ export const createCategory = async (
     .insert(productCategory)
     .values({ gymId, name: result.data.name })
     .returning();
+
+  await invalidateCategoryCache(gymId);
 
   return record;
 };
@@ -73,6 +126,9 @@ export const updateCategory = async (
     .returning();
 
   if (!record) throw new NotFoundError("Category not found");
+
+  await invalidateCategoryCache(gymId);
+
   return record;
 };
 
@@ -83,5 +139,8 @@ export const deleteCategory = async (gymId: string, id: string) => {
     .returning();
 
   if (!record) throw new NotFoundError("Category not found");
+
+  await invalidateCategoryCache(gymId);
+
   return record;
 };
