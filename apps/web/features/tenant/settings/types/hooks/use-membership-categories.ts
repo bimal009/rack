@@ -6,57 +6,61 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query"
-import type { NewPlanCategory, PlanCategoryListQuery } from "@repo/types"
+import type {
+  NewMembershipCategory,
+  MembershipCategoryListQuery,
+} from "@repo/types"
 
 import {
-  createPlanCategory,
-  deletePlanCategory,
-  listPlanCategories,
-  updatePlanCategory,
-} from "../api/plan-category"
+  createMembershipCategory,
+  deleteMembershipCategory,
+  listMembershipCategories,
+  updateMembershipCategory,
+} from "../api/membership-category"
 
-export function usePlanCategoriesQuery(
+export function useMembershipCategoriesQuery(
   tenant: string,
-  query: Partial<PlanCategoryListQuery> = {}
+  query: Partial<MembershipCategoryListQuery> = {}
 ) {
   return useQuery({
-    queryKey: [...["settings", "plan-categories", tenant], query],
-    queryFn: () => listPlanCategories(tenant, query),
+    queryKey: [...["settings", "membership-categories", tenant], query],
+    queryFn: () => listMembershipCategories(tenant, query),
     enabled: Boolean(tenant),
     placeholderData: keepPreviousData,
   })
 }
 
-export function useCreatePlanCategory(tenant: string) {
+export function useCreateMembershipCategory(tenant: string) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (input: NewPlanCategory) => createPlanCategory(tenant, input),
+    mutationFn: (input: NewMembershipCategory) =>
+      createMembershipCategory(tenant, input),
     onSuccess: () =>
       queryClient.invalidateQueries({
-        queryKey: ["settings", "plan-categories", tenant],
+        queryKey: ["settings", "membership-categories", tenant],
       }),
   })
 }
 
-export function useUpdatePlanCategory(tenant: string) {
+export function useUpdateMembershipCategory(tenant: string) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (vars: { id: string; input: Partial<NewPlanCategory> }) =>
-      updatePlanCategory(tenant, vars.id, vars.input),
+    mutationFn: (vars: { id: string; input: Partial<NewMembershipCategory> }) =>
+      updateMembershipCategory(tenant, vars.id, vars.input),
     onSuccess: () =>
       queryClient.invalidateQueries({
-        queryKey: ["settings", "plan-categories", tenant],
+        queryKey: ["settings", "membership-categories", tenant],
       }),
   })
 }
 
-export function useDeletePlanCategory(tenant: string) {
+export function useDeleteMembershipCategory(tenant: string) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (id: string) => deletePlanCategory(tenant, id),
+    mutationFn: (id: string) => deleteMembershipCategory(tenant, id),
     onSuccess: () =>
       queryClient.invalidateQueries({
-        queryKey: ["settings", "plan-categories", tenant],
+        queryKey: ["settings", "membership-categories", tenant],
       }),
   })
 }

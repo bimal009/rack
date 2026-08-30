@@ -1,35 +1,35 @@
 "use client"
 
-import type { NewPlanCategory, PlanCategory } from "@repo/types"
+import type { NewMembershipCategory, MembershipCategory } from "@repo/types"
 
 import { createDataTableColumnHelper } from "@repo/ui/components/ui/data-table"
 
 import {
-  useCreatePlanCategory,
-  useDeletePlanCategory,
-  usePlanCategoriesQuery,
-  useUpdatePlanCategory,
-} from "../hooks/use-plan-categories"
+  useCreateMembershipCategory,
+  useDeleteMembershipCategory,
+  useMembershipCategoriesQuery,
+  useUpdateMembershipCategory,
+} from "../hooks/use-membership-categories"
 import { TypeList } from "./type-list"
 import { TypeFormSheet } from "./type-form-sheet"
 
 function buildColumns() {
-  const columnHelper = createDataTableColumnHelper<PlanCategory>()
+  const columnHelper = createDataTableColumnHelper<MembershipCategory>()
   return columnHelper.columns([columnHelper.accessor("name", { header: "Name" })])
 }
 
-export function PlanCategoriesList() {
+export function MembershipCategoriesList() {
   return (
-    <TypeList<PlanCategory, NewPlanCategory>
-      label="Plan category"
+    <TypeList<MembershipCategory, NewMembershipCategory>
+      label="Membership category"
       buildColumns={buildColumns}
-      useList={usePlanCategoriesQuery}
-      useCreate={useCreatePlanCategory}
-      useUpdate={useUpdatePlanCategory}
-      useDelete={useDeletePlanCategory}
+      useList={useMembershipCategoriesQuery}
+      useCreate={useCreateMembershipCategory}
+      useUpdate={useUpdateMembershipCategory}
+      useDelete={useDeleteMembershipCategory}
       renderForm={(props) => (
         <TypeFormSheet
-          label="Plan category"
+          label="Membership category"
           open={props.open}
           onOpenChange={props.onOpenChange}
           item={props.item}
