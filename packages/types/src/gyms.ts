@@ -13,6 +13,34 @@ export const SPECIALTY_OPTIONS = [
   "Group Classes",
 ] as const;
 
+export const FEATURE_OPTIONS = [
+  "Free Weights",
+  "Cardio Machines",
+  "Weight Machines",
+  "Squat Racks",
+  "Functional Training Area",
+  "Stretching Area",
+  "Locker Rooms",
+  "Showers",
+  "Changing Rooms",
+  "Parking",
+  "WiFi",
+  "Air Conditioning",
+  "Drinking Water Station",
+  "CCTV Security",
+  "First Aid",
+  "Personal Training",
+  "Group Classes",
+  "Sauna",
+  "Steam Room",
+  "Swimming Pool",
+  "Towel Service",
+  "Supplement Store",
+  "Nutrition Coaching",
+  "Kids Area",
+  "Cafe / Juice Bar",
+] as const;
+
 
 export const CURRENCY_OPTIONS = ["NPR", "USD", "INR", "EUR", "GBP"] as const;
 export type Currency = (typeof CURRENCY_OPTIONS)[number];
@@ -84,6 +112,9 @@ export const onboardingSchema = z.object({
   specialties: z
     .array(z.string().trim().min(1).max(50))
     .min(1, "Add at least one sport"),
+  features: z
+    .array(z.string().trim().min(1).max(50))
+    .min(1, "Add at least one feature"),
   slug: z
     .string()
     .min(1, "Slug is required")

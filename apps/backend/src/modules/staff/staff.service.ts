@@ -6,7 +6,7 @@ import {
   staffUpdateSchema,
   staffWithUserInsertSchema,
 } from "@repo/types";
-import { NotFoundError, ValidationError } from "../../lib/errors";
+import { ForbiddenError, NotFoundError, ValidationError } from "../../lib/errors";
 import { db } from "../../db";
 import { staff, user } from "../../db/schema";
 import { and, asc, count, desc, eq, ilike, or } from "drizzle-orm";
@@ -107,6 +107,7 @@ export const getAll = async (gymId: string, query: StaffListQuery) => {
         gymId: staff.gymId,
         userId: staff.userId,
         role: staff.role,
+        isOwner: staff.isOwner,
         isActive: staff.isActive,
         phone: staff.phone,
         dateOfBirth: staff.dateOfBirth,
@@ -213,6 +214,18 @@ export const updateStaff = async (
     throw new ValidationError("Invalid staff data", result.error.flatten());
   }
 
+  const [existing] = await db
+    .select({ isOwner: staff.isOwner })
+    .from(staff)
+    .where(and(eq(staff.gymId, gymId), eq(staff.id, id)))
+    .limit(1);
+
+  if (!existing) throw new NotFoundError("Staff not found");
+
+  if (existing.isOwner) {
+    throw new ForbiddenError("The gym owner cannot be edited");
+  }
+
   const [record] = await db
     .update(staff)
     .set({ ...result.data, updatedAt: new Date() })
@@ -227,6 +240,18 @@ export const updateStaff = async (
 };
 
 export const deleteStaff = async (gymId: string, id: string) => {
+  const [existing] = await db
+    .select({ isOwner: staff.isOwner })
+    .from(staff)
+    .where(and(eq(staff.gymId, gymId), eq(staff.id, id)))
+    .limit(1);
+
+  if (!existing) throw new NotFoundError("Staff not found");
+
+  if (existing.isOwner) {
+    throw new ForbiddenError("The gym owner cannot be removed");
+  }
+
   const [record] = await db
     .delete(staff)
     .where(and(eq(staff.gymId, gymId), eq(staff.id, id)))

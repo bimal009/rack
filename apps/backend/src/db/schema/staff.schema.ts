@@ -30,6 +30,7 @@ export const staff = pgTable("staff", {
   gymId: uuid("gym_id").notNull().references(() => gyms.id),
   userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
   role: gymRoleEnum("role").notNull(),
+  isOwner: boolean("is_owner").notNull().default(false),
   isActive: boolean("is_active").notNull().default(true),
 
   phone: varchar("phone", { length: 20 }),

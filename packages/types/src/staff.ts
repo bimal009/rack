@@ -25,6 +25,7 @@ export const staffSchema = z.object({
   gymId: z.string().uuid(),
   userId: z.string(),
   role: gymRoleEnumSchema,
+  isOwner: z.boolean().default(false),
   isActive: z.boolean().default(true),
 
   phone: z.string().nullable(),
@@ -50,6 +51,7 @@ export const staffInsertSchema = staffSchema.omit({
   id: true,
   gymId: true,
   userId: true,
+  isOwner: true,
   createdAt: true,
   updatedAt: true,
 });

@@ -9,22 +9,28 @@ import { AuthHeader } from "@/features/auth/components/auth-header"
 import { StepNav } from "@/features/auth/onboarding/step-nav"
 import { ClubTypeStep } from "@/features/auth/onboarding/steps/club-type-step"
 import { SportsStep } from "@/features/auth/onboarding/steps/sports-step"
+import { FeaturesStep } from "@/features/auth/onboarding/steps/features-step"
 import { BusinessDetailsStep } from "@/features/auth/onboarding/steps/business-details-step"
 import { OpeningHoursStep } from "@/features/auth/onboarding/steps/opening-hours-step"
 import { useOnboardingMutation } from "@/features/auth/onboarding/hooks/useOnboarding"
 import { fieldErrors } from "@/features/auth/lib/validation"
 import { BUSINESS_TYPES } from "@/features/auth/lib/constants"
 
-const STEP_COUNT = 4
+const STEP_COUNT = 5
 
-type WizardData = Omit<OnboardingInput, "businessType" | "specialties"> & {
+type WizardData = Omit<
+  OnboardingInput,
+  "businessType" | "specialties" | "features"
+> & {
   businessType: OnboardingInput["businessType"] | null
   specialties: string[]
+  features: string[]
 }
 
 const initialData: WizardData = {
   businessType: null,
   specialties: [],
+  features: [],
   slug: "",
   businessName: "",
   address: "",
@@ -83,6 +89,11 @@ export function OnboardingWizard() {
         return
       }
     } else if (step === 2) {
+      if (data.features.length === 0) {
+        setErrors({ features: "Add at least one feature" })
+        return
+      }
+    } else if (step === 3) {
       const result = onboardingSchema
         .pick({
           slug: true,
@@ -104,7 +115,7 @@ export function OnboardingWizard() {
         setErrors(fieldErrors(result.error))
         return
       }
-    } else if (step === 3) {
+    } else if (step === 4) {
       const result = onboardingSchema.safeParse(data)
       if (!result.success) {
         setErrors(fieldErrors(result.error))
@@ -126,6 +137,7 @@ export function OnboardingWizard() {
         ...data,
         businessType: data.businessType!,
         specialties: data.specialties as OnboardingInput["specialties"],
+        features: data.features as OnboardingInput["features"],
       },
       {
         onSuccess: (result) => router.push(`/s/${result.slug}/dashboard`),
@@ -161,13 +173,20 @@ export function OnboardingWizard() {
             />
           )}
           {step === 2 && (
+            <FeaturesStep
+              value={data.features}
+              error={errors.features}
+              onChange={(features) => updateData({ features })}
+            />
+          )}
+          {step === 3 && (
             <BusinessDetailsStep
               value={data}
               errors={errors}
               onChange={updateData}
             />
           )}
-          {step === 3 && (
+          {step === 4 && (
             <OpeningHoursStep
               value={data.openingHours}
               onChange={(openingHours) => updateData({ openingHours })}

@@ -72,26 +72,29 @@ export function createStaffDirectoryColumns({
 
   const actionsColumn = columnHelper.display({
     id: "actions",
-    cell: ({ row }) => (
-      <DropdownMenu>
-        <DropdownMenuTrigger className="flex size-7 items-center justify-center rounded-md text-muted-foreground outline-none hover:bg-muted hover:text-foreground">
-          <MoreHorizontal className="size-4" />
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={() => onEdit?.(row.original)}>
-            <PenSquare />
-            Edit
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            variant="destructive"
-            onClick={() => onDelete?.(row.original)}
-          >
-            <Trash2 />
-            Delete
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    ),
+    cell: ({ row }) => {
+      if (row.original.isOwner) return null
+      return (
+        <DropdownMenu>
+          <DropdownMenuTrigger className="flex size-7 items-center justify-center rounded-md text-muted-foreground outline-none hover:bg-muted hover:text-foreground">
+            <MoreHorizontal className="size-4" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => onEdit?.(row.original)}>
+              <PenSquare />
+              Edit
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              variant="destructive"
+              onClick={() => onDelete?.(row.original)}
+            >
+              <Trash2 />
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )
+    },
   })
 
   const nameColumn = columnHelper.accessor(
@@ -216,11 +219,14 @@ export function createStaffDirectoryColumns({
     nameColumn,
     columnHelper.accessor("role", {
       header: "Role",
-      cell: ({ getValue }) => (
-        <Badge variant="outline" className="rounded-full font-normal">
-          {gymRoleLabel(getValue())}
-        </Badge>
-      ),
+      cell: ({ row }) =>
+        row.original.isOwner ? (
+          <Badge className="rounded-full">Owner</Badge>
+        ) : (
+          <Badge variant="outline" className="rounded-full font-normal">
+            {gymRoleLabel(row.original.role)}
+          </Badge>
+        ),
     }),
     payColumn,
     joinedColumn,
