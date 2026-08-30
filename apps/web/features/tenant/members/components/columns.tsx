@@ -91,7 +91,7 @@ export function createMemberColumns({
         }
         return (
           <Badge variant="outline" className="rounded-full font-normal">
-            {memberships[0]!.planName}
+            {memberships[0]!.membershipName}
             {memberships.length > 1 ? ` +${memberships.length - 1}` : ""}
           </Badge>
         )

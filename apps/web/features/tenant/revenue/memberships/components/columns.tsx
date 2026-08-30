@@ -15,7 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@repo/ui/components/ui/dropdown-menu"
 
-import type { Plan } from "../lib/schema"
+import type { Membership } from "../lib/schema"
 
 const currency = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -23,19 +23,22 @@ const currency = new Intl.NumberFormat("en-US", {
   currencyDisplay: "code",
 })
 
-interface PlanColumnActions {
-  onEdit: (plan: Plan) => void
-  onDelete: (plan: Plan) => void
+interface MembershipColumnActions {
+  onEdit: (membership: Membership) => void
+  onDelete: (membership: Membership) => void
 }
 
-export function createPlanColumns({ onEdit, onDelete }: PlanColumnActions) {
-  const columnHelper = createDataTableColumnHelper<Plan>()
+export function createMembershipColumns({
+  onEdit,
+  onDelete,
+}: MembershipColumnActions) {
+  const columnHelper = createDataTableColumnHelper<Membership>()
 
   return columnHelper.columns([
     createSelectionColumn(columnHelper),
     createIndexColumn(columnHelper),
     columnHelper.accessor("name", {
-      header: "Plan",
+      header: "Membership",
       cell: ({ row }) => (
         <div className="min-w-0">
           <p className="truncate text-sm font-medium text-foreground">
@@ -100,14 +103,14 @@ export function createPlanColumns({ onEdit, onDelete }: PlanColumnActions) {
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={() => onEdit(row.original)}>
               <PenSquare />
-              Edit plan
+              Edit membership
             </DropdownMenuItem>
             <DropdownMenuItem
               variant="destructive"
               onClick={() => onDelete(row.original)}
             >
               <Trash2 />
-              Delete plan
+              Delete membership
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

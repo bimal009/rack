@@ -1,10 +1,12 @@
 "use client"
 
 import { useState, type FormEvent } from "react"
-import { Banknote, CreditCard, Info, Sparkles, SquareCheck } from "lucide-react"
+import { useParams } from "next/navigation"
+import { Banknote, Check, CreditCard, Info, Sparkles, SquareCheck } from "lucide-react"
 import { SPECIALTY_OPTIONS } from "@repo/types"
 
 import { Button } from "@repo/ui/components/ui/button"
+import { Checkbox } from "@repo/ui/components/ui/checkbox"
 import {
   Combobox,
   ComboboxContent,
@@ -43,29 +45,33 @@ import {
 } from "@repo/ui/components/ui/sheet"
 import { Switch } from "@repo/ui/components/ui/switch"
 import { Textarea } from "@repo/ui/components/ui/textarea"
+import { cn } from "@repo/ui/lib/utils"
 
 import { FormSection, FormSheetHeader } from "@/features/tenant/components/form-section"
+import { useAreaTypesQuery } from "@/features/tenant/settings/types/hooks/use-area-types"
+import { useClassTypesQuery } from "@/features/tenant/settings/types/hooks/use-class-types"
+import { useInstructorTypesQuery } from "@/features/tenant/settings/types/hooks/use-instructor-types"
 
 import { fieldErrors } from "../../lib/validation"
 import {
   billingTypes,
-  planCategories,
-  planCoverages,
-  planFeatureOptions,
-  planSchema,
-  planVisibilities,
+  membershipCategories,
+  membershipCoverages,
+  membershipFeatureOptions,
+  membershipSchema,
+  membershipVisibilities,
   type BillingType,
-  type Plan,
-  type PlanCategory,
-  type PlanCoverage,
-  type PlanInput,
-  type PlanVisibility,
+  type Membership,
+  type MembershipCategory,
+  type MembershipCoverage,
+  type MembershipInput,
+  type MembershipVisibility,
 } from "../lib/schema"
 
-interface PlanFormValues {
+interface MembershipFormValues {
   name: string
-  category: PlanCategory | ""
-  visibility: PlanVisibility
+  category: MembershipCategory | ""
+  visibility: MembershipVisibility
   description: string
   active: boolean
 
@@ -74,15 +80,21 @@ interface PlanFormValues {
   signupFee: string
   requirePaymentUpfront: boolean
 
-  coverage: PlanCoverage
+  coverage: MembershipCoverage
+  coverageClasses: string[]
+  coverageAreas: string[]
+  coverageInstructors: string[]
+  noClasses: boolean
+  noAreas: boolean
+  noInstructors: boolean
   sessions: string
 
   features: string
   sports: string
 }
 
-function toFormValues(plan?: Plan | null): PlanFormValues {
-  if (!plan) {
+function toFormValues(membership?: Membership | null): MembershipFormValues {
+  if (!membership) {
     return {
       name: "",
       category: "",
@@ -93,50 +105,166 @@ function toFormValues(plan?: Plan | null): PlanFormValues {
       billingType: "",
       signupFee: "",
       requirePaymentUpfront: true,
-      coverage: "General plan",
+      coverage: "Full access",
+      coverageClasses: [],
+      coverageAreas: [],
+      coverageInstructors: [],
+      noClasses: false,
+      noAreas: false,
+      noInstructors: false,
       sessions: "",
       features: "",
       sports: "",
     }
   }
   return {
-    name: plan.name,
-    category: plan.category,
-    visibility: plan.visibility,
-    description: plan.description ?? "",
-    active: plan.active,
-    pricePerPeriod: String(plan.pricePerPeriod),
-    billingType: plan.billingType,
-    signupFee: plan.signupFee != null ? String(plan.signupFee) : "",
-    requirePaymentUpfront: plan.requirePaymentUpfront,
-    coverage: plan.coverage,
-    sessions: plan.sessions ?? "",
-    features: plan.features ?? "",
-    sports: plan.sports ?? "",
+    name: membership.name,
+    category: membership.category,
+    visibility: membership.visibility,
+    description: membership.description ?? "",
+    active: membership.active,
+    pricePerPeriod: String(membership.pricePerPeriod),
+    billingType: membership.billingType,
+    signupFee: membership.signupFee != null ? String(membership.signupFee) : "",
+    requirePaymentUpfront: membership.requirePaymentUpfront,
+    coverage: membership.coverage,
+    coverageClasses: membership.coverageClasses ?? [],
+    coverageAreas: membership.coverageAreas ?? [],
+    coverageInstructors: membership.coverageInstructors ?? [],
+    noClasses: membership.noClasses ?? false,
+    noAreas: membership.noAreas ?? false,
+    noInstructors: membership.noInstructors ?? false,
+    sessions: membership.sessions ?? "",
+    features: membership.features ?? "",
+    sports: membership.sports ?? "",
   }
 }
 
-interface PlanFormBodyProps {
-  plan?: Plan | null
-  onSubmit: (values: PlanInput) => void
+function listOrNull(none: boolean, ids: string[]): string[] | null {
+  if (none) return null
+  return ids.length > 0 ? ids : null
+}
+
+interface CoveragePickerProps {
+  label: string
+  noneLabel: string
+  options: { id: string; name: string }[]
+  selected: string[]
+  onToggle: (id: string) => void
+  none: boolean
+  onNoneChange: (none: boolean) => void
+}
+
+function CoveragePicker({
+  label,
+  noneLabel,
+  options,
+  selected,
+  onToggle,
+  none,
+  onNoneChange,
+}: CoveragePickerProps) {
+  return (
+    <Field>
+      <div className="flex items-center justify-between">
+        <FieldLabel>{label}</FieldLabel>
+        <label className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Checkbox
+            checked={none}
+            onCheckedChange={(checked) => onNoneChange(checked === true)}
+          />
+          {noneLabel}
+        </label>
+      </div>
+
+      {!none && (
+        <>
+          <div className="flex flex-wrap gap-1.5">
+            {options.map((option) => {
+              const isSelected = selected.includes(option.id)
+              return (
+                <button
+                  key={option.id}
+                  type="button"
+                  aria-pressed={isSelected}
+                  onClick={() => onToggle(option.id)}
+                  className={cn(
+                    "flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+                    isSelected
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-border text-foreground hover:bg-muted/50"
+                  )}
+                >
+                  {isSelected && <Check className="size-3" />}
+                  {option.name}
+                </button>
+              )
+            })}
+          </div>
+          <FieldDescription>
+            Leave empty to include all {label.toLowerCase()}.
+          </FieldDescription>
+        </>
+      )}
+    </Field>
+  )
+}
+
+interface MembershipFormBodyProps {
+  membership?: Membership | null
+  onSubmit: (values: MembershipInput) => void
   onCancel: () => void
 }
 
-function PlanFormBody({ plan, onSubmit, onCancel }: PlanFormBodyProps) {
-  const [values, setValues] = useState<PlanFormValues>(() =>
-    toFormValues(plan)
+function MembershipFormBody({
+  membership,
+  onSubmit,
+  onCancel,
+}: MembershipFormBodyProps) {
+  const tenant = useParams<{ tenant: string }>().tenant
+  const classTypes = useClassTypesQuery(tenant, { limit: 100 })
+  const areaTypes = useAreaTypesQuery(tenant, { limit: 100 })
+  const instructorTypes = useInstructorTypesQuery(tenant, { limit: 100 })
+
+  const [values, setValues] = useState<MembershipFormValues>(() =>
+    toFormValues(membership)
   )
   const [errors, setErrors] = useState<Record<string, string>>({})
-  const isEdit = Boolean(plan)
+  const isEdit = Boolean(membership)
+  const isRestricted = values.coverage === "Restricted"
+
+  function toggle(
+    key: "coverageClasses" | "coverageAreas" | "coverageInstructors",
+    id: string
+  ) {
+    setValues((v) => ({
+      ...v,
+      [key]: v[key].includes(id)
+        ? v[key].filter((x) => x !== id)
+        : [...v[key], id],
+    }))
+  }
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault()
 
-    const result = planSchema.safeParse({
+    const result = membershipSchema.safeParse({
       ...values,
       category: values.category || undefined,
       billingType: values.billingType || undefined,
       signupFee: values.signupFee === "" ? undefined : values.signupFee,
+      coverageClasses: isRestricted
+        ? listOrNull(values.noClasses, values.coverageClasses)
+        : null,
+      coverageAreas: isRestricted
+        ? listOrNull(values.noAreas, values.coverageAreas)
+        : null,
+      coverageInstructors: isRestricted
+        ? listOrNull(values.noInstructors, values.coverageInstructors)
+        : null,
+      noClasses: isRestricted && values.noClasses,
+      noAreas: isRestricted && values.noAreas,
+      noInstructors: isRestricted && values.noInstructors,
     })
 
     if (!result.success) {
@@ -152,11 +280,11 @@ function PlanFormBody({ plan, onSubmit, onCancel }: PlanFormBodyProps) {
       <SheetHeader>
         <FormSheetHeader
           icon={CreditCard}
-          title={isEdit ? "Edit plan" : "Add plan"}
+          title={isEdit ? "Edit membership" : "Add membership"}
           description={
             isEdit
-              ? "Update this membership plan's pricing and details."
-              : "Create a membership plan members can subscribe to."
+              ? "Update this membership's pricing and details."
+              : "Create a membership members can subscribe to."
           }
         />
       </SheetHeader>
@@ -165,9 +293,9 @@ function PlanFormBody({ plan, onSubmit, onCancel }: PlanFormBodyProps) {
         <FormSection icon={Info} title="General">
           <div className="grid grid-cols-2 gap-4">
             <Field data-invalid={Boolean(errors.name)}>
-              <FieldLabel htmlFor="plan-name">Plan name</FieldLabel>
+              <FieldLabel htmlFor="membership-name">Membership name</FieldLabel>
               <Input
-                id="plan-name"
+                id="membership-name"
                 placeholder="Gold Membership"
                 value={values.name}
                 aria-invalid={Boolean(errors.name)}
@@ -179,25 +307,25 @@ function PlanFormBody({ plan, onSubmit, onCancel }: PlanFormBodyProps) {
             </Field>
 
             <Field data-invalid={Boolean(errors.category)}>
-              <FieldLabel htmlFor="plan-category">Category</FieldLabel>
+              <FieldLabel htmlFor="membership-category">Category</FieldLabel>
               <Select
                 value={values.category}
                 onValueChange={(value) =>
                   setValues((v) => ({
                     ...v,
-                    category: value as PlanCategory,
+                    category: value as MembershipCategory,
                   }))
                 }
               >
                 <SelectTrigger
-                  id="plan-category"
+                  id="membership-category"
                   className="w-full"
                   aria-invalid={Boolean(errors.category)}
                 >
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
-                  {planCategories.map((category) => (
+                  {membershipCategories.map((category) => (
                     <SelectItem key={category} value={category}>
                       {category}
                     </SelectItem>
@@ -209,24 +337,22 @@ function PlanFormBody({ plan, onSubmit, onCancel }: PlanFormBodyProps) {
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-
-
             <Field>
-              <FieldLabel htmlFor="plan-visibility">Visibility</FieldLabel>
+              <FieldLabel htmlFor="membership-visibility">Visibility</FieldLabel>
               <Select
                 value={values.visibility}
                 onValueChange={(value) =>
                   setValues((v) => ({
                     ...v,
-                    visibility: value as PlanVisibility,
+                    visibility: value as MembershipVisibility,
                   }))
                 }
               >
-                <SelectTrigger id="plan-visibility" className="w-full">
+                <SelectTrigger id="membership-visibility" className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {planVisibilities.map((visibility) => (
+                  {membershipVisibilities.map((visibility) => (
                     <SelectItem key={visibility} value={visibility}>
                       {visibility}
                     </SelectItem>
@@ -235,26 +361,26 @@ function PlanFormBody({ plan, onSubmit, onCancel }: PlanFormBodyProps) {
               </Select>
             </Field>
 
-                      <div className="flex items-center gap-2.5">
-            <Switch
-              id="plan-active"
-              checked={values.active}
-              onCheckedChange={(checked) =>
-                setValues((v) => ({ ...v, active: checked }))
-              }
-            />
-            <Label htmlFor="plan-active">Active</Label>
-          </div>
+            <div className="flex items-center gap-2.5 pt-6">
+              <Switch
+                id="membership-active"
+                checked={values.active}
+                onCheckedChange={(checked) =>
+                  setValues((v) => ({ ...v, active: checked }))
+                }
+              />
+              <Label htmlFor="membership-active">Active</Label>
+            </div>
           </div>
 
           <Field data-invalid={Boolean(errors.description)}>
-            <FieldLabel htmlFor="plan-description">
+            <FieldLabel htmlFor="membership-description">
               Description{" "}
               <span className="text-muted-foreground">(optional)</span>
             </FieldLabel>
             <Textarea
-              id="plan-description"
-              placeholder="What members get with this plan"
+              id="membership-description"
+              placeholder="What members get with this membership"
               value={values.description}
               aria-invalid={Boolean(errors.description)}
               onChange={(e) =>
@@ -263,25 +389,23 @@ function PlanFormBody({ plan, onSubmit, onCancel }: PlanFormBodyProps) {
             />
             <FieldError>{errors.description}</FieldError>
           </Field>
-
-
         </FormSection>
 
         <FormSection icon={Banknote} title="Pricing">
           <div className="grid grid-cols-2 gap-4">
             <Field data-invalid={Boolean(errors.pricePerPeriod)}>
-              <FieldLabel htmlFor="plan-price">Price per period</FieldLabel>
+              <FieldLabel htmlFor="membership-price">Price per period</FieldLabel>
               <InputGroup>
                 <InputGroupAddon>
                   <InputGroupText>NPR</InputGroupText>
                 </InputGroupAddon>
                 <InputGroupInput
-                  id="plan-price"
+                  id="membership-price"
                   type="number"
                   inputMode="decimal"
                   min="0"
                   step="0.01"
-                  placeholder="0.00"
+                  placeholder="4900"
                   value={values.pricePerPeriod}
                   aria-invalid={Boolean(errors.pricePerPeriod)}
                   onChange={(e) =>
@@ -296,7 +420,7 @@ function PlanFormBody({ plan, onSubmit, onCancel }: PlanFormBodyProps) {
             </Field>
 
             <Field data-invalid={Boolean(errors.billingType)}>
-              <FieldLabel htmlFor="plan-billing-type">Type</FieldLabel>
+              <FieldLabel htmlFor="membership-billing-type">Type</FieldLabel>
               <Select
                 value={values.billingType}
                 onValueChange={(value) =>
@@ -307,7 +431,7 @@ function PlanFormBody({ plan, onSubmit, onCancel }: PlanFormBodyProps) {
                 }
               >
                 <SelectTrigger
-                  id="plan-billing-type"
+                  id="membership-billing-type"
                   className="w-full"
                   aria-invalid={Boolean(errors.billingType)}
                 >
@@ -326,18 +450,18 @@ function PlanFormBody({ plan, onSubmit, onCancel }: PlanFormBodyProps) {
           </div>
 
           <Field data-invalid={Boolean(errors.signupFee)}>
-            <FieldLabel htmlFor="plan-signup-fee">Signup fee</FieldLabel>
+            <FieldLabel htmlFor="membership-signup-fee">Signup fee</FieldLabel>
             <InputGroup>
               <InputGroupAddon>
                 <InputGroupText>NPR</InputGroupText>
               </InputGroupAddon>
               <InputGroupInput
-                id="plan-signup-fee"
+                id="membership-signup-fee"
                 type="number"
                 inputMode="decimal"
                 min="0"
                 step="0.01"
-                placeholder="0.00"
+                placeholder="1000"
                 value={values.signupFee}
                 aria-invalid={Boolean(errors.signupFee)}
                 onChange={(e) =>
@@ -354,7 +478,7 @@ function PlanFormBody({ plan, onSubmit, onCancel }: PlanFormBodyProps) {
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center gap-2.5">
               <Switch
-                id="plan-require-payment"
+                id="membership-require-payment"
                 checked={values.requirePaymentUpfront}
                 onCheckedChange={(checked) =>
                   setValues((v) => ({
@@ -363,7 +487,7 @@ function PlanFormBody({ plan, onSubmit, onCancel }: PlanFormBodyProps) {
                   }))
                 }
               />
-              <Label htmlFor="plan-require-payment">
+              <Label htmlFor="membership-require-payment">
                 Require payment upfront
               </Label>
             </div>
@@ -376,37 +500,42 @@ function PlanFormBody({ plan, onSubmit, onCancel }: PlanFormBodyProps) {
         <FormSection
           icon={SquareCheck}
           title="Validity"
-          description="Check-ins and dynamic pricing only, no booking access."
+          description="What this membership grants access to."
         >
           <div className="grid grid-cols-2 gap-4">
             <Field>
-              <FieldLabel htmlFor="plan-coverage">Coverage</FieldLabel>
+              <FieldLabel htmlFor="membership-coverage">Coverage</FieldLabel>
               <Select
                 value={values.coverage}
                 onValueChange={(value) =>
                   setValues((v) => ({
                     ...v,
-                    coverage: value as PlanCoverage,
+                    coverage: value as MembershipCoverage,
                   }))
                 }
               >
-                <SelectTrigger id="plan-coverage" className="w-full">
+                <SelectTrigger id="membership-coverage" className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {planCoverages.map((coverage) => (
+                  {membershipCoverages.map((coverage) => (
                     <SelectItem key={coverage} value={coverage}>
                       {coverage}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              <FieldDescription>
+                {isRestricted
+                  ? "Covers only what you allow below."
+                  : "Covers every class, area and instructor."}
+              </FieldDescription>
             </Field>
 
             <Field>
-              <FieldLabel htmlFor="plan-sessions">Sessions</FieldLabel>
+              <FieldLabel htmlFor="membership-sessions">Sessions</FieldLabel>
               <Input
-                id="plan-sessions"
+                id="membership-sessions"
                 placeholder="e.g. 10/month"
                 value={values.sessions}
                 onChange={(e) =>
@@ -418,21 +547,59 @@ function PlanFormBody({ plan, onSubmit, onCancel }: PlanFormBodyProps) {
               </FieldDescription>
             </Field>
           </div>
+
+          {isRestricted && (
+            <div className="flex flex-col gap-6 rounded-lg border border-border bg-muted/20 p-4">
+              <CoveragePicker
+                label="Classes"
+                noneLabel="No classes"
+                options={classTypes.data?.data ?? []}
+                selected={values.coverageClasses}
+                onToggle={(id) => toggle("coverageClasses", id)}
+                none={values.noClasses}
+                onNoneChange={(none) =>
+                  setValues((v) => ({ ...v, noClasses: none }))
+                }
+              />
+              <CoveragePicker
+                label="Areas"
+                noneLabel="No areas"
+                options={areaTypes.data?.data ?? []}
+                selected={values.coverageAreas}
+                onToggle={(id) => toggle("coverageAreas", id)}
+                none={values.noAreas}
+                onNoneChange={(none) =>
+                  setValues((v) => ({ ...v, noAreas: none }))
+                }
+              />
+              <CoveragePicker
+                label="Instructors"
+                noneLabel="No instructors"
+                options={instructorTypes.data?.data ?? []}
+                selected={values.coverageInstructors}
+                onToggle={(id) => toggle("coverageInstructors", id)}
+                none={values.noInstructors}
+                onNoneChange={(none) =>
+                  setValues((v) => ({ ...v, noInstructors: none }))
+                }
+              />
+            </div>
+          )}
         </FormSection>
 
         <FormSection icon={Sparkles} title="Presentation">
           <div className="grid grid-cols-2 gap-4">
             <Field>
-              <FieldLabel htmlFor="plan-features">Features</FieldLabel>
+              <FieldLabel htmlFor="membership-features">Features</FieldLabel>
               <Combobox
-                items={planFeatureOptions}
+                items={membershipFeatureOptions}
                 value={values.features || null}
                 onValueChange={(value) =>
                   setValues((v) => ({ ...v, features: value ?? "" }))
                 }
               >
                 <ComboboxInput
-                  id="plan-features"
+                  id="membership-features"
                   placeholder="Search features..."
                 />
                 <ComboboxContent>
@@ -449,7 +616,7 @@ function PlanFormBody({ plan, onSubmit, onCancel }: PlanFormBodyProps) {
             </Field>
 
             <Field>
-              <FieldLabel htmlFor="plan-sports">Sports</FieldLabel>
+              <FieldLabel htmlFor="membership-sports">Sports</FieldLabel>
               <Combobox
                 items={SPECIALTY_OPTIONS}
                 value={values.sports || null}
@@ -458,7 +625,7 @@ function PlanFormBody({ plan, onSubmit, onCancel }: PlanFormBodyProps) {
                 }
               >
                 <ComboboxInput
-                  id="plan-sports"
+                  id="membership-sports"
                   placeholder="Search sports..."
                 />
                 <ComboboxContent>
@@ -482,33 +649,33 @@ function PlanFormBody({ plan, onSubmit, onCancel }: PlanFormBodyProps) {
           Cancel
         </Button>
         <Button type="submit">
-          {isEdit ? "Save changes" : "Create plan"}
+          {isEdit ? "Save changes" : "Create membership"}
         </Button>
       </SheetFooter>
     </form>
   )
 }
 
-interface PlanFormSheetProps {
+interface MembershipFormSheetProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  plan?: Plan | null
-  onSubmit: (values: PlanInput) => void
+  membership?: Membership | null
+  onSubmit: (values: MembershipInput) => void
 }
 
-export function PlanFormSheet({
+export function MembershipFormSheet({
   open,
   onOpenChange,
-  plan,
+  membership,
   onSubmit,
-}: PlanFormSheetProps) {
+}: MembershipFormSheetProps) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="sm:max-w-xl">
         {open && (
-          <PlanFormBody
-            key={plan?.id ?? "new"}
-            plan={plan}
+          <MembershipFormBody
+            key={membership?.id ?? "new"}
+            membership={membership}
             onSubmit={(values) => {
               onSubmit(values)
               onOpenChange(false)

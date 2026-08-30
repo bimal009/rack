@@ -7,8 +7,8 @@ export const genders = ["Male", "Female", "Other", "Prefer not to say"] as const
 export type Gender = (typeof genders)[number]
 
 export const membershipSchema = z.object({
-  planId: z.string(),
-  planName: z.string(),
+  membershipId: z.string(),
+  membershipName: z.string(),
 })
 
 export type Membership = z.infer<typeof membershipSchema>

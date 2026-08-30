@@ -39,7 +39,7 @@ import {
 } from "@repo/ui/components/ui/sheet"
 
 import { FormSection, FormSheetHeader } from "@/features/tenant/components/form-section"
-import { initialPlans } from "@/features/tenant/revenue/plans/lib/data"
+import { initialMemberships } from "@/features/tenant/revenue/memberships/lib/data"
 
 import { fieldErrors } from "../lib/validation"
 import {
@@ -128,7 +128,10 @@ function MemberFormBody({ member, onSubmit, onCancel }: MemberFormBodyProps) {
   function addMembership() {
     setValues((v) => ({
       ...v,
-      memberships: [...v.memberships, { planId: "", planName: "" }],
+      memberships: [
+        ...v.memberships,
+        { membershipId: "", membershipName: "" },
+      ],
     }))
   }
 
@@ -154,7 +157,7 @@ function MemberFormBody({ member, onSubmit, onCancel }: MemberFormBodyProps) {
     const result = memberSchema.safeParse({
       ...values,
       gender: values.gender || undefined,
-      memberships: values.memberships.filter((m) => m.planId),
+      memberships: values.memberships.filter((m) => m.membershipId),
     })
 
     if (!result.success) {
@@ -329,33 +332,37 @@ function MemberFormBody({ member, onSubmit, onCancel }: MemberFormBodyProps) {
         <FormSection
           icon={CreditCard}
           title="Membership"
-          description="Assign an existing plan to this member."
+          description="Assign an existing membership to this member."
         >
           {values.memberships.length > 0 && (
             <div className="flex flex-col gap-2">
               {values.memberships.map((membership, index) => (
                 <div key={index} className="flex items-center gap-2">
                   <Select
-                    value={membership.planId}
-                    onValueChange={(planId) => {
-                      const plan = initialPlans.find((p) => p.id === planId)
+                    value={membership.membershipId}
+                    onValueChange={(membershipId) => {
+                      const found = initialMemberships.find(
+                        (m) => m.id === membershipId
+                      )
                       updateMembership(index, {
-                        planId: planId ?? "",
-                        planName: plan?.name ?? "",
+                        membershipId: membershipId ?? "",
+                        membershipName: found?.name ?? "",
                       })
                     }}
                   >
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select a plan">
-                        {() => membership.planName || "Select a plan"}
+                      <SelectValue placeholder="Select a membership">
+                        {() =>
+                          membership.membershipName || "Select a membership"
+                        }
                       </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
-                      {initialPlans
-                        .filter((plan) => plan.active)
-                        .map((plan) => (
-                          <SelectItem key={plan.id} value={plan.id}>
-                            {plan.name}
+                      {initialMemberships
+                        .filter((m) => m.active)
+                        .map((m) => (
+                          <SelectItem key={m.id} value={m.id}>
+                            {m.name}
                           </SelectItem>
                         ))}
                     </SelectContent>

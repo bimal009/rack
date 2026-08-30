@@ -1,26 +1,22 @@
 import { z } from "zod"
 
-export const planCategories = [
+export const membershipCategories = [
   "Individual",
   "Couple",
   "Family",
   "Student",
   "Corporate",
 ] as const
-export type PlanCategory = (typeof planCategories)[number]
+export type MembershipCategory = (typeof membershipCategories)[number]
 
-export const planVisibilities = ["Public", "Private", "Hidden"] as const
-export type PlanVisibility = (typeof planVisibilities)[number]
+export const membershipVisibilities = ["Public", "Private", "Hidden"] as const
+export type MembershipVisibility = (typeof membershipVisibilities)[number]
 
 export const billingTypes = ["Monthly", "Quarterly", "Annual"] as const
 export type BillingType = (typeof billingTypes)[number]
 
-export const planCoverages = [
-  "General plan",
-  "Class access only",
-  "Full facility access",
-] as const
-export type PlanCoverage = (typeof planCoverages)[number]
+export const membershipCoverages = ["Full access", "Restricted"] as const
+export type MembershipCoverage = (typeof membershipCoverages)[number]
 
 export const revenueAccounts = [
   "General Revenue",
@@ -29,7 +25,7 @@ export const revenueAccounts = [
   "Class Revenue",
 ] as const
 
-export const planFeatureOptions = [
+export const membershipFeatureOptions = [
   "Personal Training",
   "Group Classes",
   "Sauna",
@@ -39,11 +35,13 @@ export const planFeatureOptions = [
   "Nutrition Coaching",
 ] as const
 
-export const planSchema = z.object({
-  name: z.string().trim().min(2, "Enter a plan name"),
-  category: z.enum(planCategories),
+const uuidList = z.array(z.string()).nullish()
+
+export const membershipSchema = z.object({
+  name: z.string().trim().min(2, "Enter a membership name"),
+  category: z.enum(membershipCategories),
   barcode: z.string().trim().optional().or(z.literal("")),
-  visibility: z.enum(planVisibilities),
+  visibility: z.enum(membershipVisibilities),
   description: z
     .string()
     .trim()
@@ -57,16 +55,22 @@ export const planSchema = z.object({
   signupFee: z.coerce.number().nonnegative("Enter a valid fee").optional(),
   requirePaymentUpfront: z.boolean(),
 
-  coverage: z.enum(planCoverages),
+  coverage: z.enum(membershipCoverages),
+  coverageClasses: uuidList,
+  coverageAreas: uuidList,
+  coverageInstructors: uuidList,
+  noClasses: z.boolean().default(false),
+  noAreas: z.boolean().default(false),
+  noInstructors: z.boolean().default(false),
   sessions: z.string().trim().optional().or(z.literal("")),
 
   features: z.string().optional().or(z.literal("")),
   sports: z.string().optional().or(z.literal("")),
 })
 
-export type PlanInput = z.infer<typeof planSchema>
+export type MembershipInput = z.infer<typeof membershipSchema>
 
-export interface Plan extends PlanInput {
+export interface Membership extends MembershipInput {
   id: string
   members: number
 }

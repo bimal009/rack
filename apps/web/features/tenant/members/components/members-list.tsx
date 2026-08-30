@@ -95,7 +95,7 @@ export function MembersList() {
         Name: fullName(member),
         Email: member.email,
         Phone: member.phone,
-        Plan: member.memberships.map((m) => m.planName).join("; "),
+        Plan: member.memberships.map((m) => m.membershipName).join("; "),
         Joined: member.joined,
         Status: member.status,
       }))

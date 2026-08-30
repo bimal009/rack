@@ -10,50 +10,51 @@ import { DataTable } from "@repo/ui/components/ui/data-table"
 import { DeleteConfirmDialog } from "@/features/tenant/components/delete-confirm-dialog"
 import { FilterPills } from "@/features/tenant/components/filter-pills"
 import { exportToCsv } from "@/features/tenant/lib/export-csv"
-import { initialPlans } from "../lib/data"
-import type { Plan, PlanInput } from "../lib/schema"
-import { createPlanColumns } from "./columns"
-import { PlanFormSheet } from "./plan-form-sheet"
+import { initialMemberships } from "../lib/data"
+import type { Membership, MembershipInput } from "../lib/schema"
+import { createMembershipColumns } from "./columns"
+import { MembershipFormSheet } from "./membership-form-sheet"
 
 const filters = ["All", "Active", "Inactive"] as const
 
 function generateId() {
-  return `plan_${Math.random().toString(36).slice(2, 10)}`
+  return `membership_${Math.random().toString(36).slice(2, 10)}`
 }
 
-export function PlansList() {
-  const [plans, setPlans] = useState<Plan[]>(initialPlans)
+export function MembershipsList() {
+  const [memberships, setMemberships] =
+    useState<Membership[]>(initialMemberships)
   const [filter, setFilter] = useState<(typeof filters)[number]>("All")
   const [view, setView] = useState<"list" | "grid">("list")
   const [sheetOpen, setSheetOpen] = useState(false)
-  const [editingPlan, setEditingPlan] = useState<Plan | null>(null)
-  const [deletingPlan, setDeletingPlan] = useState<Plan | null>(null)
+  const [editing, setEditing] = useState<Membership | null>(null)
+  const [deleting, setDeleting] = useState<Membership | null>(null)
 
   const visible =
     filter === "All"
-      ? plans
-      : plans.filter((p) => (filter === "Active" ? p.active : !p.active))
+      ? memberships
+      : memberships.filter((m) =>
+          filter === "Active" ? m.active : !m.active
+        )
 
   function handleAdd() {
-    setEditingPlan(null)
+    setEditing(null)
     setSheetOpen(true)
   }
 
-  function handleEdit(plan: Plan) {
-    setEditingPlan(plan)
+  function handleEdit(membership: Membership) {
+    setEditing(membership)
     setSheetOpen(true)
   }
 
-  function handleSubmit(values: PlanInput) {
-    if (editingPlan) {
-      setPlans((prev) =>
-        prev.map((plan) =>
-          plan.id === editingPlan.id ? { ...plan, ...values } : plan
-        )
+  function handleSubmit(values: MembershipInput) {
+    if (editing) {
+      setMemberships((prev) =>
+        prev.map((m) => (m.id === editing.id ? { ...m, ...values } : m))
       )
       toast.success(`${values.name} updated`)
     } else {
-      setPlans((prev) => [
+      setMemberships((prev) => [
         { ...values, id: generateId(), members: 0 },
         ...prev,
       ])
@@ -62,31 +63,31 @@ export function PlansList() {
   }
 
   function handleDelete() {
-    if (!deletingPlan) return
-    setPlans((prev) => prev.filter((plan) => plan.id !== deletingPlan.id))
-    toast.success(`${deletingPlan.name} deleted`)
-    setDeletingPlan(null)
+    if (!deleting) return
+    setMemberships((prev) => prev.filter((m) => m.id !== deleting.id))
+    toast.success(`${deleting.name} deleted`)
+    setDeleting(null)
   }
 
   function handleExport() {
     exportToCsv(
-      "plans.csv",
-      visible.map((plan) => ({
-        Name: plan.name,
-        Category: plan.category,
-        Price: plan.pricePerPeriod,
-        "Billing Type": plan.billingType,
-        Members: plan.members,
-        Status: plan.active ? "Active" : "Inactive",
+      "memberships.csv",
+      visible.map((m) => ({
+        Name: m.name,
+        Category: m.category,
+        Price: m.pricePerPeriod,
+        "Billing Type": m.billingType,
+        Members: m.members,
+        Status: m.active ? "Active" : "Inactive",
       }))
     )
   }
 
   const columns = useMemo(
     () =>
-      createPlanColumns({
+      createMembershipColumns({
         onEdit: handleEdit,
-        onDelete: setDeletingPlan,
+        onDelete: setDeleting,
       }),
     []
   )
@@ -106,8 +107,8 @@ export function PlansList() {
         data={visible}
         getRowId={(row) => row.id}
         enableRowSelection
-        searchPlaceholder="Search plans..."
-        emptyMessage="No plans found."
+        searchPlaceholder="Search memberships..."
+        emptyMessage="No memberships found."
         toolbar={
           <>
             <Button variant="outline" size="icon">
@@ -131,26 +132,26 @@ export function PlansList() {
             </div>
             <Button onClick={handleAdd}>
               <Plus className="size-4" />
-              Add Plan
+              Add Membership
             </Button>
           </>
         }
       />
 
-      <PlanFormSheet
+      <MembershipFormSheet
         open={sheetOpen}
         onOpenChange={setSheetOpen}
-        plan={editingPlan}
+        membership={editing}
         onSubmit={handleSubmit}
       />
 
       <DeleteConfirmDialog
-        open={Boolean(deletingPlan)}
-        onOpenChange={(open) => !open && setDeletingPlan(null)}
-        title="Delete plan?"
+        open={Boolean(deleting)}
+        onOpenChange={(open) => !open && setDeleting(null)}
+        title="Delete membership?"
         description={
-          deletingPlan
-            ? `"${deletingPlan.name}" will be removed. Members already on this plan keep their access until it ends.`
+          deleting
+            ? `"${deleting.name}" will be removed. Members already on this membership keep their access until it ends.`
             : ""
         }
         onConfirm={handleDelete}

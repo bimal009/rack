@@ -43,7 +43,7 @@ import { Textarea } from "@repo/ui/components/ui/textarea"
 
 import { FormSection, FormSheetHeader } from "@/features/tenant/components/form-section"
 
-import { initialPlans } from "../../plans/lib/data"
+import { initialMemberships } from "../../memberships/lib/data"
 import { initialProducts } from "../../products/lib/data"
 import { fieldErrors } from "../../lib/validation"
 import {
@@ -99,7 +99,7 @@ interface ImagePreview {
 
 function pickableOptions(type: PackageItemType) {
   return type === "plan"
-    ? initialPlans.map((p) => ({ refId: p.id, name: p.name }))
+    ? initialMemberships.map((p) => ({ refId: p.id, name: p.name }))
     : initialProducts.map((p) => ({ refId: p.id, name: p.name }))
 }
 
