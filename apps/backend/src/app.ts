@@ -19,7 +19,7 @@ import classTypeRoutes from "./modules/classType/classType.routes";
 import brandRoutes from "./modules/brand/brand.routes";
 import productCategoryRoutes from "./modules/productCategory/productCategory.routes";
 import taxRateRoutes from "./modules/taxRate/taxRate.routes";
-import planCategoryRoutes from "./modules/planCategory/planCategory.routes";
+import membershipCategoryRoutes from "./modules/membershipCategory/membershipCategory.routes";
 import payRateRoutes from "./modules/payRate/payRate.routes";
 
 const isDev = process.env.NODE_ENV === "development";
@@ -61,7 +61,10 @@ app.use("/api/v1/gyms/:slug/settings/class-types", classTypeRoutes);
 app.use("/api/v1/gyms/:slug/settings/brands", brandRoutes);
 app.use("/api/v1/gyms/:slug/settings/product-categories", productCategoryRoutes);
 app.use("/api/v1/gyms/:slug/settings/tax-rates", taxRateRoutes);
-app.use("/api/v1/gyms/:slug/settings/plan-categories", planCategoryRoutes);
+app.use(
+  "/api/v1/gyms/:slug/settings/membership-categories",
+  membershipCategoryRoutes
+);
 app.use("/api/v1/gyms/:slug/pay-rates", payRateRoutes);
 app.use("/api/v1/plans", plansRoutes);
 app.use("/api/v1/media", mediaRoutes);

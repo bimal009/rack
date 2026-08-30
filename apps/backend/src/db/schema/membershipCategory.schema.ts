@@ -1,8 +1,8 @@
 import { pgTable, timestamp, uuid, varchar, unique } from "drizzle-orm/pg-core";
 import { gyms } from "./gym.schema";
 
-export const planCategory = pgTable(
-  "plan_categories",
+export const membershipCategory = pgTable(
+  "membership_categories",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     gymId: uuid("gym_id")
@@ -13,6 +13,9 @@ export const planCategory = pgTable(
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },
   (table) => [
-    unique("plan_categories_gym_id_name_unique").on(table.gymId, table.name),
+    unique("membership_categories_gym_id_name_unique").on(
+      table.gymId,
+      table.name
+    ),
   ]
 );

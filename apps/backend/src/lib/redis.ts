@@ -23,7 +23,7 @@ export const CACHE_KEYS = {
   CLASS_TYPE: "class_type",
   INSTRUCTOR_TYPE: "instructor_type",
   PAY_RATE: "pay_rate",
-  PLAN_CATEGORY: "plan_category",
+  MEMBERSHIP_CATEGORY: "membership_category",
 } as const;
 
 export const CACHE_TTL = {
