@@ -224,6 +224,7 @@ function FormBody({ policy, pending, onSubmit, onCancel }: FormBodyProps) {
                     inputMode="decimal"
                     min="0"
                     step="1"
+                    placeholder="800"
                     value={values.perClassRate}
                     onChange={(e) => set("perClassRate", e.target.value)}
                   />
@@ -243,6 +244,7 @@ function FormBody({ policy, pending, onSubmit, onCancel }: FormBodyProps) {
                     inputMode="decimal"
                     min="0"
                     step="1"
+                    placeholder="200"
                     value={values.perPersonRate}
                     onChange={(e) => set("perPersonRate", e.target.value)}
                   />

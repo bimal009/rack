@@ -30,6 +30,7 @@ export function MembershipCategoriesList() {
       renderForm={(props) => (
         <TypeFormSheet
           label="Membership category"
+          namePlaceholder="Individual, Couple, Family, Student"
           open={props.open}
           onOpenChange={props.onOpenChange}
           item={props.item}

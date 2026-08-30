@@ -38,6 +38,7 @@ interface Props {
   onOpenChange: (open: boolean) => void
   label: string
   hasRate?: boolean
+  namePlaceholder?: string
   item: SimpleItem | null
   pending?: boolean
   onSubmit: (values: SimpleValues) => void
@@ -46,6 +47,7 @@ interface Props {
 function Body({
   label,
   hasRate,
+  namePlaceholder,
   item,
   pending,
   onSubmit,
@@ -94,6 +96,7 @@ function Body({
             </FieldLabel>
             <Input
               id="type-name"
+              placeholder={namePlaceholder ?? `e.g. ${label}`}
               value={name}
               aria-invalid={Boolean(errors.name)}
               onChange={(e) => setName(e.target.value)}
@@ -112,6 +115,7 @@ function Body({
                   min="0"
                   max="100"
                   step="0.1"
+                  placeholder="13"
                   value={rate}
                   aria-invalid={Boolean(errors.rate)}
                   onChange={(e) => setRate(e.target.value)}
@@ -143,6 +147,7 @@ export function TypeFormSheet({
   onOpenChange,
   label,
   hasRate,
+  namePlaceholder,
   item,
   pending,
   onSubmit,
@@ -155,6 +160,7 @@ export function TypeFormSheet({
             key={item?.id ?? "new"}
             label={label}
             hasRate={hasRate}
+            namePlaceholder={namePlaceholder}
             item={item}
             pending={pending}
             onSubmit={(values) => {

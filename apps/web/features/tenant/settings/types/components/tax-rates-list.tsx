@@ -36,6 +36,7 @@ export function TaxRatesList() {
       renderForm={(props) => (
         <TypeFormSheet
           label="Tax Rate"
+          namePlaceholder="VAT, Service Charge"
           hasRate
           open={props.open}
           onOpenChange={props.onOpenChange}

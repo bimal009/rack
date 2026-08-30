@@ -88,6 +88,7 @@ function FormBody({ type, pending, onSubmit, onCancel }: FormBodyProps) {
             </FieldLabel>
             <Input
               id="inst-type-name"
+              placeholder="Personal Trainer"
               value={values.name}
               aria-invalid={Boolean(errors.name)}
               onChange={(e) =>
@@ -101,6 +102,7 @@ function FormBody({ type, pending, onSubmit, onCancel }: FormBodyProps) {
             <FieldLabel htmlFor="inst-type-description">Description</FieldLabel>
             <Textarea
               id="inst-type-description"
+              placeholder="What this instructor type covers"
               value={values.description}
               onChange={(e) =>
                 setValues((v) => ({ ...v, description: e.target.value }))
@@ -118,6 +120,7 @@ function FormBody({ type, pending, onSubmit, onCancel }: FormBodyProps) {
               inputMode="numeric"
               min="1"
               step="1"
+              placeholder="1"
               value={values.maxConcurrentBookings}
               aria-invalid={Boolean(errors.maxConcurrentBookings)}
               onChange={(e) =>

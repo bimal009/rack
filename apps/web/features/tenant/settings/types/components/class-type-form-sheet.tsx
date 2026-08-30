@@ -121,6 +121,7 @@ function FormBody({ type, pending, onSubmit, onCancel }: FormBodyProps) {
             </FieldLabel>
             <Input
               id="class-name"
+              placeholder="Yoga Flow, CrossFit WOD"
               value={values.name}
               aria-invalid={Boolean(errors.name)}
               onChange={(e) =>
@@ -134,6 +135,7 @@ function FormBody({ type, pending, onSubmit, onCancel }: FormBodyProps) {
             <FieldLabel htmlFor="class-description">Description</FieldLabel>
             <Textarea
               id="class-description"
+              placeholder="A class members can book, like Yoga Flow or CrossFit WOD"
               value={values.description}
               onChange={(e) =>
                 setValues((v) => ({ ...v, description: e.target.value }))
@@ -203,6 +205,7 @@ function FormBody({ type, pending, onSubmit, onCancel }: FormBodyProps) {
                   inputMode="decimal"
                   min="0"
                   step="1"
+                  placeholder="800"
                   value={values.pricePerClass}
                   onChange={(e) =>
                     setValues((v) => ({ ...v, pricePerClass: e.target.value }))
@@ -222,6 +225,7 @@ function FormBody({ type, pending, onSubmit, onCancel }: FormBodyProps) {
                 inputMode="numeric"
                 min="1"
                 step="1"
+                placeholder="15"
                 value={values.maxParticipants}
                 onChange={(e) =>
                   setValues((v) => ({ ...v, maxParticipants: e.target.value }))
@@ -241,6 +245,7 @@ function FormBody({ type, pending, onSubmit, onCancel }: FormBodyProps) {
               inputMode="numeric"
               min="1"
               step="1"
+              placeholder="1"
               value={values.maxConcurrentBookings}
               onChange={(e) =>
                 setValues((v) => ({

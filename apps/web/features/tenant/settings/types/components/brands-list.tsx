@@ -30,6 +30,7 @@ export function BrandsList() {
       renderForm={(props) => (
         <TypeFormSheet
           label="Brand"
+          namePlaceholder="Nike, Optimum Nutrition"
           open={props.open}
           onOpenChange={props.onOpenChange}
           item={props.item}

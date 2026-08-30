@@ -121,6 +121,7 @@ function FormBody({ area, pending, onSubmit, onCancel }: FormBodyProps) {
             </FieldLabel>
             <Input
               id="area-name"
+              placeholder="Cycling Studio"
               value={values.name}
               aria-invalid={Boolean(errors.name)}
               onChange={(e) =>
@@ -134,6 +135,7 @@ function FormBody({ area, pending, onSubmit, onCancel }: FormBodyProps) {
             <FieldLabel htmlFor="area-description">Description</FieldLabel>
             <Textarea
               id="area-description"
+              placeholder="A bookable space like a cycling studio or strength floor"
               value={values.description}
               onChange={(e) =>
                 setValues((v) => ({ ...v, description: e.target.value }))
@@ -203,6 +205,7 @@ function FormBody({ area, pending, onSubmit, onCancel }: FormBodyProps) {
                   inputMode="decimal"
                   min="0"
                   step="1"
+                  placeholder="500"
                   value={values.pricePerHour}
                   onChange={(e) =>
                     setValues((v) => ({ ...v, pricePerHour: e.target.value }))
@@ -220,6 +223,7 @@ function FormBody({ area, pending, onSubmit, onCancel }: FormBodyProps) {
                 inputMode="numeric"
                 min="1"
                 step="1"
+                placeholder="20"
                 value={values.maxPlayers}
                 onChange={(e) =>
                   setValues((v) => ({ ...v, maxPlayers: e.target.value }))
@@ -239,6 +243,7 @@ function FormBody({ area, pending, onSubmit, onCancel }: FormBodyProps) {
               inputMode="numeric"
               min="1"
               step="1"
+              placeholder="1"
               value={values.maxConcurrentBookings}
               onChange={(e) =>
                 setValues((v) => ({
