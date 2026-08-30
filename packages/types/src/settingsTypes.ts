@@ -121,6 +121,17 @@ export type NewTaxRate = z.infer<typeof taxRateInsertSchema>;
 export const taxRateUpdateSchema = taxRateInsertSchema.partial();
 export type UpdateTaxRate = z.infer<typeof taxRateUpdateSchema>;
 
+export const planCategorySchema = z.object({
+  ...rowBase,
+  name: z.string(),
+});
+export type PlanCategory = z.infer<typeof planCategorySchema>;
+
+export const planCategoryInsertSchema = z.object({ name: nameField });
+export type NewPlanCategory = z.infer<typeof planCategoryInsertSchema>;
+export const planCategoryUpdateSchema = planCategoryInsertSchema.partial();
+export type UpdatePlanCategory = z.infer<typeof planCategoryUpdateSchema>;
+
 export const areaTypeListQuerySchema = z.object({ ...paginationFields });
 export type AreaTypeListQuery = z.infer<typeof areaTypeListQuerySchema>;
 export type AreaTypeListResponse = PaginatedResponse<AreaType>;
@@ -144,3 +155,7 @@ export type ProductCategoryListResponse = PaginatedResponse<ProductCategory>;
 export const taxRateListQuerySchema = z.object({ ...paginationFields });
 export type TaxRateListQuery = z.infer<typeof taxRateListQuerySchema>;
 export type TaxRateListResponse = PaginatedResponse<TaxRate>;
+
+export const planCategoryListQuerySchema = z.object({ ...paginationFields });
+export type PlanCategoryListQuery = z.infer<typeof planCategoryListQuerySchema>;
+export type PlanCategoryListResponse = PaginatedResponse<PlanCategory>;

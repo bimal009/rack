@@ -8,13 +8,6 @@ export function gymId(req: Request): string {
   return req.gym.id;
 }
 
-export function gymOwnerId(req: Request): string {
-  if (!req.gym) {
-    throw new ForbiddenError("Gym context is missing");
-  }
-  return req.gym.ownerUserId;
-}
-
 export function pathId(req: Request, name = "id"): string {
   const value = req.params[name];
   if (typeof value !== "string" || value.length === 0) {

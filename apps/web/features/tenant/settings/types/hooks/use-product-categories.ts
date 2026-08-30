@@ -9,54 +9,55 @@ import {
 import type { NewProductCategory, ProductCategoryListQuery } from "@repo/types"
 
 import {
-  createCategory,
-  deleteCategory,
-  listCategories,
-  updateCategory,
-} from "../api/category"
+  createProductCategory,
+  deleteProductCategory,
+  listProductCategories,
+  updateProductCategory,
+} from "../api/product-category"
 
-export function useCategoriesQuery(
+export function useProductCategoriesQuery(
   tenant: string,
   query: Partial<ProductCategoryListQuery> = {}
 ) {
   return useQuery({
-    queryKey: [...["settings", "categories", tenant], query],
-    queryFn: () => listCategories(tenant, query),
+    queryKey: [...["settings", "product-categories", tenant], query],
+    queryFn: () => listProductCategories(tenant, query),
     enabled: Boolean(tenant),
     placeholderData: keepPreviousData,
   })
 }
 
-export function useCreateCategory(tenant: string) {
+export function useCreateProductCategory(tenant: string) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (input: NewProductCategory) => createCategory(tenant, input),
+    mutationFn: (input: NewProductCategory) =>
+      createProductCategory(tenant, input),
     onSuccess: () =>
       queryClient.invalidateQueries({
-        queryKey: ["settings", "categories", tenant],
+        queryKey: ["settings", "product-categories", tenant],
       }),
   })
 }
 
-export function useUpdateCategory(tenant: string) {
+export function useUpdateProductCategory(tenant: string) {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (vars: { id: string; input: Partial<NewProductCategory> }) =>
-      updateCategory(tenant, vars.id, vars.input),
+      updateProductCategory(tenant, vars.id, vars.input),
     onSuccess: () =>
       queryClient.invalidateQueries({
-        queryKey: ["settings", "categories", tenant],
+        queryKey: ["settings", "product-categories", tenant],
       }),
   })
 }
 
-export function useDeleteCategory(tenant: string) {
+export function useDeleteProductCategory(tenant: string) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (id: string) => deleteCategory(tenant, id),
+    mutationFn: (id: string) => deleteProductCategory(tenant, id),
     onSuccess: () =>
       queryClient.invalidateQueries({
-        queryKey: ["settings", "categories", tenant],
+        queryKey: ["settings", "product-categories", tenant],
       }),
   })
 }

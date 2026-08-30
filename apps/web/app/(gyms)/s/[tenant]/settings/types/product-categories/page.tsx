@@ -1,11 +1,11 @@
 import type { Metadata } from "next"
 
-import { CategoriesList } from "@/features/tenant/settings/types/components/categories-list"
+import { ProductCategoriesList } from "@/features/tenant/settings/types/components/product-categories-list"
 
 export const metadata: Metadata = {
-  title: "Categories",
+  title: "Product Categories",
 }
 
 export default function Page() {
-  return <CategoriesList />
+  return <ProductCategoriesList />
 }

@@ -19,10 +19,11 @@ export const CACHE_KEYS = {
   TAX_RATE: "tax_rate",
   BRANDS: "brands",
   AREA_TYPE: "area_type",
-  CATEGORY: "category",
+  PRODUCT_CATEGORY: "product_category",
   CLASS_TYPE: "class_type",
   INSTRUCTOR_TYPE: "instructor_type",
   PAY_RATE: "pay_rate",
+  PLAN_CATEGORY: "plan_category",
 } as const;
 
 export const CACHE_TTL = {

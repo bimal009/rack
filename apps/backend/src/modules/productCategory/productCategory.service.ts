@@ -11,26 +11,26 @@ import { productCategory } from "../../db/schema";
 import { NotFoundError, ValidationError } from "../../lib/errors";
 import { CACHE_KEYS, CACHE_TTL, redis, deleteByPattern } from "../../lib/redis";
 
-const categoryListKey = (
+const productCategoryListKey = (
   gymId: string,
   query: ProductCategoryListQuery
 ): string => {
   const { page, limit, search, sortOrder } = query;
-  return `${CACHE_KEYS.CATEGORY}:${gymId}:list:${page}:${limit}:${search ?? ""}:${sortOrder}`;
+  return `${CACHE_KEYS.PRODUCT_CATEGORY}:${gymId}:list:${page}:${limit}:${search ?? ""}:${sortOrder}`;
 };
 
-const categoryItemKey = (gymId: string, id: string): string =>
-  `${CACHE_KEYS.CATEGORY}:${gymId}:item:${id}`;
+const productCategoryItemKey = (gymId: string, id: string): string =>
+  `${CACHE_KEYS.PRODUCT_CATEGORY}:${gymId}:item:${id}`;
 
-const invalidateCategoryCache = async (gymId: string): Promise<void> => {
-  await deleteByPattern(`${CACHE_KEYS.CATEGORY}:${gymId}:*`);
+const invalidateProductCategoryCache = async (gymId: string): Promise<void> => {
+  await deleteByPattern(`${CACHE_KEYS.PRODUCT_CATEGORY}:${gymId}:*`);
 };
 
-export const listCategories = async (
+export const listProductCategories = async (
   gymId: string,
   query: ProductCategoryListQuery
 ) => {
-  const cacheKey = categoryListKey(gymId, query);
+  const cacheKey = productCategoryListKey(gymId, query);
 
   const cached = await redis.get(cacheKey);
   if (cached) {
@@ -69,8 +69,8 @@ export const listCategories = async (
   return result;
 };
 
-export const getCategory = async (gymId: string, id: string) => {
-  const cacheKey = categoryItemKey(gymId, id);
+export const getProductCategory = async (gymId: string, id: string) => {
+  const cacheKey = productCategoryItemKey(gymId, id);
 
   const cached = await redis.get(cacheKey);
   if (cached) {
@@ -83,20 +83,23 @@ export const getCategory = async (gymId: string, id: string) => {
     .where(and(eq(productCategory.gymId, gymId), eq(productCategory.id, id)))
     .limit(1);
 
-  if (!record) throw new NotFoundError("Category not found");
+  if (!record) throw new NotFoundError("Product category not found");
 
   await redis.set(cacheKey, JSON.stringify(record), "EX", CACHE_TTL.MEDIUM);
 
   return record;
 };
 
-export const createCategory = async (
+export const createProductCategory = async (
   gymId: string,
   input: NewProductCategory
 ) => {
   const result = productCategoryInsertSchema.safeParse(input);
   if (!result.success) {
-    throw new ValidationError("Invalid category", result.error.flatten());
+    throw new ValidationError(
+      "Invalid product category",
+      result.error.flatten()
+    );
   }
 
   const [record] = await db
@@ -104,19 +107,22 @@ export const createCategory = async (
     .values({ gymId, name: result.data.name })
     .returning();
 
-  await invalidateCategoryCache(gymId);
+  await invalidateProductCategoryCache(gymId);
 
   return record;
 };
 
-export const updateCategory = async (
+export const updateProductCategory = async (
   gymId: string,
   id: string,
   input: UpdateProductCategory
 ) => {
   const result = productCategoryUpdateSchema.safeParse(input);
   if (!result.success) {
-    throw new ValidationError("Invalid category", result.error.flatten());
+    throw new ValidationError(
+      "Invalid product category",
+      result.error.flatten()
+    );
   }
 
   const [record] = await db
@@ -125,22 +131,22 @@ export const updateCategory = async (
     .where(and(eq(productCategory.gymId, gymId), eq(productCategory.id, id)))
     .returning();
 
-  if (!record) throw new NotFoundError("Category not found");
+  if (!record) throw new NotFoundError("Product category not found");
 
-  await invalidateCategoryCache(gymId);
+  await invalidateProductCategoryCache(gymId);
 
   return record;
 };
 
-export const deleteCategory = async (gymId: string, id: string) => {
+export const deleteProductCategory = async (gymId: string, id: string) => {
   const [record] = await db
     .delete(productCategory)
     .where(and(eq(productCategory.gymId, gymId), eq(productCategory.id, id)))
     .returning();
 
-  if (!record) throw new NotFoundError("Category not found");
+  if (!record) throw new NotFoundError("Product category not found");
 
-  await invalidateCategoryCache(gymId);
+  await invalidateProductCategoryCache(gymId);
 
   return record;
 };

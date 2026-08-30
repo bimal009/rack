@@ -5,11 +5,11 @@ import type { NewProductCategory, ProductCategory } from "@repo/types"
 import { createDataTableColumnHelper } from "@repo/ui/components/ui/data-table"
 
 import {
-  useCategoriesQuery,
-  useCreateCategory,
-  useDeleteCategory,
-  useUpdateCategory,
-} from "../hooks/use-categories"
+  useCreateProductCategory,
+  useDeleteProductCategory,
+  useProductCategoriesQuery,
+  useUpdateProductCategory,
+} from "../hooks/use-product-categories"
 import { TypeList } from "./type-list"
 import { TypeFormSheet } from "./type-form-sheet"
 
@@ -18,18 +18,18 @@ function buildColumns() {
   return columnHelper.columns([columnHelper.accessor("name", { header: "Name" })])
 }
 
-export function CategoriesList() {
+export function ProductCategoriesList() {
   return (
     <TypeList<ProductCategory, NewProductCategory>
-      label="Category"
+      label="Product category"
       buildColumns={buildColumns}
-      useList={useCategoriesQuery}
-      useCreate={useCreateCategory}
-      useUpdate={useUpdateCategory}
-      useDelete={useDeleteCategory}
+      useList={useProductCategoriesQuery}
+      useCreate={useCreateProductCategory}
+      useUpdate={useUpdateProductCategory}
+      useDelete={useDeleteProductCategory}
       renderForm={(props) => (
         <TypeFormSheet
-          label="Category"
+          label="Product category"
           open={props.open}
           onOpenChange={props.onOpenChange}
           item={props.item}

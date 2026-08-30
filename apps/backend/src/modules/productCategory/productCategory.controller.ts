@@ -4,60 +4,64 @@ import { ValidationError, handleError } from "../../lib/errors";
 import { AppResponse, RESPONSE_STATUS } from "../../lib/response";
 import { gymId, pathId } from "../../lib/helper";
 import {
-  createCategory,
-  deleteCategory,
-  listCategories,
-  updateCategory,
-} from "./category.service";
+  createProductCategory,
+  deleteProductCategory,
+  listProductCategories,
+  updateProductCategory,
+} from "./productCategory.service";
 
-export const getCategories = async (req: Request, res: Response) => {
+export const getProductCategories = async (req: Request, res: Response) => {
   try {
     const query = productCategoryListQuerySchema.safeParse(req.query);
     if (!query.success) {
       throw new ValidationError("Invalid query params", query.error.flatten());
     }
-    const { data, meta } = await listCategories(gymId(req), query.data);
+    const { data, meta } = await listProductCategories(gymId(req), query.data);
     return res
       .status(RESPONSE_STATUS.ok)
-      .json(AppResponse.paginated(data, meta, "Categories fetched"));
+      .json(AppResponse.paginated(data, meta, "Product categories fetched"));
   } catch (error) {
-    const { status, body } = handleError("getCategories", error);
+    const { status, body } = handleError("getProductCategories", error);
     return res.status(status).json(body);
   }
 };
 
-export const addCategory = async (req: Request, res: Response) => {
+export const addProductCategory = async (req: Request, res: Response) => {
   try {
-    const record = await createCategory(gymId(req), req.body);
+    const record = await createProductCategory(gymId(req), req.body);
     return res
       .status(RESPONSE_STATUS.created)
-      .json(AppResponse.created(record, "Category created"));
+      .json(AppResponse.created(record, "Product category created"));
   } catch (error) {
-    const { status, body } = handleError("addCategory", error);
+    const { status, body } = handleError("addProductCategory", error);
     return res.status(status).json(body);
   }
 };
 
-export const editCategory = async (req: Request, res: Response) => {
+export const editProductCategory = async (req: Request, res: Response) => {
   try {
-    const record = await updateCategory(gymId(req), pathId(req), req.body);
+    const record = await updateProductCategory(
+      gymId(req),
+      pathId(req),
+      req.body
+    );
     return res
       .status(RESPONSE_STATUS.ok)
-      .json(AppResponse.ok(record, "Category updated"));
+      .json(AppResponse.ok(record, "Product category updated"));
   } catch (error) {
-    const { status, body } = handleError("editCategory", error);
+    const { status, body } = handleError("editProductCategory", error);
     return res.status(status).json(body);
   }
 };
 
-export const removeCategory = async (req: Request, res: Response) => {
+export const removeProductCategory = async (req: Request, res: Response) => {
   try {
-    const record = await deleteCategory(gymId(req), pathId(req));
+    const record = await deleteProductCategory(gymId(req), pathId(req));
     return res
       .status(RESPONSE_STATUS.ok)
-      .json(AppResponse.ok(record, "Category removed"));
+      .json(AppResponse.ok(record, "Product category removed"));
   } catch (error) {
-    const { status, body } = handleError("removeCategory", error);
+    const { status, body } = handleError("removeProductCategory", error);
     return res.status(status).json(body);
   }
 };
