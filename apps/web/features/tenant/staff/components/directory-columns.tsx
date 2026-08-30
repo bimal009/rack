@@ -1,5 +1,6 @@
 "use client"
 
+import { MoreHorizontal, PenSquare, Trash2 } from "lucide-react"
 import type { StaffWithUser } from "@repo/types"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/components/ui/avatar"
@@ -8,6 +9,12 @@ import {
   createDataTableColumnHelper,
   createIndexColumn,
 } from "@repo/ui/components/ui/data-table"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@repo/ui/components/ui/dropdown-menu"
 import { cn } from "@repo/ui/lib/utils"
 
 import { gymRoleLabel } from "../lib/roles"
@@ -49,13 +56,43 @@ function payLabel(row: StaffWithUser) {
 interface StaffColumnOptions {
   instructor?: boolean
   instructorTypeName?: (id: string | null) => string
+  onEdit?: (row: StaffWithUser) => void
+  onDelete?: (row: StaffWithUser) => void
 }
 
 export function createStaffDirectoryColumns({
   instructor = false,
   instructorTypeName,
+  onEdit,
+  onDelete,
 }: StaffColumnOptions = {}) {
   const columnHelper = createDataTableColumnHelper<StaffWithUser>()
+
+  const hasActions = Boolean(onEdit || onDelete)
+
+  const actionsColumn = columnHelper.display({
+    id: "actions",
+    cell: ({ row }) => (
+      <DropdownMenu>
+        <DropdownMenuTrigger className="flex size-7 items-center justify-center rounded-md text-muted-foreground outline-none hover:bg-muted hover:text-foreground">
+          <MoreHorizontal className="size-4" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={() => onEdit?.(row.original)}>
+            <PenSquare />
+            Edit
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            variant="destructive"
+            onClick={() => onDelete?.(row.original)}
+          >
+            <Trash2 />
+            Delete
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    ),
+  })
 
   const nameColumn = columnHelper.accessor(
     (row) => `${row.user.name} ${row.user.email}`,
@@ -170,6 +207,7 @@ export function createStaffDirectoryColumns({
       }),
       joinedColumn,
       statusColumn,
+      ...(hasActions ? [actionsColumn] : []),
     ])
   }
 
@@ -187,5 +225,6 @@ export function createStaffDirectoryColumns({
     payColumn,
     joinedColumn,
     statusColumn,
+    ...(hasActions ? [actionsColumn] : []),
   ])
 }

@@ -65,7 +65,7 @@ const optionalText = z
     return trimmed.length > 0 ? trimmed : null;
   });
 
-export const staffWithUserInsertSchema = z.object({
+const staffWithUserInsertObject = z.object({
   firstName: z.string().trim().min(1, "Enter a first name"),
   lastName: z.string().trim().min(1, "Enter a last name"),
   email: z.string().trim().email("Enter a valid email address"),
@@ -99,7 +99,12 @@ export const staffWithUserInsertSchema = z.object({
   canBeBooked: z.boolean().default(false),
   visibility: staffVisibilityEnumSchema.default("Public"),
   maxConcurrentBookings: z.number().int().positive().default(1),
-}).superRefine((data, ctx) => {
+});
+
+const requireInstructorFields = (
+  data: { role?: string; instructorTypeId?: unknown; experience?: unknown },
+  ctx: z.RefinementCtx
+) => {
   if (data.role !== "instructor") return;
 
   if (!data.instructorTypeId) {
@@ -117,9 +122,18 @@ export const staffWithUserInsertSchema = z.object({
       message: "Enter years of experience",
     });
   }
-});
+};
+
+export const staffWithUserInsertSchema =
+  staffWithUserInsertObject.superRefine(requireInstructorFields);
 
 export type NewStaffWithUser = z.infer<typeof staffWithUserInsertSchema>;
+
+export const staffUpdateSchema = staffWithUserInsertObject
+  .omit({ firstName: true, lastName: true, email: true, image: true })
+  .partial();
+
+export type UpdateStaff = z.infer<typeof staffUpdateSchema>;
 
 
 export type StaffMemberUser = {

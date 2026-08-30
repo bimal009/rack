@@ -2,7 +2,13 @@ import { Request, Response } from "express";
 import { staffListQuerySchema } from "@repo/types";
 import { ForbiddenError, ValidationError, handleError } from "../../lib/errors";
 import { AppResponse, RESPONSE_STATUS } from "../../lib/response";
-import { createStaffWithUser, getAll } from "./staff.service";
+import { gymId, pathId } from "../../lib/helper";
+import {
+  createStaffWithUser,
+  deleteStaff,
+  getAll,
+  updateStaff,
+} from "./staff.service";
 
 export const createStaff = async (req: Request, res: Response) => {
   try {
@@ -36,6 +42,30 @@ export const getStaff = async (req: Request, res: Response) => {
       .json(AppResponse.paginated(data, meta, "Staff fetched successfully"));
   } catch (error) {
     const { status, body } = handleError("getStaff", error);
+    return res.status(status).json(body);
+  }
+};
+
+export const editStaff = async (req: Request, res: Response) => {
+  try {
+    const record = await updateStaff(gymId(req), pathId(req), req.body);
+    return res
+      .status(RESPONSE_STATUS.ok)
+      .json(AppResponse.ok(record, "Staff updated successfully"));
+  } catch (error) {
+    const { status, body } = handleError("editStaff", error);
+    return res.status(status).json(body);
+  }
+};
+
+export const removeStaff = async (req: Request, res: Response) => {
+  try {
+    const record = await deleteStaff(gymId(req), pathId(req));
+    return res
+      .status(RESPONSE_STATUS.ok)
+      .json(AppResponse.ok(record, "Staff removed successfully"));
+  } catch (error) {
+    const { status, body } = handleError("removeStaff", error);
     return res.status(status).json(body);
   }
 };

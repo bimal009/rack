@@ -9,7 +9,13 @@ import {
   Plus,
   SearchIcon,
 } from "lucide-react"
-import { gymRoleEnumSchema, type GymRole, type StaffListQuery } from "@repo/types"
+import { toast } from "sonner"
+import {
+  gymRoleEnumSchema,
+  type GymRole,
+  type StaffListQuery,
+  type StaffWithUser,
+} from "@repo/types"
 
 import { Button } from "@repo/ui/components/ui/button"
 import { DataTable } from "@repo/ui/components/ui/data-table"
@@ -24,16 +30,17 @@ import {
 } from "@repo/ui/components/ui/dropdown-menu"
 import { Input } from "@repo/ui/components/ui/input"
 
+import { DeleteConfirmDialog } from "@/features/tenant/components/delete-confirm-dialog"
 import { FilterPills } from "@/features/tenant/components/filter-pills"
 import { useDebounce } from "@/hooks/use-debounce"
 
 import { useInstructorTypesQuery } from "@/features/tenant/settings/types/hooks/use-instructor-types"
 
-import { useStaffListQuery } from "../hooks/use-staff"
+import { useDeleteStaffMutation, useStaffListQuery } from "../hooks/use-staff"
 import { useStaffFilters } from "../hooks/use-staff-filters"
 import { gymRoleLabel } from "../lib/roles"
 import { createStaffDirectoryColumns } from "./directory-columns"
-import { StaffCreateSheet } from "./staff-create-sheet"
+import { StaffFormSheet } from "./staff-form-sheet"
 
 const roleOptions = ["All", ...gymRoleEnumSchema.options.map(gymRoleLabel)] as const
 const statusOptions = ["All", "Active", "Inactive"] as const
@@ -47,6 +54,10 @@ export function StaffList({ lockedRole, label = "Staff" }: StaffListProps = {}) 
   const tenant = useParams<{ tenant: string }>().tenant
   const [filters, setFilters] = useStaffFilters()
   const [sheetOpen, setSheetOpen] = useState(false)
+  const [editing, setEditing] = useState<StaffWithUser | null>(null)
+  const [deleting, setDeleting] = useState<StaffWithUser | null>(null)
+
+  const deleteStaff = useDeleteStaffMutation(tenant)
 
   const debouncedSearch = useDebounce(filters.search, 350)
 
@@ -64,11 +75,19 @@ export function StaffList({ lockedRole, label = "Staff" }: StaffListProps = {}) 
   const instructorTypes = useInstructorTypesQuery(tenant, { limit: 100 })
 
   const columns = useMemo(() => {
-    if (!isInstructorView) return createStaffDirectoryColumns()
+    const rowActions = {
+      onEdit: (row: StaffWithUser) => {
+        setEditing(row)
+        setSheetOpen(true)
+      },
+      onDelete: (row: StaffWithUser) => setDeleting(row),
+    }
+    if (!isInstructorView) return createStaffDirectoryColumns(rowActions)
     const map = new Map(
       (instructorTypes.data?.data ?? []).map((t) => [t.id, t.name])
     )
     return createStaffDirectoryColumns({
+      ...rowActions,
       instructor: true,
       instructorTypeName: (id) => (id ? (map.get(id) ?? "") : ""),
     })
@@ -184,7 +203,10 @@ export function StaffList({ lockedRole, label = "Staff" }: StaffListProps = {}) 
               </DropdownMenuContent>
             </DropdownMenu>
             <Button
-              onClick={() => setSheetOpen(true)}
+              onClick={() => {
+                setEditing(null)
+                setSheetOpen(true)
+              }}
               className="flex-1 sm:flex-none"
             >
               <Plus className="size-4" />
@@ -237,10 +259,33 @@ export function StaffList({ lockedRole, label = "Staff" }: StaffListProps = {}) 
         </div>
       )}
 
-      <StaffCreateSheet
+      <StaffFormSheet
         tenant={tenant}
         open={sheetOpen}
-        onOpenChange={setSheetOpen}
+        onOpenChange={(open) => {
+          setSheetOpen(open)
+          if (!open) setEditing(null)
+        }}
+        staff={editing}
+      />
+
+      <DeleteConfirmDialog
+        open={Boolean(deleting)}
+        onOpenChange={(open) => !open && setDeleting(null)}
+        title="Remove staff member?"
+        description={
+          deleting
+            ? `${deleting.user.name} will be removed from this gym.`
+            : ""
+        }
+        onConfirm={() => {
+          if (!deleting) return
+          deleteStaff.mutate(deleting.id, {
+            onSuccess: () => toast.success(`${deleting.user.name} removed`),
+            onError: (error) => toast.error(error.message),
+          })
+          setDeleting(null)
+        }}
       />
     </div>
   )

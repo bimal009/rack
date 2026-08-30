@@ -18,6 +18,7 @@ import classTypeRoutes from "./modules/classType/classType.routes";
 import brandRoutes from "./modules/brand/brand.routes";
 import categoryRoutes from "./modules/category/category.routes";
 import taxRateRoutes from "./modules/taxRate/taxRate.routes";
+import payRateRoutes from "./modules/payRate/payRate.routes";
 
 const isDev = process.env.NODE_ENV === "development";
 
@@ -57,6 +58,7 @@ app.use("/api/v1/gyms/:slug/settings/class-types", classTypeRoutes);
 app.use("/api/v1/gyms/:slug/settings/brands", brandRoutes);
 app.use("/api/v1/gyms/:slug/settings/categories", categoryRoutes);
 app.use("/api/v1/gyms/:slug/settings/tax-rates", taxRateRoutes);
+app.use("/api/v1/gyms/:slug/pay-rates", payRateRoutes);
 app.use("/api/v1/plans", plansRoutes);
 app.use("/api/v1/media", mediaRoutes);
 
