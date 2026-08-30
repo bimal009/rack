@@ -227,6 +227,7 @@ function BookingFormBody({ booking, onSubmit, onCancel }: BookingFormBodyProps) 
             <FieldLabel htmlFor="booking-notes">Notes</FieldLabel>
             <Textarea
               id="booking-notes"
+              placeholder="Anything staff should know about this booking"
               value={values.notes}
               onChange={(e) =>
                 setValues((v) => ({ ...v, notes: e.target.value }))
@@ -299,6 +300,7 @@ function BookingFormBody({ booking, onSubmit, onCancel }: BookingFormBodyProps) 
                     inputMode="numeric"
                     min="1"
                     step="1"
+                    placeholder="1"
                     value={values.repeatEvery}
                     onChange={(e) =>
                       setValues((v) => ({ ...v, repeatEvery: e.target.value }))
@@ -423,6 +425,7 @@ function BookingFormBody({ booking, onSubmit, onCancel }: BookingFormBodyProps) 
                     inputMode="numeric"
                     min="1"
                     step="1"
+                    placeholder="10"
                     value={values.repeatEndOccurrences}
                     onChange={(e) =>
                       setValues((v) => ({

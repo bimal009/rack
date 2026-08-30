@@ -264,6 +264,7 @@ function FormBody({ policy, pending, onSubmit, onCancel }: FormBodyProps) {
                   inputMode="decimal"
                   min="0"
                   step="1"
+                  placeholder="1500"
                   value={values.perSessionRate}
                   onChange={(e) => set("perSessionRate", e.target.value)}
                 />
@@ -284,6 +285,7 @@ function FormBody({ policy, pending, onSubmit, onCancel }: FormBodyProps) {
                 min="0"
                 max="100"
                 step="1"
+                placeholder="40"
                 value={values.revenueSharePercent}
                 onChange={(e) => set("revenueSharePercent", e.target.value)}
               />
