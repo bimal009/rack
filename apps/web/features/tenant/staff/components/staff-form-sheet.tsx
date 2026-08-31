@@ -604,9 +604,18 @@ function StaffForm({
                 ) : (
                   <Select
                     value={values.instructorTypeId}
-                    onValueChange={(value) =>
+                    onValueChange={(value) => {
                       set("instructorTypeId", value ?? "")
-                    }
+                      const picked = instructorTypes.data?.data.find(
+                        (t) => t.id === value
+                      )
+                      if (picked && !isEdit) {
+                        set(
+                          "maxConcurrentBookings",
+                          String(picked.maxConcurrentBookings ?? 1)
+                        )
+                      }
+                    }}
                   >
                     <SelectTrigger id="staff-instructor-type" className="w-full">
                       <SelectValue placeholder="Select a type">
@@ -714,6 +723,10 @@ function StaffForm({
                     set("maxConcurrentBookings", e.target.value)
                   }
                 />
+                <FieldDescription>
+                  Defaults from the instructor type — adjust for this person if
+                  needed.
+                </FieldDescription>
                 <FieldError>{errors.maxConcurrentBookings}</FieldError>
               </Field>
             </div>

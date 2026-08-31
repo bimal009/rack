@@ -19,6 +19,9 @@ export const areaSchema = z.object({
   visibility: areaVisibilityEnumSchema,
   status: areaStatusEnumSchema,
   attributes: z.array(z.string()),
+  areaType: z
+    .object({ id: z.string().uuid(), name: z.string() })
+    .nullish(),
   createdAt: z.date(),
   updatedAt: z.date(),
 });

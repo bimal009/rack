@@ -203,9 +203,21 @@ function AreaFormBody({ area, pending, onSubmit, onCancel }: AreaFormBodyProps) 
               <FieldLabel htmlFor="area-type">Area Type</FieldLabel>
               <Select
                 value={values.areaTypeId}
-                onValueChange={(value) =>
-                  setValues((v) => ({ ...v, areaTypeId: value ?? "" }))
-                }
+                onValueChange={(value) => {
+                  const picked = areaTypes.find((t) => t.id === value)
+                  setValues((v) => ({
+                    ...v,
+                    areaTypeId: value ?? "",
+                    ...(picked && !isEdit
+                      ? {
+                          pricePerHour: String(picked.pricePerHour ?? 0),
+                          maxConcurrentBookings: String(
+                            picked.maxConcurrentBookings ?? 1
+                          ),
+                        }
+                      : {}),
+                  }))
+                }}
               >
                 <SelectTrigger id="area-type" className="w-full">
                   <SelectValue placeholder="Select area type">
@@ -223,6 +235,11 @@ function AreaFormBody({ area, pending, onSubmit, onCancel }: AreaFormBodyProps) 
                   ))}
                 </SelectContent>
               </Select>
+              {!isEdit && (
+                <FieldDescription>
+                  Sets a default price and capacity you can adjust below.
+                </FieldDescription>
+              )}
             </Field>
           </div>
 

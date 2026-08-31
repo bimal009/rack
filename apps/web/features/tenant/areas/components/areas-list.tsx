@@ -11,7 +11,6 @@ import { DataTable } from "@repo/ui/components/ui/data-table"
 
 import { DeleteConfirmDialog } from "@/features/tenant/components/delete-confirm-dialog"
 import { FilterPills } from "@/features/tenant/components/filter-pills"
-import { useAreaTypesQuery } from "@/features/tenant/settings/types/hooks/use-area-types"
 
 import {
   useAreasQuery,
@@ -39,14 +38,6 @@ export function AreasList() {
   const createArea = useCreateArea(tenant)
   const updateArea = useUpdateArea(tenant)
   const deleteArea = useDeleteArea(tenant)
-
-  const areaTypesQuery = useAreaTypesQuery(tenant, { limit: 100 })
-  const areaTypeName = useMemo(() => {
-    const map = new Map(
-      (areaTypesQuery.data?.data ?? []).map((type) => [type.id, type.name])
-    )
-    return (id: string | null) => (id ? (map.get(id) ?? "") : "")
-  }, [areaTypesQuery.data])
 
   const rows = areasQuery.data?.data ?? []
 
@@ -92,9 +83,8 @@ export function AreasList() {
       createAreaColumns({
         onEdit: handleEdit,
         onDelete: setDeletingArea,
-        areaTypeName,
       }),
-    [areaTypeName]
+    []
   )
 
   return (

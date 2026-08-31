@@ -25,14 +25,9 @@ const currency = new Intl.NumberFormat("en-US", {
 interface AreaColumnActions {
   onEdit: (area: Area) => void
   onDelete: (area: Area) => void
-  areaTypeName: (id: string | null) => string
 }
 
-export function createAreaColumns({
-  onEdit,
-  onDelete,
-  areaTypeName,
-}: AreaColumnActions) {
+export function createAreaColumns({ onEdit, onDelete }: AreaColumnActions) {
   const columnHelper = createDataTableColumnHelper<Area>()
 
   return columnHelper.columns([
@@ -56,16 +51,14 @@ export function createAreaColumns({
     columnHelper.accessor("areaTypeId", {
       header: "Type",
       enableGlobalFilter: false,
-      cell: ({ getValue }) => {
-        const name = areaTypeName(getValue())
-        return name ? (
+      cell: ({ row }) =>
+        row.original.areaType?.name ? (
           <Badge variant="outline" className="rounded-full font-normal">
-            {name}
+            {row.original.areaType.name}
           </Badge>
         ) : (
           <span className="text-muted-foreground">—</span>
-        )
-      },
+        ),
     }),
     columnHelper.accessor("pricePerHour", {
       header: "Price / hour",

@@ -7,7 +7,7 @@ import {
 } from "@repo/types";
 import { and, asc, count, desc, eq, ilike } from "drizzle-orm";
 import { db } from "../../db";
-import { area } from "../../db/schema";
+import { area, areaType } from "../../db/schema";
 import { NotFoundError, ValidationError } from "../../lib/errors";
 import { CACHE_KEYS, CACHE_TTL, redis, deleteByPattern } from "../../lib/redis";
 
@@ -41,8 +41,24 @@ export const listAreas = async (gymId: string, query: AreaListQuery) => {
 
   const [data, [totalRow]] = await Promise.all([
     db
-      .select()
+      .select({
+        id: area.id,
+        gymId: area.gymId,
+        areaTypeId: area.areaTypeId,
+        name: area.name,
+        description: area.description,
+        images: area.images,
+        pricePerHour: area.pricePerHour,
+        maxConcurrentBookings: area.maxConcurrentBookings,
+        visibility: area.visibility,
+        status: area.status,
+        attributes: area.attributes,
+        areaType: { id: areaType.id, name: areaType.name },
+        createdAt: area.createdAt,
+        updatedAt: area.updatedAt,
+      })
       .from(area)
+      .leftJoin(areaType, eq(area.areaTypeId, areaType.id))
       .where(where)
       .orderBy(sortOrder === "asc" ? asc(area.name) : desc(area.name))
       .limit(limit)
@@ -70,8 +86,24 @@ export const getArea = async (gymId: string, id: string) => {
   }
 
   const [record] = await db
-    .select()
+    .select({
+      id: area.id,
+      gymId: area.gymId,
+      areaTypeId: area.areaTypeId,
+      name: area.name,
+      description: area.description,
+      images: area.images,
+      pricePerHour: area.pricePerHour,
+      maxConcurrentBookings: area.maxConcurrentBookings,
+      visibility: area.visibility,
+      status: area.status,
+      attributes: area.attributes,
+      areaType: { id: areaType.id, name: areaType.name },
+      createdAt: area.createdAt,
+      updatedAt: area.updatedAt,
+    })
     .from(area)
+    .leftJoin(areaType, eq(area.areaTypeId, areaType.id))
     .where(and(eq(area.gymId, gymId), eq(area.id, id)))
     .limit(1);
 
