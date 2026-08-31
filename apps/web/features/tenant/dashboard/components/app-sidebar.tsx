@@ -9,6 +9,7 @@ import {
   Dumbbell,
   LayoutGrid,
   LogOut,
+  MapPin,
   Rocket,
   Settings,
   UserRoundCog,
@@ -37,6 +38,7 @@ const mainNav = [
   { title: "Revenue", icon: Wallet, segment: "revenue/memberships", match: "revenue" },
   { title: "Attendance", icon: ClipboardCheck, segment: "attendance" },
   { title: "Schedule", icon: CalendarRange, segment: "schedule" },
+  { title: "Areas", icon: MapPin, segment: "areas" },
   { title: "Staff", icon: UserRoundCog, segment: "staff/directory", match: "staff" },
 ]
 

@@ -106,6 +106,27 @@ export const relations = defineRelations(schema, (r) => ({
     }),
   },
 
+  areaType: {
+    gym: r.one.gyms({
+      from: r.areaType.gymId,
+      to: r.gyms.id,
+      optional: false,
+    }),
+    areas: r.many.area(),
+  },
+
+  area: {
+    gym: r.one.gyms({
+      from: r.area.gymId,
+      to: r.gyms.id,
+      optional: false,
+    }),
+    areaType: r.one.areaType({
+      from: r.area.areaTypeId,
+      to: r.areaType.id,
+    }),
+  },
+
   plan: {
     subscriptions: r.many.gymSubscription(),
   },
