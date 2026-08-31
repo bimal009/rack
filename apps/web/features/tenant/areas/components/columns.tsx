@@ -1,6 +1,7 @@
 "use client"
 
 import { MoreHorizontal, PenSquare, Trash2 } from "lucide-react"
+import type { Area } from "@repo/types"
 
 import { Badge } from "@repo/ui/components/ui/badge"
 import {
@@ -15,8 +16,6 @@ import {
   DropdownMenuTrigger,
 } from "@repo/ui/components/ui/dropdown-menu"
 
-import type { Area } from "../lib/schema"
-
 const currency = new Intl.NumberFormat("en-US", {
   style: "currency",
   currency: "NPR",
@@ -26,7 +25,7 @@ const currency = new Intl.NumberFormat("en-US", {
 interface AreaColumnActions {
   onEdit: (area: Area) => void
   onDelete: (area: Area) => void
-  areaTypeName: (id: string) => string
+  areaTypeName: (id: string | null) => string
 }
 
 export function createAreaColumns({
@@ -58,7 +57,7 @@ export function createAreaColumns({
       header: "Type",
       enableGlobalFilter: false,
       cell: ({ getValue }) => {
-        const name = getValue() ? areaTypeName(getValue() as string) : ""
+        const name = areaTypeName(getValue())
         return name ? (
           <Badge variant="outline" className="rounded-full font-normal">
             {name}

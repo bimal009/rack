@@ -39,17 +39,18 @@ import { MultiImageUpload } from "@/features/media"
 import { FormSection, FormSheetHeader } from "@/features/tenant/components/form-section"
 import { useAreaTypesQuery } from "@/features/tenant/settings/types/hooks/use-area-types"
 
-import { fieldErrors } from "../lib/validation"
 import {
-  areaAttributeOptions,
-  areaSchema,
-  areaStatuses,
-  areaVisibilities,
+  areaInsertSchema,
+  areaStatusEnumSchema,
+  areaVisibilityEnumSchema,
   type Area,
-  type AreaInput,
   type AreaStatus,
   type AreaVisibility,
-} from "../lib/schema"
+  type NewArea,
+} from "@repo/types"
+
+import { fieldErrors } from "../lib/validation"
+import { areaAttributeOptions } from "../lib/schema"
 
 interface AreaFormValues {
   name: string
@@ -92,11 +93,12 @@ function toFormValues(area?: Area | null): AreaFormValues {
 
 interface AreaFormBodyProps {
   area?: Area | null
-  onSubmit: (values: AreaInput) => void
+  pending?: boolean
+  onSubmit: (values: NewArea) => void
   onCancel: () => void
 }
 
-function AreaFormBody({ area, onSubmit, onCancel }: AreaFormBodyProps) {
+function AreaFormBody({ area, pending, onSubmit, onCancel }: AreaFormBodyProps) {
   const tenant = useParams<{ tenant: string }>().tenant
   const areaTypesQuery = useAreaTypesQuery(tenant, { limit: 100 })
   const areaTypes = areaTypesQuery.data?.data ?? []
@@ -147,10 +149,14 @@ function AreaFormBody({ area, onSubmit, onCancel }: AreaFormBodyProps) {
   function handleSubmit(event: FormEvent) {
     event.preventDefault()
 
-    const result = areaSchema.safeParse({
-      ...values,
-      areaTypeId: values.areaTypeId || undefined,
+    const result = areaInsertSchema.safeParse({
+      name: values.name,
+      areaTypeId: values.areaTypeId || null,
       description: values.description || undefined,
+      images: values.images,
+      visibility: values.visibility,
+      status: values.status,
+      attributes: values.attributes,
       pricePerHour: Number(values.pricePerHour || 0),
       maxConcurrentBookings: Number(values.maxConcurrentBookings || 0),
     })
@@ -312,7 +318,7 @@ function AreaFormBody({ area, onSubmit, onCancel }: AreaFormBodyProps) {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {areaVisibilities.map((option) => (
+                  {areaVisibilityEnumSchema.options.map((option) => (
                     <SelectItem key={option} value={option}>
                       {option}
                     </SelectItem>
@@ -333,7 +339,7 @@ function AreaFormBody({ area, onSubmit, onCancel }: AreaFormBodyProps) {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {areaStatuses.map((option) => (
+                  {areaStatusEnumSchema.options.map((option) => (
                     <SelectItem key={option} value={option}>
                       {option}
                     </SelectItem>
@@ -397,7 +403,7 @@ function AreaFormBody({ area, onSubmit, onCancel }: AreaFormBodyProps) {
         <Button type="button" variant="outline" onClick={onCancel}>
           Cancel
         </Button>
-        <Button type="submit">
+        <Button type="submit" disabled={pending}>
           {isEdit ? "Save changes" : "Create area"}
         </Button>
       </SheetFooter>
@@ -409,13 +415,15 @@ interface AreaFormSheetProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   area?: Area | null
-  onSubmit: (values: AreaInput) => void
+  pending?: boolean
+  onSubmit: (values: NewArea) => void
 }
 
 export function AreaFormSheet({
   open,
   onOpenChange,
   area,
+  pending,
   onSubmit,
 }: AreaFormSheetProps) {
   return (
@@ -425,6 +433,7 @@ export function AreaFormSheet({
           <AreaFormBody
             key={area?.id ?? "new"}
             area={area}
+            pending={pending}
             onSubmit={(values) => {
               onSubmit(values)
               onOpenChange(false)

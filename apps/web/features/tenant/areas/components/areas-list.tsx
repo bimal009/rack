@@ -2,19 +2,23 @@
 
 import { useMemo, useState } from "react"
 import { useParams } from "next/navigation"
-import { Download, Plus } from "lucide-react"
+import { Plus } from "lucide-react"
 import { toast } from "sonner"
+import type { Area, NewArea } from "@repo/types"
 
 import { Button } from "@repo/ui/components/ui/button"
 import { DataTable } from "@repo/ui/components/ui/data-table"
 
 import { DeleteConfirmDialog } from "@/features/tenant/components/delete-confirm-dialog"
 import { FilterPills } from "@/features/tenant/components/filter-pills"
-import { exportToCsv } from "@/features/tenant/lib/export-csv"
 import { useAreaTypesQuery } from "@/features/tenant/settings/types/hooks/use-area-types"
 
-import { generateAreaId, initialAreas } from "../lib/data"
-import type { Area, AreaInput } from "../lib/schema"
+import {
+  useAreasQuery,
+  useCreateArea,
+  useDeleteArea,
+  useUpdateArea,
+} from "../hooks/use-areas"
 import { AreaFormSheet } from "./area-form-sheet"
 import { createAreaColumns } from "./columns"
 
@@ -22,24 +26,29 @@ const filters = ["All", "Active", "Inactive"] as const
 
 export function AreasList() {
   const tenant = useParams<{ tenant: string }>().tenant
-  const areaTypesQuery = useAreaTypesQuery(tenant, { limit: 100 })
-  const areaTypeName = useMemo(() => {
-    const map = new Map(
-      (areaTypesQuery.data?.data ?? []).map((type) => [type.id, type.name])
-    )
-    return (id: string) => map.get(id) ?? ""
-  }, [areaTypesQuery.data])
 
-  const [areas, setAreas] = useState<Area[]>(initialAreas)
   const [filter, setFilter] = useState<(typeof filters)[number]>("All")
   const [sheetOpen, setSheetOpen] = useState(false)
   const [editingArea, setEditingArea] = useState<Area | null>(null)
   const [deletingArea, setDeletingArea] = useState<Area | null>(null)
 
-  const visible =
-    filter === "All"
-      ? areas
-      : areas.filter((area) => area.status === filter)
+  const areasQuery = useAreasQuery(tenant, {
+    limit: 100,
+    status: filter === "All" ? undefined : filter,
+  })
+  const createArea = useCreateArea(tenant)
+  const updateArea = useUpdateArea(tenant)
+  const deleteArea = useDeleteArea(tenant)
+
+  const areaTypesQuery = useAreaTypesQuery(tenant, { limit: 100 })
+  const areaTypeName = useMemo(() => {
+    const map = new Map(
+      (areaTypesQuery.data?.data ?? []).map((type) => [type.id, type.name])
+    )
+    return (id: string | null) => (id ? (map.get(id) ?? "") : "")
+  }, [areaTypesQuery.data])
+
+  const rows = areasQuery.data?.data ?? []
 
   function handleAdd() {
     setEditingArea(null)
@@ -51,38 +60,31 @@ export function AreasList() {
     setSheetOpen(true)
   }
 
-  function handleSubmit(values: AreaInput) {
+  function handleSubmit(values: NewArea) {
     if (editingArea) {
-      setAreas((prev) =>
-        prev.map((area) =>
-          area.id === editingArea.id ? { ...area, ...values } : area
-        )
+      updateArea.mutate(
+        { id: editingArea.id, input: values },
+        {
+          onSuccess: () => toast.success(`${values.name} updated`),
+          onError: (error) => toast.error(error.message),
+        }
       )
-      toast.success(`${values.name} updated`)
     } else {
-      setAreas((prev) => [{ ...values, id: generateAreaId() }, ...prev])
-      toast.success(`${values.name} created`)
+      createArea.mutate(values, {
+        onSuccess: () => toast.success(`${values.name} created`),
+        onError: (error) => toast.error(error.message),
+      })
     }
   }
 
   function handleDelete() {
     if (!deletingArea) return
-    setAreas((prev) => prev.filter((area) => area.id !== deletingArea.id))
-    toast.success(`${deletingArea.name} deleted`)
+    const name = deletingArea.name
+    deleteArea.mutate(deletingArea.id, {
+      onSuccess: () => toast.success(`${name} deleted`),
+      onError: (error) => toast.error(error.message),
+    })
     setDeletingArea(null)
-  }
-
-  function handleExport() {
-    exportToCsv(
-      "areas.csv",
-      visible.map((area) => ({
-        Name: area.name,
-        Type: area.areaTypeId ? areaTypeName(area.areaTypeId) : "",
-        "Price / hour": area.pricePerHour,
-        Visibility: area.visibility,
-        Status: area.status,
-      }))
-    )
   }
 
   const columns = useMemo(
@@ -97,19 +99,14 @@ export function AreasList() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between gap-2">
-        <FilterPills options={filters} value={filter} onChange={setFilter} />
-        <Button variant="outline" onClick={handleExport}>
-          <Download className="size-4" />
-          Export
-        </Button>
-      </div>
+      <FilterPills options={filters} value={filter} onChange={setFilter} />
 
       <DataTable
         columns={columns}
-        data={visible}
+        data={rows}
         getRowId={(row) => row.id}
         enableRowSelection
+        isLoading={areasQuery.isPending}
         searchPlaceholder="Search areas..."
         emptyMessage="No areas found."
         toolbar={
@@ -124,6 +121,7 @@ export function AreasList() {
         open={sheetOpen}
         onOpenChange={setSheetOpen}
         area={editingArea}
+        pending={createArea.isPending || updateArea.isPending}
         onSubmit={handleSubmit}
       />
 

@@ -19,6 +19,7 @@ export const CACHE_KEYS = {
   TAX_RATE: "tax_rate",
   BRANDS: "brands",
   AREA_TYPE: "area_type",
+  AREA: "area",
   PRODUCT_CATEGORY: "product_category",
   CLASS_TYPE: "class_type",
   INSTRUCTOR_TYPE: "instructor_type",
