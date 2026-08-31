@@ -370,7 +370,7 @@ function AreaFormBody({ area, pending, onSubmit, onCancel }: AreaFormBodyProps) 
             <FieldLabel htmlFor="area-attributes">Attributes</FieldLabel>
             <Input
               id="area-attributes"
-              placeholder="Search attributes..."
+              placeholder="Add attributes..."
               value={attributeDraft}
               onChange={(e) => setAttributeDraft(e.target.value)}
               onKeyDown={onAttributeKeyDown}
