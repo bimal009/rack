@@ -7,6 +7,7 @@ import {
   type ChangeEvent,
   type FormEvent,
 } from "react"
+import { useParams } from "next/navigation"
 import { CalendarCheck, Info, Layers, ListChecks, Plus, Sliders, Trash2, X } from "lucide-react"
 
 import { Button } from "@repo/ui/components/ui/button"
@@ -43,7 +44,7 @@ import { Textarea } from "@repo/ui/components/ui/textarea"
 
 import { FormSection, FormSheetHeader } from "@/features/tenant/components/form-section"
 
-import { initialMemberships } from "../../memberships/lib/data"
+import { useMembershipPlansQuery } from "../../memberships/hooks/use-memberships"
 import { initialProducts } from "../../products/lib/data"
 import { fieldErrors } from "../../lib/validation"
 import {
@@ -97,12 +98,6 @@ interface ImagePreview {
   url: string
 }
 
-function pickableOptions(type: PackageItemType) {
-  return type === "plan"
-    ? initialMemberships.map((p) => ({ refId: p.id, name: p.name }))
-    : initialProducts.map((p) => ({ refId: p.id, name: p.name }))
-}
-
 interface PackageFormBodyProps {
   pkg?: Package | null
   onSubmit: (values: PackageInput) => void
@@ -110,6 +105,8 @@ interface PackageFormBodyProps {
 }
 
 function PackageFormBody({ pkg, onSubmit, onCancel }: PackageFormBodyProps) {
+  const tenant = useParams<{ tenant: string }>().tenant
+  const membershipPlans = useMembershipPlansQuery(tenant, { limit: 100 })
   const [values, setValues] = useState<PackageFormValues>(() =>
     toFormValues(pkg)
   )
@@ -132,6 +129,12 @@ function PackageFormBody({ pkg, onSubmit, onCancel }: PackageFormBodyProps) {
     createdUrls.current.push(url)
     setImage({ id: file.name, url })
     event.target.value = ""
+  }
+
+  function pickableOptions(type: PackageItemType) {
+    return type === "plan"
+      ? (membershipPlans.data?.data ?? []).map((p) => ({ refId: p.id, name: p.name }))
+      : initialProducts.map((p) => ({ refId: p.id, name: p.name }))
   }
 
   function addItem(type: PackageItemType) {

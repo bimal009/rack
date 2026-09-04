@@ -7,6 +7,7 @@ import {
   type ChangeEvent,
   type FormEvent,
 } from "react"
+import { useParams } from "next/navigation"
 import { Camera, CreditCard, MapPin, Plus, Trash2, UserRound, Users } from "lucide-react"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/components/ui/avatar"
@@ -39,7 +40,7 @@ import {
 } from "@repo/ui/components/ui/sheet"
 
 import { FormSection, FormSheetHeader } from "@/features/tenant/components/form-section"
-import { initialMemberships } from "@/features/tenant/revenue/memberships/lib/data"
+import { useMembershipPlansQuery } from "@/features/tenant/revenue/memberships/hooks/use-memberships"
 
 import { fieldErrors } from "../lib/validation"
 import {
@@ -99,6 +100,8 @@ interface MemberFormBodyProps {
 }
 
 function MemberFormBody({ member, onSubmit, onCancel }: MemberFormBodyProps) {
+  const tenant = useParams<{ tenant: string }>().tenant
+  const membershipPlans = useMembershipPlansQuery(tenant, { limit: 100 })
   const [values, setValues] = useState<MemberFormValues>(() =>
     toFormValues(member)
   )
@@ -341,7 +344,7 @@ function MemberFormBody({ member, onSubmit, onCancel }: MemberFormBodyProps) {
                   <Select
                     value={membership.membershipId}
                     onValueChange={(membershipId) => {
-                      const found = initialMemberships.find(
+                      const found = membershipPlans.data?.data.find(
                         (m) => m.id === membershipId
                       )
                       updateMembership(index, {
@@ -358,8 +361,8 @@ function MemberFormBody({ member, onSubmit, onCancel }: MemberFormBodyProps) {
                       </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
-                      {initialMemberships
-                        .filter((m) => m.active)
+                      {(membershipPlans.data?.data ?? [])
+                        .filter((m) => m.isActive)
                         .map((m) => (
                           <SelectItem key={m.id} value={m.id}>
                             {m.name}

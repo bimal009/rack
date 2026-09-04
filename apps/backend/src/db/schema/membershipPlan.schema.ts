@@ -54,7 +54,6 @@ export const memberMembership = pgTable(
       .references(() => membershipCategory.id, { onDelete: "restrict" }),
     visibility: membershipVisibilityEnum("visibility").notNull().default("Public"),
     description: text("description"),
-    barcode: text("barcode"),
     isActive: boolean("is_active").notNull().default(true),
 
     pricePerPeriod: integer("price_per_period").notNull(),

@@ -1,5 +1,10 @@
 import { z } from "zod";
 import { paginationFields, type PaginatedResponse } from "./pagination";
+import {
+  membershipFeatureRefSchema,
+  membershipSportRefSchema,
+  relatedRefSchema,
+} from "./membershipRefs";
 
 export const membershipPlanVisibilityEnumSchema = z.enum([
   "Public",
@@ -39,17 +44,14 @@ export type MembershipPlanCoverage = z.infer<
   typeof membershipPlanCoverageEnumSchema
 >;
 
-const relatedRef = z.object({ id: z.string().uuid(), name: z.string() });
-
 export const membershipPlanSchema = z.object({
   id: z.string().uuid(),
   gymId: z.string().uuid(),
   name: z.string(),
   categoryId: z.string().uuid(),
-  category: relatedRef.nullish(),
+  category: relatedRefSchema,
   visibility: membershipPlanVisibilityEnumSchema,
   description: z.string().nullable(),
-  barcode: z.string().nullable(),
   isActive: z.boolean(),
 
   pricePerPeriod: z.number(),
@@ -68,8 +70,8 @@ export const membershipPlanSchema = z.object({
   noInstructors: z.boolean(),
   sessions: z.string().nullable(),
 
-  sports: z.array(relatedRef),
-  features: z.array(relatedRef),
+  sports: z.array(membershipSportRefSchema),
+  features: z.array(membershipFeatureRefSchema),
 
   createdAt: z.date(),
   updatedAt: z.date(),
@@ -83,7 +85,6 @@ const membershipPlanFields = z.object({
   categoryId: z.string().uuid("Select a category"),
   visibility: membershipPlanVisibilityEnumSchema.default("Public"),
   description: z.string().trim().max(300).optional().or(z.literal("")),
-  barcode: z.string().trim().max(120).optional().or(z.literal("")),
   isActive: z.boolean().default(true),
 
   pricePerPeriod: z

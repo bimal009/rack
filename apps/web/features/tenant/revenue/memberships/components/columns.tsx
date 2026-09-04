@@ -1,6 +1,7 @@
 "use client"
 
 import { MoreHorizontal, PenSquare, Trash2 } from "lucide-react"
+import type { MembershipPlan } from "@repo/types"
 
 import { Badge } from "@repo/ui/components/ui/badge"
 import {
@@ -15,8 +16,6 @@ import {
   DropdownMenuTrigger,
 } from "@repo/ui/components/ui/dropdown-menu"
 
-import type { Membership } from "../lib/schema"
-
 const currency = new Intl.NumberFormat("en-US", {
   style: "currency",
   currency: "NPR",
@@ -24,15 +23,15 @@ const currency = new Intl.NumberFormat("en-US", {
 })
 
 interface MembershipColumnActions {
-  onEdit: (membership: Membership) => void
-  onDelete: (membership: Membership) => void
+  onEdit: (membership: MembershipPlan) => void
+  onDelete: (membership: MembershipPlan) => void
 }
 
 export function createMembershipColumns({
   onEdit,
   onDelete,
 }: MembershipColumnActions) {
-  const columnHelper = createDataTableColumnHelper<Membership>()
+  const columnHelper = createDataTableColumnHelper<MembershipPlan>()
 
   return columnHelper.columns([
     createSelectionColumn(columnHelper),
@@ -57,7 +56,7 @@ export function createMembershipColumns({
       enableGlobalFilter: false,
       cell: ({ getValue }) => (
         <Badge variant="outline" className="rounded-full font-normal">
-          {getValue()}
+          {getValue().name}
         </Badge>
       ),
     }),
@@ -68,19 +67,24 @@ export function createMembershipColumns({
         <span className="font-medium text-foreground">
           {currency.format(row.original.pricePerPeriod)}
           <span className="text-muted-foreground">
-            /{row.original.billingType.toLowerCase()}
+            {" "}
+            {row.original.billingType}
+            {row.original.billingType === "custom" &&
+              ` (${row.original.billingIntervalCount} ${row.original.billingIntervalUnit})`}
           </span>
         </span>
       ),
     }),
-    columnHelper.accessor("members", {
-      header: "Members",
+    columnHelper.accessor("visibility", {
+      header: "Visibility",
       enableGlobalFilter: false,
       cell: ({ getValue }) => (
-        <span className="text-muted-foreground">{getValue()}</span>
+        <Badge variant="outline" className="rounded-full font-normal">
+          {getValue()}
+        </Badge>
       ),
     }),
-    columnHelper.accessor("active", {
+    columnHelper.accessor("isActive", {
       header: "Status",
       enableGlobalFilter: false,
       cell: ({ getValue }) => (

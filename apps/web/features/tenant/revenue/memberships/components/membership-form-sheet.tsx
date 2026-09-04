@@ -3,17 +3,32 @@
 import { useState, type FormEvent } from "react"
 import { useParams } from "next/navigation"
 import { Banknote, Check, CreditCard, Info, Sparkles, SquareCheck } from "lucide-react"
-import { SPECIALTY_OPTIONS } from "@repo/types"
+import {
+  membershipPlanBillingTypeEnumSchema,
+  membershipPlanBillingUnitEnumSchema,
+  membershipPlanCoverageEnumSchema,
+  membershipPlanInsertSchema,
+  membershipPlanVisibilityEnumSchema,
+  type MembershipPlan,
+  type MembershipPlanBillingType,
+  type MembershipPlanBillingUnit,
+  type MembershipPlanCoverage,
+  type MembershipPlanVisibility,
+  type NewMembershipPlan,
+} from "@repo/types"
 
 import { Button } from "@repo/ui/components/ui/button"
 import { Checkbox } from "@repo/ui/components/ui/checkbox"
 import {
   Combobox,
+  ComboboxChip,
+  ComboboxChips,
+  ComboboxChipsInput,
   ComboboxContent,
   ComboboxEmpty,
-  ComboboxInput,
   ComboboxItem,
   ComboboxList,
+  useComboboxAnchor,
 } from "@repo/ui/components/ui/combobox"
 import {
   Field,
@@ -50,37 +65,43 @@ import { cn } from "@repo/ui/lib/utils"
 import { FormSection, FormSheetHeader } from "@/features/tenant/components/form-section"
 import { useAreaTypesQuery } from "@/features/tenant/settings/types/hooks/use-area-types"
 import { useClassTypesQuery } from "@/features/tenant/settings/types/hooks/use-class-types"
+import { useGymFeaturesQuery } from "@/features/tenant/settings/types/hooks/use-gym-features"
+import { useGymSportsQuery } from "@/features/tenant/settings/types/hooks/use-gym-sports"
 import { useInstructorTypesQuery } from "@/features/tenant/settings/types/hooks/use-instructor-types"
+import { useMembershipCategoriesQuery } from "@/features/tenant/settings/types/hooks/use-membership-categories"
 
 import { fieldErrors } from "../../lib/validation"
-import {
-  billingTypes,
-  membershipCategories,
-  membershipCoverages,
-  membershipFeatureOptions,
-  membershipSchema,
-  membershipVisibilities,
-  type BillingType,
-  type Membership,
-  type MembershipCategory,
-  type MembershipCoverage,
-  type MembershipInput,
-  type MembershipVisibility,
-} from "../lib/schema"
+
+const billingTypeLabels: Record<MembershipPlanBillingType, string> = {
+  one_time: "One-time",
+  weekly: "Weekly",
+  monthly: "Monthly",
+  quarterly: "Quarterly",
+  annually: "Annually",
+  custom: "Custom",
+}
+
+const billingUnitLabels: Record<MembershipPlanBillingUnit, string> = {
+  day: "day(s)",
+  week: "week(s)",
+  month: "month(s)",
+}
 
 interface MembershipFormValues {
   name: string
-  category: MembershipCategory | ""
-  visibility: MembershipVisibility
+  categoryId: string
+  visibility: MembershipPlanVisibility
   description: string
-  active: boolean
+  isActive: boolean
 
   pricePerPeriod: string
-  billingType: BillingType | ""
+  billingType: MembershipPlanBillingType | ""
+  billingIntervalUnit: MembershipPlanBillingUnit | ""
+  billingIntervalCount: string
   signupFee: string
   requirePaymentUpfront: boolean
 
-  coverage: MembershipCoverage
+  coverage: MembershipPlanCoverage
   coverageClasses: string[]
   coverageAreas: string[]
   coverageInstructors: string[]
@@ -89,20 +110,22 @@ interface MembershipFormValues {
   noInstructors: boolean
   sessions: string
 
-  features: string
-  sports: string
+  sportIds: string[]
+  featureIds: string[]
 }
 
-function toFormValues(membership?: Membership | null): MembershipFormValues {
-  if (!membership) {
+function toFormValues(plan?: MembershipPlan | null): MembershipFormValues {
+  if (!plan) {
     return {
       name: "",
-      category: "",
+      categoryId: "",
       visibility: "Public",
       description: "",
-      active: true,
+      isActive: true,
       pricePerPeriod: "",
       billingType: "",
+      billingIntervalUnit: "",
+      billingIntervalCount: "",
       signupFee: "",
       requirePaymentUpfront: true,
       coverage: "Full access",
@@ -113,36 +136,103 @@ function toFormValues(membership?: Membership | null): MembershipFormValues {
       noAreas: false,
       noInstructors: false,
       sessions: "",
-      features: "",
-      sports: "",
+      sportIds: [],
+      featureIds: [],
     }
   }
   return {
-    name: membership.name,
-    category: membership.category,
-    visibility: membership.visibility,
-    description: membership.description ?? "",
-    active: membership.active,
-    pricePerPeriod: String(membership.pricePerPeriod),
-    billingType: membership.billingType,
-    signupFee: membership.signupFee != null ? String(membership.signupFee) : "",
-    requirePaymentUpfront: membership.requirePaymentUpfront,
-    coverage: membership.coverage,
-    coverageClasses: membership.coverageClasses ?? [],
-    coverageAreas: membership.coverageAreas ?? [],
-    coverageInstructors: membership.coverageInstructors ?? [],
-    noClasses: membership.noClasses ?? false,
-    noAreas: membership.noAreas ?? false,
-    noInstructors: membership.noInstructors ?? false,
-    sessions: membership.sessions ?? "",
-    features: membership.features ?? "",
-    sports: membership.sports ?? "",
+    name: plan.name,
+    categoryId: plan.categoryId,
+    visibility: plan.visibility,
+    description: plan.description ?? "",
+    isActive: plan.isActive,
+    pricePerPeriod: String(plan.pricePerPeriod),
+    billingType: plan.billingType,
+    billingIntervalUnit: plan.billingIntervalUnit ?? "",
+    billingIntervalCount:
+      plan.billingIntervalCount != null ? String(plan.billingIntervalCount) : "",
+    signupFee: plan.signupFee != null ? String(plan.signupFee) : "",
+    requirePaymentUpfront: plan.requirePaymentUpfront,
+    coverage: plan.coverage,
+    coverageClasses: plan.coverageClasses ?? [],
+    coverageAreas: plan.coverageAreas ?? [],
+    coverageInstructors: plan.coverageInstructors ?? [],
+    noClasses: plan.noClasses,
+    noAreas: plan.noAreas,
+    noInstructors: plan.noInstructors,
+    sessions: plan.sessions ?? "",
+    sportIds: plan.sports.map((s) => s.sportId),
+    featureIds: plan.features.map((f) => f.featureId),
   }
 }
 
 function listOrNull(none: boolean, ids: string[]): string[] | null {
   if (none) return null
   return ids.length > 0 ? ids : null
+}
+
+interface ComboboxOption {
+  value: string
+  label: string
+}
+
+interface MultiSelectComboboxProps {
+  label: string
+  description?: string
+  placeholder: string
+  emptyMessage: string
+  options: { id: string; name: string }[]
+  selected: string[]
+  onChange: (ids: string[]) => void
+}
+
+function MultiSelectCombobox({
+  label,
+  description,
+  placeholder,
+  emptyMessage,
+  options,
+  selected,
+  onChange,
+}: MultiSelectComboboxProps) {
+  const anchor = useComboboxAnchor()
+  const items: ComboboxOption[] = options.map((option) => ({
+    value: option.id,
+    label: option.name,
+  }))
+  const selectedItems = items.filter((item) => selected.includes(item.value))
+
+  return (
+    <Field>
+      <FieldLabel>{label}</FieldLabel>
+      <Combobox
+        items={items}
+        multiple
+        value={selectedItems}
+        onValueChange={(next) => onChange(next.map((item) => item.value))}
+      >
+        <ComboboxChips ref={anchor}>
+          {selectedItems.map((item) => (
+            <ComboboxChip key={item.value}>{item.label}</ComboboxChip>
+          ))}
+          <ComboboxChipsInput
+            placeholder={selectedItems.length === 0 ? placeholder : undefined}
+          />
+        </ComboboxChips>
+        <ComboboxContent anchor={anchor}>
+          <ComboboxEmpty>{emptyMessage}</ComboboxEmpty>
+          <ComboboxList>
+            {(item: ComboboxOption) => (
+              <ComboboxItem key={item.value} value={item}>
+                {item.label}
+              </ComboboxItem>
+            )}
+          </ComboboxList>
+        </ComboboxContent>
+      </Combobox>
+      {description && <FieldDescription>{description}</FieldDescription>}
+    </Field>
+  )
 }
 
 interface CoveragePickerProps {
@@ -211,17 +301,22 @@ function CoveragePicker({
 }
 
 interface MembershipFormBodyProps {
-  membership?: Membership | null
-  onSubmit: (values: MembershipInput) => void
+  membership?: MembershipPlan | null
+  pending?: boolean
+  onSubmit: (values: NewMembershipPlan) => void
   onCancel: () => void
 }
 
 function MembershipFormBody({
   membership,
+  pending,
   onSubmit,
   onCancel,
 }: MembershipFormBodyProps) {
   const tenant = useParams<{ tenant: string }>().tenant
+  const categories = useMembershipCategoriesQuery(tenant, { limit: 100 })
+  const sports = useGymSportsQuery(tenant, { limit: 100 })
+  const features = useGymFeaturesQuery(tenant, { limit: 100 })
   const classTypes = useClassTypesQuery(tenant, { limit: 100 })
   const areaTypes = useAreaTypesQuery(tenant, { limit: 100 })
   const instructorTypes = useInstructorTypesQuery(tenant, { limit: 100 })
@@ -232,6 +327,7 @@ function MembershipFormBody({
   const [errors, setErrors] = useState<Record<string, string>>({})
   const isEdit = Boolean(membership)
   const isRestricted = values.coverage === "Restricted"
+  const isCustomBilling = values.billingType === "custom"
 
   function toggle(
     key: "coverageClasses" | "coverageAreas" | "coverageInstructors",
@@ -248,11 +344,25 @@ function MembershipFormBody({
   function handleSubmit(event: FormEvent) {
     event.preventDefault()
 
-    const result = membershipSchema.safeParse({
-      ...values,
-      category: values.category || undefined,
+    const result = membershipPlanInsertSchema.safeParse({
+      name: values.name,
+      categoryId: values.categoryId,
+      visibility: values.visibility,
+      description: values.description || undefined,
+      isActive: values.isActive,
+      pricePerPeriod: Number(values.pricePerPeriod || 0),
       billingType: values.billingType || undefined,
-      signupFee: values.signupFee === "" ? undefined : values.signupFee,
+      billingIntervalUnit: isCustomBilling
+        ? values.billingIntervalUnit || undefined
+        : undefined,
+      billingIntervalCount: isCustomBilling
+        ? values.billingIntervalCount === ""
+          ? undefined
+          : Number(values.billingIntervalCount)
+        : undefined,
+      signupFee: values.signupFee === "" ? undefined : Number(values.signupFee),
+      requirePaymentUpfront: values.requirePaymentUpfront,
+      coverage: values.coverage,
       coverageClasses: isRestricted
         ? listOrNull(values.noClasses, values.coverageClasses)
         : null,
@@ -265,6 +375,9 @@ function MembershipFormBody({
       noClasses: isRestricted && values.noClasses,
       noAreas: isRestricted && values.noAreas,
       noInstructors: isRestricted && values.noInstructors,
+      sessions: values.sessions || undefined,
+      sportIds: values.sportIds,
+      featureIds: values.featureIds,
     })
 
     if (!result.success) {
@@ -306,33 +419,36 @@ function MembershipFormBody({
               <FieldError>{errors.name}</FieldError>
             </Field>
 
-            <Field data-invalid={Boolean(errors.category)}>
+            <Field data-invalid={Boolean(errors.categoryId)}>
               <FieldLabel htmlFor="membership-category">Category</FieldLabel>
               <Select
-                value={values.category}
+                value={values.categoryId}
                 onValueChange={(value) =>
-                  setValues((v) => ({
-                    ...v,
-                    category: value as MembershipCategory,
-                  }))
+                  setValues((v) => ({ ...v, categoryId: value ?? "" }))
                 }
               >
                 <SelectTrigger
                   id="membership-category"
                   className="w-full"
-                  aria-invalid={Boolean(errors.category)}
+                  aria-invalid={Boolean(errors.categoryId)}
                 >
-                  <SelectValue placeholder="Select category" />
+                  <SelectValue placeholder="Select category">
+                    {() =>
+                      categories.data?.data.find(
+                        (category) => category.id === values.categoryId
+                      )?.name ?? "Select category"
+                    }
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
-                  {membershipCategories.map((category) => (
-                    <SelectItem key={category} value={category}>
-                      {category}
+                  {(categories.data?.data ?? []).map((category) => (
+                    <SelectItem key={category.id} value={category.id}>
+                      {category.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              <FieldError>{errors.category}</FieldError>
+              <FieldError>{errors.categoryId}</FieldError>
             </Field>
           </div>
 
@@ -344,7 +460,7 @@ function MembershipFormBody({
                 onValueChange={(value) =>
                   setValues((v) => ({
                     ...v,
-                    visibility: value as MembershipVisibility,
+                    visibility: value as MembershipPlanVisibility,
                   }))
                 }
               >
@@ -352,7 +468,7 @@ function MembershipFormBody({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {membershipVisibilities.map((visibility) => (
+                  {membershipPlanVisibilityEnumSchema.options.map((visibility) => (
                     <SelectItem key={visibility} value={visibility}>
                       {visibility}
                     </SelectItem>
@@ -364,9 +480,9 @@ function MembershipFormBody({
             <div className="flex items-center gap-2.5 pt-6">
               <Switch
                 id="membership-active"
-                checked={values.active}
+                checked={values.isActive}
                 onCheckedChange={(checked) =>
-                  setValues((v) => ({ ...v, active: checked }))
+                  setValues((v) => ({ ...v, isActive: checked }))
                 }
               />
               <Label htmlFor="membership-active">Active</Label>
@@ -404,7 +520,7 @@ function MembershipFormBody({
                   type="number"
                   inputMode="decimal"
                   min="0"
-                  step="0.01"
+                  step="1"
                   placeholder="4900"
                   value={values.pricePerPeriod}
                   aria-invalid={Boolean(errors.pricePerPeriod)}
@@ -426,7 +542,7 @@ function MembershipFormBody({
                 onValueChange={(value) =>
                   setValues((v) => ({
                     ...v,
-                    billingType: value as BillingType,
+                    billingType: value as MembershipPlanBillingType,
                   }))
                 }
               >
@@ -438,9 +554,9 @@ function MembershipFormBody({
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>
                 <SelectContent>
-                  {billingTypes.map((type) => (
+                  {membershipPlanBillingTypeEnumSchema.options.map((type) => (
                     <SelectItem key={type} value={type}>
-                      {type}
+                      {billingTypeLabels[type]}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -448,6 +564,62 @@ function MembershipFormBody({
               <FieldError>{errors.billingType}</FieldError>
             </Field>
           </div>
+
+          {isCustomBilling && (
+            <div className="grid grid-cols-2 gap-4 rounded-lg border border-border bg-muted/20 p-4">
+              <Field data-invalid={Boolean(errors.billingIntervalCount)}>
+                <FieldLabel htmlFor="membership-billing-count">
+                  Period
+                </FieldLabel>
+                <Input
+                  id="membership-billing-count"
+                  type="number"
+                  inputMode="numeric"
+                  min="1"
+                  step="1"
+                  placeholder="2"
+                  value={values.billingIntervalCount}
+                  aria-invalid={Boolean(errors.billingIntervalCount)}
+                  onChange={(e) =>
+                    setValues((v) => ({
+                      ...v,
+                      billingIntervalCount: e.target.value,
+                    }))
+                  }
+                />
+                <FieldError>{errors.billingIntervalCount}</FieldError>
+              </Field>
+
+              <Field data-invalid={Boolean(errors.billingIntervalUnit)}>
+                <FieldLabel htmlFor="membership-billing-unit">Unit</FieldLabel>
+                <Select
+                  value={values.billingIntervalUnit}
+                  onValueChange={(value) =>
+                    setValues((v) => ({
+                      ...v,
+                      billingIntervalUnit: value as MembershipPlanBillingUnit,
+                    }))
+                  }
+                >
+                  <SelectTrigger
+                    id="membership-billing-unit"
+                    className="w-full"
+                    aria-invalid={Boolean(errors.billingIntervalUnit)}
+                  >
+                    <SelectValue placeholder="Select unit" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {membershipPlanBillingUnitEnumSchema.options.map((unit) => (
+                      <SelectItem key={unit} value={unit}>
+                        {billingUnitLabels[unit]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FieldError>{errors.billingIntervalUnit}</FieldError>
+              </Field>
+            </div>
+          )}
 
           <Field data-invalid={Boolean(errors.signupFee)}>
             <FieldLabel htmlFor="membership-signup-fee">Signup fee</FieldLabel>
@@ -460,7 +632,7 @@ function MembershipFormBody({
                 type="number"
                 inputMode="decimal"
                 min="0"
-                step="0.01"
+                step="1"
                 placeholder="1000"
                 value={values.signupFee}
                 aria-invalid={Boolean(errors.signupFee)}
@@ -510,7 +682,7 @@ function MembershipFormBody({
                 onValueChange={(value) =>
                   setValues((v) => ({
                     ...v,
-                    coverage: value as MembershipCoverage,
+                    coverage: value as MembershipPlanCoverage,
                   }))
                 }
               >
@@ -518,7 +690,7 @@ function MembershipFormBody({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {membershipCoverages.map((coverage) => (
+                  {membershipPlanCoverageEnumSchema.options.map((coverage) => (
                     <SelectItem key={coverage} value={coverage}>
                       {coverage}
                     </SelectItem>
@@ -589,57 +761,24 @@ function MembershipFormBody({
 
         <FormSection icon={Sparkles} title="Presentation">
           <div className="grid grid-cols-2 gap-4">
-            <Field>
-              <FieldLabel htmlFor="membership-features">Features</FieldLabel>
-              <Combobox
-                items={membershipFeatureOptions}
-                value={values.features || null}
-                onValueChange={(value) =>
-                  setValues((v) => ({ ...v, features: value ?? "" }))
-                }
-              >
-                <ComboboxInput
-                  id="membership-features"
-                  placeholder="Search features..."
-                />
-                <ComboboxContent>
-                  <ComboboxEmpty>No features found.</ComboboxEmpty>
-                  <ComboboxList>
-                    {(item: string) => (
-                      <ComboboxItem key={item} value={item}>
-                        {item}
-                      </ComboboxItem>
-                    )}
-                  </ComboboxList>
-                </ComboboxContent>
-              </Combobox>
-            </Field>
-
-            <Field>
-              <FieldLabel htmlFor="membership-sports">Sports</FieldLabel>
-              <Combobox
-                items={SPECIALTY_OPTIONS}
-                value={values.sports || null}
-                onValueChange={(value) =>
-                  setValues((v) => ({ ...v, sports: value ?? "" }))
-                }
-              >
-                <ComboboxInput
-                  id="membership-sports"
-                  placeholder="Search sports..."
-                />
-                <ComboboxContent>
-                  <ComboboxEmpty>No sports found.</ComboboxEmpty>
-                  <ComboboxList>
-                    {(item: string) => (
-                      <ComboboxItem key={item} value={item}>
-                        {item}
-                      </ComboboxItem>
-                    )}
-                  </ComboboxList>
-                </ComboboxContent>
-              </Combobox>
-            </Field>
+            <MultiSelectCombobox
+              label="Features"
+              description="Highlighted perks shown to members."
+              placeholder="Search features..."
+              emptyMessage="No features found."
+              options={features.data?.data ?? []}
+              selected={values.featureIds}
+              onChange={(ids) => setValues((v) => ({ ...v, featureIds: ids }))}
+            />
+            <MultiSelectCombobox
+              label="Sports"
+              description="Sports this membership covers."
+              placeholder="Search sports..."
+              emptyMessage="No sports found."
+              options={sports.data?.data ?? []}
+              selected={values.sportIds}
+              onChange={(ids) => setValues((v) => ({ ...v, sportIds: ids }))}
+            />
           </div>
         </FormSection>
       </SheetBody>
@@ -648,7 +787,7 @@ function MembershipFormBody({
         <Button type="button" variant="outline" onClick={onCancel}>
           Cancel
         </Button>
-        <Button type="submit">
+        <Button type="submit" disabled={pending}>
           {isEdit ? "Save changes" : "Create membership"}
         </Button>
       </SheetFooter>
@@ -659,14 +798,16 @@ function MembershipFormBody({
 interface MembershipFormSheetProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  membership?: Membership | null
-  onSubmit: (values: MembershipInput) => void
+  membership?: MembershipPlan | null
+  pending?: boolean
+  onSubmit: (values: NewMembershipPlan) => void
 }
 
 export function MembershipFormSheet({
   open,
   onOpenChange,
   membership,
+  pending,
   onSubmit,
 }: MembershipFormSheetProps) {
   return (
@@ -676,6 +817,7 @@ export function MembershipFormSheet({
           <MembershipFormBody
             key={membership?.id ?? "new"}
             membership={membership}
+            pending={pending}
             onSubmit={(values) => {
               onSubmit(values)
               onOpenChange(false)

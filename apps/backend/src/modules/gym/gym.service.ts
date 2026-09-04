@@ -1,8 +1,16 @@
 import { OnboardingInput, onboardingSchema, UpdateGymInput, updateGymSchema } from "@repo/types";
 import { eq } from "drizzle-orm";
 import { InternalServerError, NotFoundError, ValidationError } from "../../lib/errors";
-import { gymFeature, gymSport, gyms, staff, user } from "../../db/schema";
+import { gymFeature, gymSport, gyms, membershipCategory, staff, user } from "../../db/schema";
 import { db } from "../../db";
+
+const DEFAULT_MEMBERSHIP_CATEGORIES = [
+  "Individual",
+  "Couple",
+  "Family",
+  "Student",
+  "Corporate",
+] as const;
 
 export const onboardGym = async (gym: OnboardingInput, userId: string) => {
   const result = onboardingSchema.safeParse(gym);
@@ -44,6 +52,10 @@ export const onboardGym = async (gym: OnboardingInput, userId: string) => {
 
     await tx.insert(gymFeature).values(
       features.map((name) => ({ gymId: gymRecord.id, name }))
+    );
+
+    await tx.insert(membershipCategory).values(
+      DEFAULT_MEMBERSHIP_CATEGORIES.map((name) => ({ gymId: gymRecord.id, name }))
     );
 
     return gymRecord;
