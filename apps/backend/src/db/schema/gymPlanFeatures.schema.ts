@@ -1,18 +1,18 @@
 import { pgTable, timestamp, uuid, unique } from "drizzle-orm/pg-core";
 import { gyms } from "./gym.schema";
-import { memberMembership } from "./membershipPlan.schema";
+import { gymPlan } from "./gymPlan.schema";
 import { gymFeature } from "./features.schema";
 
-export const membershipFeature = pgTable(
-  "membership_features",
+export const gymPlanFeature = pgTable(
+  "gym_plan_features",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     gymId: uuid("gym_id")
       .notNull()
       .references(() => gyms.id, { onDelete: "cascade" }),
-    membershipId: uuid("membership_id")
+    planId: uuid("plan_id")
       .notNull()
-      .references(() => memberMembership.id, { onDelete: "cascade" }),
+      .references(() => gymPlan.id, { onDelete: "cascade" }),
     featureId: uuid("feature_id")
       .notNull()
       .references(() => gymFeature.id, { onDelete: "cascade" }),
@@ -20,8 +20,8 @@ export const membershipFeature = pgTable(
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },
   (table) => [
-    unique("membership_features_membership_id_feature_id_unique").on(
-      table.membershipId,
+    unique("gym_plan_features_plan_id_feature_id_unique").on(
+      table.planId,
       table.featureId
     ),
   ]

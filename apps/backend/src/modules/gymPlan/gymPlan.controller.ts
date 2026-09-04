@@ -1,80 +1,76 @@
 import { Request, Response } from "express";
-import { membershipPlanListQuerySchema } from "@repo/types";
+import { gymPlanListQuerySchema } from "@repo/types";
 import { ValidationError, handleError } from "../../lib/errors";
 import { AppResponse, RESPONSE_STATUS } from "../../lib/response";
 import { gymId, pathId } from "../../lib/helper";
 import {
-  createMembershipPlan,
-  deleteMembershipPlan,
-  getMembershipPlan,
-  listMembershipPlans,
-  updateMembershipPlan,
-} from "./membershipPlan.service";
+  createGymPlan,
+  deleteGymPlan,
+  getGymPlan,
+  listGymPlans,
+  updateGymPlan,
+} from "./gymPlan.service";
 
-export const getMembershipPlans = async (req: Request, res: Response) => {
+export const getGymPlans = async (req: Request, res: Response) => {
   try {
-    const query = membershipPlanListQuerySchema.safeParse(req.query);
+    const query = gymPlanListQuerySchema.safeParse(req.query);
     if (!query.success) {
       throw new ValidationError("Invalid query params", query.error.flatten());
     }
-    const { data, meta } = await listMembershipPlans(gymId(req), query.data);
+    const { data, meta } = await listGymPlans(gymId(req), query.data);
     return res
       .status(RESPONSE_STATUS.ok)
-      .json(AppResponse.paginated(data, meta, "Membership plans fetched"));
+      .json(AppResponse.paginated(data, meta, "Plans fetched"));
   } catch (error) {
-    const { status, body } = handleError("getMembershipPlans", error);
+    const { status, body } = handleError("getGymPlans", error);
     return res.status(status).json(body);
   }
 };
 
-export const getMembershipPlanById = async (req: Request, res: Response) => {
+export const getGymPlanById = async (req: Request, res: Response) => {
   try {
-    const record = await getMembershipPlan(gymId(req), pathId(req));
+    const record = await getGymPlan(gymId(req), pathId(req));
     return res
       .status(RESPONSE_STATUS.ok)
-      .json(AppResponse.ok(record, "Membership plan fetched"));
+      .json(AppResponse.ok(record, "Plan fetched"));
   } catch (error) {
-    const { status, body } = handleError("getMembershipPlanById", error);
+    const { status, body } = handleError("getGymPlanById", error);
     return res.status(status).json(body);
   }
 };
 
-export const addMembershipPlan = async (req: Request, res: Response) => {
+export const addGymPlan = async (req: Request, res: Response) => {
   try {
-    const record = await createMembershipPlan(gymId(req), req.body);
+    const record = await createGymPlan(gymId(req), req.body);
     return res
       .status(RESPONSE_STATUS.created)
-      .json(AppResponse.created(record, "Membership plan created"));
+      .json(AppResponse.created(record, "Plan created"));
   } catch (error) {
-    const { status, body } = handleError("addMembershipPlan", error);
+    const { status, body } = handleError("addGymPlan", error);
     return res.status(status).json(body);
   }
 };
 
-export const editMembershipPlan = async (req: Request, res: Response) => {
+export const editGymPlan = async (req: Request, res: Response) => {
   try {
-    const record = await updateMembershipPlan(
-      gymId(req),
-      pathId(req),
-      req.body
-    );
+    const record = await updateGymPlan(gymId(req), pathId(req), req.body);
     return res
       .status(RESPONSE_STATUS.ok)
-      .json(AppResponse.ok(record, "Membership plan updated"));
+      .json(AppResponse.ok(record, "Plan updated"));
   } catch (error) {
-    const { status, body } = handleError("editMembershipPlan", error);
+    const { status, body } = handleError("editGymPlan", error);
     return res.status(status).json(body);
   }
 };
 
-export const removeMembershipPlan = async (req: Request, res: Response) => {
+export const removeGymPlan = async (req: Request, res: Response) => {
   try {
-    const record = await deleteMembershipPlan(gymId(req), pathId(req));
+    const record = await deleteGymPlan(gymId(req), pathId(req));
     return res
       .status(RESPONSE_STATUS.ok)
-      .json(AppResponse.ok(record, "Membership plan removed"));
+      .json(AppResponse.ok(record, "Plan removed"));
   } catch (error) {
-    const { status, body } = handleError("removeMembershipPlan", error);
+    const { status, body } = handleError("removeGymPlan", error);
     return res.status(status).json(body);
   }
 };

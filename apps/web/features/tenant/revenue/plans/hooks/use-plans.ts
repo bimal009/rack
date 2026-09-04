@@ -6,57 +6,53 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query"
-import type {
-  MembershipPlanListQuery,
-  NewMembershipPlan,
-  UpdateMembershipPlan,
-} from "@repo/types"
+import type { GymPlanListQuery, NewGymPlan, UpdateGymPlan } from "@repo/types"
 
 import {
-  createMembershipPlan,
-  deleteMembershipPlan,
-  listMembershipPlans,
-  updateMembershipPlan,
-} from "../api/membership"
+  createGymPlan,
+  deleteGymPlan,
+  listGymPlans,
+  updateGymPlan,
+} from "../api/plan"
 
-const membershipsKey = (tenant: string) => ["memberships", tenant]
+const gymPlansKey = (tenant: string) => ["gym-plans", tenant]
 
-export function useMembershipPlansQuery(
+export function useGymPlansQuery(
   tenant: string,
-  query: Partial<MembershipPlanListQuery> = {}
+  query: Partial<GymPlanListQuery> = {}
 ) {
   return useQuery({
-    queryKey: [...membershipsKey(tenant), query],
-    queryFn: () => listMembershipPlans(tenant, query),
+    queryKey: [...gymPlansKey(tenant), query],
+    queryFn: () => listGymPlans(tenant, query),
     enabled: Boolean(tenant),
     placeholderData: keepPreviousData,
   })
 }
 
-export function useCreateMembershipPlan(tenant: string) {
+export function useCreateGymPlan(tenant: string) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (input: NewMembershipPlan) => createMembershipPlan(tenant, input),
+    mutationFn: (input: NewGymPlan) => createGymPlan(tenant, input),
     onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: membershipsKey(tenant) }),
+      queryClient.invalidateQueries({ queryKey: gymPlansKey(tenant) }),
   })
 }
 
-export function useUpdateMembershipPlan(tenant: string) {
+export function useUpdateGymPlan(tenant: string) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (vars: { id: string; input: UpdateMembershipPlan }) =>
-      updateMembershipPlan(tenant, vars.id, vars.input),
+    mutationFn: (vars: { id: string; input: UpdateGymPlan }) =>
+      updateGymPlan(tenant, vars.id, vars.input),
     onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: membershipsKey(tenant) }),
+      queryClient.invalidateQueries({ queryKey: gymPlansKey(tenant) }),
   })
 }
 
-export function useDeleteMembershipPlan(tenant: string) {
+export function useDeleteGymPlan(tenant: string) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (id: string) => deleteMembershipPlan(tenant, id),
+    mutationFn: (id: string) => deleteGymPlan(tenant, id),
     onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: membershipsKey(tenant) }),
+      queryClient.invalidateQueries({ queryKey: gymPlansKey(tenant) }),
   })
 }

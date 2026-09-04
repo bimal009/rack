@@ -1,21 +1,19 @@
 import { z } from "zod";
 import { paginationFields, type PaginatedResponse } from "./pagination";
 import {
-  membershipFeatureRefSchema,
-  membershipSportRefSchema,
+  gymPlanFeatureRefSchema,
+  gymPlanSportRefSchema,
   relatedRefSchema,
-} from "./membershipRefs";
+} from "./gymPlanRefs";
 
-export const membershipPlanVisibilityEnumSchema = z.enum([
+export const gymPlanVisibilityEnumSchema = z.enum([
   "Public",
   "Private",
   "Hidden",
 ]);
-export type MembershipPlanVisibility = z.infer<
-  typeof membershipPlanVisibilityEnumSchema
->;
+export type GymPlanVisibility = z.infer<typeof gymPlanVisibilityEnumSchema>;
 
-export const membershipPlanBillingTypeEnumSchema = z.enum([
+export const gymPlanBillingTypeEnumSchema = z.enum([
   "one_time",
   "weekly",
   "monthly",
@@ -23,45 +21,32 @@ export const membershipPlanBillingTypeEnumSchema = z.enum([
   "annually",
   "custom",
 ]);
-export type MembershipPlanBillingType = z.infer<
-  typeof membershipPlanBillingTypeEnumSchema
->;
+export type GymPlanBillingType = z.infer<typeof gymPlanBillingTypeEnumSchema>;
 
-export const membershipPlanBillingUnitEnumSchema = z.enum([
-  "day",
-  "week",
-  "month",
-]);
-export type MembershipPlanBillingUnit = z.infer<
-  typeof membershipPlanBillingUnitEnumSchema
->;
+export const gymPlanBillingUnitEnumSchema = z.enum(["day", "week", "month"]);
+export type GymPlanBillingUnit = z.infer<typeof gymPlanBillingUnitEnumSchema>;
 
-export const membershipPlanCoverageEnumSchema = z.enum([
-  "Full access",
-  "Restricted",
-]);
-export type MembershipPlanCoverage = z.infer<
-  typeof membershipPlanCoverageEnumSchema
->;
+export const gymPlanCoverageEnumSchema = z.enum(["Full access", "Restricted"]);
+export type GymPlanCoverage = z.infer<typeof gymPlanCoverageEnumSchema>;
 
-export const membershipPlanSchema = z.object({
+export const gymPlanSchema = z.object({
   id: z.string().uuid(),
   gymId: z.string().uuid(),
   name: z.string(),
   categoryId: z.string().uuid(),
   category: relatedRefSchema,
-  visibility: membershipPlanVisibilityEnumSchema,
+  visibility: gymPlanVisibilityEnumSchema,
   description: z.string().nullable(),
   isActive: z.boolean(),
 
   pricePerPeriod: z.number(),
-  billingType: membershipPlanBillingTypeEnumSchema,
-  billingIntervalUnit: membershipPlanBillingUnitEnumSchema.nullable(),
+  billingType: gymPlanBillingTypeEnumSchema,
+  billingIntervalUnit: gymPlanBillingUnitEnumSchema.nullable(),
   billingIntervalCount: z.number().int().nullable(),
   signupFee: z.number().nullable(),
   requirePaymentUpfront: z.boolean(),
 
-  coverage: membershipPlanCoverageEnumSchema,
+  coverage: gymPlanCoverageEnumSchema,
   coverageClasses: z.array(z.string()).nullable(),
   coverageAreas: z.array(z.string()).nullable(),
   coverageInstructors: z.array(z.string()).nullable(),
@@ -70,53 +55,55 @@ export const membershipPlanSchema = z.object({
   noInstructors: z.boolean(),
   sessions: z.string().nullable(),
 
-  sports: z.array(membershipSportRefSchema),
-  features: z.array(membershipFeatureRefSchema),
+  sports: z.array(gymPlanSportRefSchema),
+  features: z.array(gymPlanFeatureRefSchema),
 
   createdAt: z.date(),
   updatedAt: z.date(),
 });
-export type MembershipPlan = z.infer<typeof membershipPlanSchema>;
+export type GymPlan = z.infer<typeof gymPlanSchema>;
 
 const uuidArray = z.array(z.string().uuid());
 
-const membershipPlanFields = z.object({
-  name: z.string().trim().min(2, "Enter a membership name").max(120),
-  categoryId: z.string().uuid("Select a category"),
-  visibility: membershipPlanVisibilityEnumSchema.default("Public"),
-  description: z.string().trim().max(300).optional().or(z.literal("")),
-  isActive: z.boolean().default(true),
+const gymPlanFields = z
+  .object({
+    name: z.string().trim().min(2, "Enter a plan name").max(120),
+    categoryId: z.string().uuid("Select a category"),
+    visibility: gymPlanVisibilityEnumSchema.default("Public"),
+    description: z.string().trim().max(300).optional().or(z.literal("")),
+    isActive: z.boolean().default(true),
 
-  pricePerPeriod: z
-    .number()
-    .int("Enter a valid price")
-    .nonnegative("Enter a valid price"),
-  billingType: membershipPlanBillingTypeEnumSchema,
-  billingIntervalUnit: membershipPlanBillingUnitEnumSchema.optional(),
-  billingIntervalCount: z
-    .number()
-    .int()
-    .positive("Enter a valid period")
-    .optional(),
-  signupFee: z.number().int().nonnegative("Enter a valid fee").optional(),
-  requirePaymentUpfront: z.boolean().default(true),
+    pricePerPeriod: z
+      .number()
+      .int("Enter a valid price")
+      .nonnegative("Enter a valid price"),
+    billingType: gymPlanBillingTypeEnumSchema,
+    billingIntervalUnit: gymPlanBillingUnitEnumSchema.optional(),
+    billingIntervalCount: z
+      .number()
+      .int()
+      .positive("Enter a valid period")
+      .optional(),
+    signupFee: z.number().int().nonnegative("Enter a valid fee").optional(),
+    requirePaymentUpfront: z.boolean().default(true),
 
-  coverage: membershipPlanCoverageEnumSchema.default("Full access"),
-  coverageClasses: uuidArray.nullish(),
-  coverageAreas: uuidArray.nullish(),
-  coverageInstructors: uuidArray.nullish(),
-  noClasses: z.boolean().default(false),
-  noAreas: z.boolean().default(false),
-  noInstructors: z.boolean().default(false),
-  sessions: z.string().trim().max(60).optional().or(z.literal("")),
+    coverage: gymPlanCoverageEnumSchema.default("Full access"),
+    coverageClasses: uuidArray.nullish(),
+    coverageAreas: uuidArray.nullish(),
+    coverageInstructors: uuidArray.nullish(),
+    noClasses: z.boolean().default(false),
+    noAreas: z.boolean().default(false),
+    noInstructors: z.boolean().default(false),
+    sessions: z.string().trim().max(60).optional().or(z.literal("")),
 
-  sportIds: uuidArray.default([]),
-  featureIds: uuidArray.default([]),
-}).strict();
+    sportIds: uuidArray.default([]),
+    featureIds: uuidArray.default([]),
+  })
+  .strict();
 
 type BillingShape = {
-  billingType?: MembershipPlanBillingType;
-  billingIntervalUnit?: MembershipPlanBillingUnit;
+  billingType?: GymPlanBillingType;
+  billingIntervalUnit?: GymPlanBillingUnit;
   billingIntervalCount?: number;
 };
 
@@ -150,20 +137,19 @@ const validateBilling = (val: BillingShape, ctx: z.RefinementCtx) => {
   }
 };
 
-export const membershipPlanInsertSchema =
-  membershipPlanFields.superRefine(validateBilling);
-export type NewMembershipPlan = z.infer<typeof membershipPlanInsertSchema>;
+export const gymPlanInsertSchema = gymPlanFields.superRefine(validateBilling);
+export type NewGymPlan = z.infer<typeof gymPlanInsertSchema>;
 
-export const membershipPlanUpdateSchema = membershipPlanFields
+export const gymPlanUpdateSchema = gymPlanFields
   .partial()
   .strict()
   .superRefine(validateBilling);
-export type UpdateMembershipPlan = z.infer<typeof membershipPlanUpdateSchema>;
+export type UpdateGymPlan = z.infer<typeof gymPlanUpdateSchema>;
 
-export const membershipPlanListQuerySchema = z
+export const gymPlanListQuerySchema = z
   .object({
     ...paginationFields,
-    visibility: membershipPlanVisibilityEnumSchema.optional(),
+    visibility: gymPlanVisibilityEnumSchema.optional(),
     categoryId: z.string().uuid().optional(),
     isActive: z
       .enum(["true", "false"])
@@ -171,7 +157,5 @@ export const membershipPlanListQuerySchema = z
       .optional(),
   })
   .strict();
-export type MembershipPlanListQuery = z.infer<
-  typeof membershipPlanListQuerySchema
->;
-export type MembershipPlanListResponse = PaginatedResponse<MembershipPlan>;
+export type GymPlanListQuery = z.infer<typeof gymPlanListQuerySchema>;
+export type GymPlanListResponse = PaginatedResponse<GymPlan>;

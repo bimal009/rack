@@ -38,7 +38,7 @@ export const relations = defineRelations(schema, (r) => ({
     staff: r.many.staff(),
     members: r.many.member(),
     rolePermissionOverrides: r.many.gymRolePermissionOverride(),
-    memberMemberships: r.many.memberMembership(),
+    gymPlans: r.many.gymPlan(),
     subscriptions: r.many.gymSubscription(),
   },
 
@@ -92,19 +92,19 @@ export const relations = defineRelations(schema, (r) => ({
     }),
   },
 
-  memberMembership: {
+  gymPlan: {
     gym: r.one.gyms({
-      from: r.memberMembership.gymId,
+      from: r.gymPlan.gymId,
       to: r.gyms.id,
       optional: false,
     }),
     category: r.one.membershipCategory({
-      from: r.memberMembership.categoryId,
+      from: r.gymPlan.categoryId,
       to: r.membershipCategory.id,
       optional: false,
     }),
-    sports: r.many.membershipSport(),
-    features: r.many.membershipFeature(),
+    sports: r.many.gymPlanSport(),
+    features: r.many.gymPlanFeature(),
   },
 
   membershipCategory: {
@@ -113,7 +113,7 @@ export const relations = defineRelations(schema, (r) => ({
       to: r.gyms.id,
       optional: false,
     }),
-    memberships: r.many.memberMembership(),
+    plans: r.many.gymPlan(),
   },
 
   gymSport: {
@@ -122,7 +122,7 @@ export const relations = defineRelations(schema, (r) => ({
       to: r.gyms.id,
       optional: false,
     }),
-    memberships: r.many.membershipSport(),
+    plans: r.many.gymPlanSport(),
   },
 
   gymFeature: {
@@ -131,40 +131,40 @@ export const relations = defineRelations(schema, (r) => ({
       to: r.gyms.id,
       optional: false,
     }),
-    memberships: r.many.membershipFeature(),
+    plans: r.many.gymPlanFeature(),
   },
 
-  membershipSport: {
+  gymPlanSport: {
     gym: r.one.gyms({
-      from: r.membershipSport.gymId,
+      from: r.gymPlanSport.gymId,
       to: r.gyms.id,
       optional: false,
     }),
-    membership: r.one.memberMembership({
-      from: r.membershipSport.membershipId,
-      to: r.memberMembership.id,
+    plan: r.one.gymPlan({
+      from: r.gymPlanSport.planId,
+      to: r.gymPlan.id,
       optional: false,
     }),
     sport: r.one.gymSport({
-      from: r.membershipSport.sportId,
+      from: r.gymPlanSport.sportId,
       to: r.gymSport.id,
       optional: false,
     }),
   },
 
-  membershipFeature: {
+  gymPlanFeature: {
     gym: r.one.gyms({
-      from: r.membershipFeature.gymId,
+      from: r.gymPlanFeature.gymId,
       to: r.gyms.id,
       optional: false,
     }),
-    membership: r.one.memberMembership({
-      from: r.membershipFeature.membershipId,
-      to: r.memberMembership.id,
+    plan: r.one.gymPlan({
+      from: r.gymPlanFeature.planId,
+      to: r.gymPlan.id,
       optional: false,
     }),
     feature: r.one.gymFeature({
-      from: r.membershipFeature.featureId,
+      from: r.gymPlanFeature.featureId,
       to: r.gymFeature.id,
       optional: false,
     }),

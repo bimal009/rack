@@ -22,7 +22,7 @@ import taxRateRoutes from "./modules/taxRate/taxRate.routes";
 import membershipCategoryRoutes from "./modules/membershipCategory/membershipCategory.routes";
 import payRateRoutes from "./modules/payRate/payRate.routes";
 import areaRoutes from "./modules/area/area.routes";
-import membershipPlanRoutes from "./modules/membershipPlan/membershipPlan.routes";
+import gymPlanRoutes from "./modules/gymPlan/gymPlan.routes";
 
 const isDev = process.env.NODE_ENV === "development";
 
@@ -69,7 +69,7 @@ app.use(
 );
 app.use("/api/v1/gyms/:slug/pay-rates", payRateRoutes);
 app.use("/api/v1/gyms/:slug/areas", areaRoutes);
-app.use("/api/v1/gyms/:slug/memberships", membershipPlanRoutes);
+app.use("/api/v1/gyms/:slug/plans", gymPlanRoutes);
 app.use("/api/v1/plans", plansRoutes);
 app.use("/api/v1/media", mediaRoutes);
 

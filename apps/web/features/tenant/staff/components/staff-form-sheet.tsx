@@ -9,7 +9,6 @@ import {
   IdCard,
   MapPin,
   Plus,
-  ShieldCheck,
   UserRound,
   UserRoundCog,
 } from "lucide-react"
@@ -290,22 +289,21 @@ function StaffForm({
       </SheetHeader>
 
       <SheetBody className="flex flex-col gap-7">
-        <FormSection
-          icon={ShieldCheck}
-          title="Status"
-          description="Inactive members stay on record but are hidden from most views."
-        >
+        <FormSection icon={UserRound} title="Basic information">
           <Field orientation="horizontal">
             <Switch
               id="staff-active"
               checked={values.isActive}
               onCheckedChange={(checked) => set("isActive", checked)}
             />
-            <FieldLabel htmlFor="staff-active">Active staff member</FieldLabel>
+            <div>
+              <FieldLabel htmlFor="staff-active">Active staff member</FieldLabel>
+              <FieldDescription>
+                Inactive members stay on record but are hidden from most views.
+              </FieldDescription>
+            </div>
           </Field>
-        </FormSection>
 
-        <FormSection icon={UserRound} title="Basic information">
           {isEdit && staff ? (
             <div className="flex items-center gap-3 rounded-lg border border-border bg-muted/30 p-3">
               <Avatar size="sm">

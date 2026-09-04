@@ -3,21 +3,21 @@ import { requireAuth } from "../../middleware/auth.middleware";
 import { validateGym } from "../../middleware/gym.middleware";
 import { validateGymMember } from "../../middleware/staff.middleware";
 import {
-  addMembershipPlan,
-  editMembershipPlan,
-  getMembershipPlanById,
-  getMembershipPlans,
-  removeMembershipPlan,
-} from "./membershipPlan.controller";
+  addGymPlan,
+  editGymPlan,
+  getGymPlanById,
+  getGymPlans,
+  removeGymPlan,
+} from "./gymPlan.controller";
 
 const router: Router = Router({ mergeParams: true });
 
 router.use(requireAuth, validateGym, validateGymMember);
 
-router.get("/", getMembershipPlans);
-router.post("/", addMembershipPlan);
-router.get("/:id", getMembershipPlanById);
-router.patch("/:id", editMembershipPlan);
-router.delete("/:id", removeMembershipPlan);
+router.get("/", getGymPlans);
+router.post("/", addGymPlan);
+router.get("/:id", getGymPlanById);
+router.patch("/:id", editGymPlan);
+router.delete("/:id", removeGymPlan);
 
 export default router;

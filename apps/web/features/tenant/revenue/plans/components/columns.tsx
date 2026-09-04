@@ -107,14 +107,14 @@ export function createMembershipColumns({
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={() => onEdit(row.original)}>
               <PenSquare />
-              Edit membership
+              Edit
             </DropdownMenuItem>
             <DropdownMenuItem
               variant="destructive"
               onClick={() => onDelete(row.original)}
             >
               <Trash2 />
-              Delete membership
+              Delete
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

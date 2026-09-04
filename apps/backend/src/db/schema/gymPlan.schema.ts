@@ -14,13 +14,13 @@ import {
 import { gyms } from "./gym.schema";
 import { membershipCategory } from "./membershipCategory.schema";
 
-export const membershipVisibilityEnum = pgEnum("membership_visibility", [
+export const gymPlanVisibilityEnum = pgEnum("gym_plan_visibility", [
   "Public",
   "Private",
   "Hidden",
 ]);
 
-export const membershipBillingTypeEnum = pgEnum("membership_billing_type", [
+export const gymPlanBillingTypeEnum = pgEnum("gym_plan_billing_type", [
   "one_time",
   "weekly",
   "monthly",
@@ -29,19 +29,20 @@ export const membershipBillingTypeEnum = pgEnum("membership_billing_type", [
   "custom",
 ]);
 
-export const membershipBillingUnitEnum = pgEnum("membership_billing_unit", [
+export const gymPlanBillingUnitEnum = pgEnum("gym_plan_billing_unit", [
   "day",
   "week",
   "month",
 ]);
 
-export const membershipCoverageEnum = pgEnum("membership_coverage", [
+export const gymPlanCoverageEnum = pgEnum("gym_plan_coverage", [
   "Full access",
   "Restricted",
 ]);
 
-export const memberMembership = pgTable(
-  "member_memberships",
+// Membership plan/product defined in revenue → plans. Gym-scoped.
+export const gymPlan = pgTable(
+  "gym_plans",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     gymId: uuid("gym_id")
@@ -52,20 +53,20 @@ export const memberMembership = pgTable(
     categoryId: uuid("category_id")
       .notNull()
       .references(() => membershipCategory.id, { onDelete: "restrict" }),
-    visibility: membershipVisibilityEnum("visibility").notNull().default("Public"),
+    visibility: gymPlanVisibilityEnum("visibility").notNull().default("Public"),
     description: text("description"),
     isActive: boolean("is_active").notNull().default(true),
 
     pricePerPeriod: integer("price_per_period").notNull(),
-    billingType: membershipBillingTypeEnum("billing_type").notNull(),
-    billingIntervalUnit: membershipBillingUnitEnum("billing_interval_unit"),
+    billingType: gymPlanBillingTypeEnum("billing_type").notNull(),
+    billingIntervalUnit: gymPlanBillingUnitEnum("billing_interval_unit"),
     billingIntervalCount: integer("billing_interval_count"),
     signupFee: integer("signup_fee"),
     requirePaymentUpfront: boolean("require_payment_upfront")
       .notNull()
       .default(true),
 
-    coverage: membershipCoverageEnum("coverage").notNull().default("Full access"),
+    coverage: gymPlanCoverageEnum("coverage").notNull().default("Full access"),
     coverageClasses: jsonb("coverage_classes").$type<string[]>(),
     coverageAreas: jsonb("coverage_areas").$type<string[]>(),
     coverageInstructors: jsonb("coverage_instructors").$type<string[]>(),
@@ -78,9 +79,9 @@ export const memberMembership = pgTable(
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },
   (table) => [
-    unique("member_memberships_gym_id_name_unique").on(table.gymId, table.name),
+    unique("gym_plans_gym_id_name_unique").on(table.gymId, table.name),
     check(
-      "member_memberships_custom_billing_check",
+      "gym_plans_custom_billing_check",
       sql`(
         ${table.billingType} = 'custom'
         AND ${table.billingIntervalUnit} IS NOT NULL

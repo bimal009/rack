@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent } from "react"
 import { useParams } from "next/navigation"
-import { Banknote, Check, CreditCard, Info, Sparkles, SquareCheck } from "lucide-react"
+import { Banknote, Check, CreditCard, Info, SquareCheck, Tags } from "lucide-react"
 import {
   membershipPlanBillingTypeEnumSchema,
   membershipPlanBillingUnitEnumSchema,
@@ -759,7 +759,7 @@ function MembershipFormBody({
           )}
         </FormSection>
 
-        <FormSection icon={Sparkles} title="Presentation">
+        <FormSection icon={Tags} title="Presentation">
           <div className="grid grid-cols-2 gap-4">
             <MultiSelectCombobox
               label="Features"
