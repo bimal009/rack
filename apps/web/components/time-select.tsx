@@ -8,14 +8,21 @@ import {
   SelectValue,
 } from "@repo/ui/components/ui/select"
 
+export function formatTime12h(value: string): string {
+  const [hoursStr, minutes = "00"] = value.split(":")
+  const hours = Number(hoursStr)
+  if (Number.isNaN(hours)) return value
+
+  const period = hours < 12 ? "AM" : "PM"
+  const hour12 = hours % 12 === 0 ? 12 : hours % 12
+  return `${hour12}:${minutes} ${period}`
+}
+
 const TIME_OPTIONS = Array.from({ length: 48 }, (_, i) => {
   const hours = Math.floor(i / 2)
   const minutes = i % 2 === 0 ? "00" : "30"
   const value = `${String(hours).padStart(2, "0")}:${minutes}`
-  const period = hours < 12 ? "AM" : "PM"
-  const hour12 = hours % 12 === 0 ? 12 : hours % 12
-  const label = `${hour12}:${minutes} ${period}`
-  return { value, label }
+  return { value, label: formatTime12h(value) }
 })
 
 interface TimeSelectProps {

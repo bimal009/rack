@@ -77,6 +77,14 @@ export const gymMembershipUpdateSchema = gymMembershipFields
   .superRefine(validateDateRange);
 export type UpdateGymMembership = z.infer<typeof gymMembershipUpdateSchema>;
 
+export const gymMembershipExtendSchema = z
+  .object({
+    days: z.number().int().positive("Enter a number of days"),
+    reason: z.string().trim().max(300).optional().or(z.literal("")),
+  })
+  .strict();
+export type ExtendGymMembership = z.infer<typeof gymMembershipExtendSchema>;
+
 export const gymMembershipListQuerySchema = z
   .object({
     ...paginationFields,

@@ -2,25 +2,13 @@
 
 import { useState, type FormEvent } from "react"
 import { useParams } from "next/navigation"
-import {
-  Banknote,
-  Check,
-  Clock,
-  CreditCard,
-  Info,
-  PenSquare,
-  RotateCcw,
-  Save,
-  SquareCheck,
-  Tags,
-} from "lucide-react"
+import { Banknote, Check, Clock, CreditCard, Info, Save, SquareCheck, Tags } from "lucide-react"
 import {
   gymPlanBillingTypeEnumSchema,
   gymPlanBillingUnitEnumSchema,
   gymPlanCoverageEnumSchema,
   gymPlanInsertSchema,
   gymPlanVisibilityEnumSchema,
-  WEEKDAYS,
   type GymPlan,
   type GymPlanBillingType,
   type GymPlanBillingUnit,
@@ -172,7 +160,7 @@ function toFormValues(plan?: GymPlan | null): PlanFormValues {
     sessions: plan.sessions ?? "",
     sportIds: plan.sports.map((s) => s.sportId),
     featureIds: plan.features.map((f) => f.featureId),
-    operatingHourOverrides: plan.operatingHourOverrides,
+    operatingHourOverrides: plan.operatingHourOverrides ?? [],
   }
 }
 
@@ -734,58 +722,32 @@ function PlanFormBody({ plan, pending, onSubmit, onCancel }: PlanFormBodyProps) 
               : "This plan currently follows the gym's default hours."
           }
         >
-          {overridingHours ? (
-            <>
-              <OpeningHoursEditor
-                value={values.operatingHourOverrides}
-                onChange={(operatingHourOverrides) =>
-                  setValues((v) => ({ ...v, operatingHourOverrides }))
-                }
-                closedLabel="Uses gym hours"
-              />
-              <button
-                type="button"
-                onClick={() => {
-                  setOverridingHours(false)
-                  setValues((v) => ({ ...v, operatingHourOverrides: [] }))
-                }}
-                className="flex w-fit items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground"
-              >
-                <RotateCcw className="size-3.5" />
-                Use the gym&apos;s default hours instead
-              </button>
-            </>
-          ) : (
-            <>
-              <div className="flex flex-col gap-1.5 rounded-lg border border-border bg-muted/30 p-3">
-                {WEEKDAYS.map((day) => {
-                  const range = defaultHours.find((r) => r.day === day)
-                  return (
-                    <div
-                      key={day}
-                      className="flex items-center justify-between text-sm"
-                    >
-                      <span className="text-foreground">{day}</span>
-                      <span className="text-muted-foreground">
-                        {range ? `${range.open} – ${range.close}` : "Closed"}
-                      </span>
-                    </div>
-                  )
-                })}
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                disabled={!gymHours.data}
-                onClick={() => {
-                  setOverridingHours(true)
-                  setValues((v) => ({ ...v, operatingHourOverrides: defaultHours }))
-                }}
-              >
-                <PenSquare className="size-4" />
-                Override hours for this plan
-              </Button>
-            </>
+          <Field orientation="horizontal">
+            <Switch
+              id="plan-override-hours"
+              checked={overridingHours}
+              disabled={!gymHours.data}
+              onCheckedChange={(checked) => {
+                setOverridingHours(checked)
+                setValues((v) => ({
+                  ...v,
+                  operatingHourOverrides: checked ? defaultHours : [],
+                }))
+              }}
+            />
+            <FieldLabel htmlFor="plan-override-hours">
+              Override hours for this plan
+            </FieldLabel>
+          </Field>
+
+          {overridingHours && (
+            <OpeningHoursEditor
+              value={values.operatingHourOverrides}
+              onChange={(operatingHourOverrides) =>
+                setValues((v) => ({ ...v, operatingHourOverrides }))
+              }
+              closedLabel="Uses gym hours"
+            />
           )}
         </FormSection>
       </SheetBody>

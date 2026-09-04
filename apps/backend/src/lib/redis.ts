@@ -27,6 +27,7 @@ export const CACHE_KEYS = {
   MEMBERSHIP_CATEGORY: "membership_category",
   GYM_PLAN: "gym_plan",
   GYM_HOURS: "gym_hours",
+  GYM_MEMBERSHIP: "gym_membership",
   PRODUCT: "product",
   PRODUCT_FEATURE: "product_feature",
 } as const;
