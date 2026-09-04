@@ -5,7 +5,7 @@ import {
   areaTypeInsertSchema,
   areaTypeUpdateSchema,
 } from "@repo/types";
-import { and, asc, count, desc, eq, ilike } from "drizzle-orm";
+import { and, eq, ilike } from "drizzle-orm";
 import { db } from "../../db";
 import { areaType } from "../../db/schema";
 import { NotFoundError, ValidationError } from "../../lib/errors";
@@ -35,23 +35,26 @@ export const listAreaTypes = async (
   }
 
   const { page, limit, search, sortOrder } = query;
-  const where = and(
-    eq(areaType.gymId, gymId),
-    search ? ilike(areaType.name, `%${search}%`) : undefined
-  );
 
-  const [data, [totalRow]] = await Promise.all([
-    db
-      .select()
-      .from(areaType)
-      .where(where)
-      .orderBy(sortOrder === "asc" ? asc(areaType.name) : desc(areaType.name))
-      .limit(limit)
-      .offset((page - 1) * limit),
-    db.select({ total: count() }).from(areaType).where(where),
+  const [data, total] = await Promise.all([
+    db.query.areaType.findMany({
+      where: {
+        gymId,
+        name: search ? { ilike: `%${search}%` } : undefined,
+      },
+      orderBy: { name: sortOrder },
+      limit,
+      offset: (page - 1) * limit,
+    }),
+    db.$count(
+      areaType,
+      and(
+        eq(areaType.gymId, gymId),
+        search ? ilike(areaType.name, `%${search}%`) : undefined
+      )
+    ),
   ]);
 
-  const total = totalRow?.total ?? 0;
   const result = {
     data,
     meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
@@ -70,11 +73,9 @@ export const getAreaType = async (gymId: string, id: string) => {
     return JSON.parse(cached);
   }
 
-  const [record] = await db
-    .select()
-    .from(areaType)
-    .where(and(eq(areaType.gymId, gymId), eq(areaType.id, id)))
-    .limit(1);
+  const record = await db.query.areaType.findFirst({
+    where: { gymId, id },
+  });
 
   if (!record) throw new NotFoundError("Area type not found");
 

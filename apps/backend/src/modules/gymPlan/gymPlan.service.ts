@@ -225,11 +225,10 @@ export const updateGymPlan = async (
   }
 
   await db.transaction(async (tx) => {
-    const [existing] = await tx
-      .select({ id: gymPlan.id })
-      .from(gymPlan)
-      .where(and(eq(gymPlan.gymId, gymId), eq(gymPlan.id, id)))
-      .limit(1);
+    const existing = await tx.query.gymPlan.findFirst({
+      where: { gymId, id },
+      columns: { id: true },
+    });
 
     if (!existing) throw new NotFoundError("Plan not found");
 

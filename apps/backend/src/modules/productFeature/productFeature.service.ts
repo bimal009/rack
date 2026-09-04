@@ -5,7 +5,7 @@ import {
   productFeatureInsertSchema,
   productFeatureUpdateSchema,
 } from "@repo/types";
-import { and, asc, count, desc, eq, ilike } from "drizzle-orm";
+import { and, eq, ilike } from "drizzle-orm";
 import { db } from "../../db";
 import { productFeature } from "../../db/schema";
 import { NotFoundError, ValidationError } from "../../lib/errors";
@@ -32,25 +32,26 @@ export const listProductFeatures = async (
   if (cached) return JSON.parse(cached);
 
   const { page, limit, search, sortOrder } = query;
-  const where = and(
-    eq(productFeature.gymId, gymId),
-    search ? ilike(productFeature.name, `%${search}%`) : undefined
-  );
 
-  const [data, [totalRow]] = await Promise.all([
-    db
-      .select()
-      .from(productFeature)
-      .where(where)
-      .orderBy(
-        sortOrder === "asc" ? asc(productFeature.name) : desc(productFeature.name)
+  const [data, total] = await Promise.all([
+    db.query.productFeature.findMany({
+      where: {
+        gymId,
+        name: search ? { ilike: `%${search}%` } : undefined,
+      },
+      orderBy: { name: sortOrder },
+      limit,
+      offset: (page - 1) * limit,
+    }),
+    db.$count(
+      productFeature,
+      and(
+        eq(productFeature.gymId, gymId),
+        search ? ilike(productFeature.name, `%${search}%`) : undefined
       )
-      .limit(limit)
-      .offset((page - 1) * limit),
-    db.select({ total: count() }).from(productFeature).where(where),
+    ),
   ]);
 
-  const total = totalRow?.total ?? 0;
   const result = {
     data,
     meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
@@ -67,11 +68,9 @@ export const getProductFeature = async (gymId: string, id: string) => {
   const cached = await redis.get(cacheKey);
   if (cached) return JSON.parse(cached);
 
-  const [record] = await db
-    .select()
-    .from(productFeature)
-    .where(and(eq(productFeature.gymId, gymId), eq(productFeature.id, id)))
-    .limit(1);
+  const record = await db.query.productFeature.findFirst({
+    where: { gymId, id },
+  });
 
   if (!record) throw new NotFoundError("Product feature not found");
 

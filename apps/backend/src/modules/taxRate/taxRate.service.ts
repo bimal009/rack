@@ -5,7 +5,7 @@ import {
   taxRateInsertSchema,
   taxRateUpdateSchema,
 } from "@repo/types";
-import { and, asc, count, desc, eq, ilike } from "drizzle-orm";
+import { and, eq, ilike } from "drizzle-orm";
 import { db } from "../../db";
 import { taxRate } from "../../db/schema";
 import { NotFoundError, ValidationError } from "../../lib/errors";
@@ -32,23 +32,26 @@ export const listTaxRates = async (gymId: string, query: TaxRateListQuery) => {
   }
 
   const { page, limit, search, sortOrder } = query;
-  const where = and(
-    eq(taxRate.gymId, gymId),
-    search ? ilike(taxRate.name, `%${search}%`) : undefined
-  );
 
-  const [data, [totalRow]] = await Promise.all([
-    db
-      .select()
-      .from(taxRate)
-      .where(where)
-      .orderBy(sortOrder === "asc" ? asc(taxRate.rate) : desc(taxRate.rate))
-      .limit(limit)
-      .offset((page - 1) * limit),
-    db.select({ total: count() }).from(taxRate).where(where),
+  const [data, total] = await Promise.all([
+    db.query.taxRate.findMany({
+      where: {
+        gymId,
+        name: search ? { ilike: `%${search}%` } : undefined,
+      },
+      orderBy: { rate: sortOrder },
+      limit,
+      offset: (page - 1) * limit,
+    }),
+    db.$count(
+      taxRate,
+      and(
+        eq(taxRate.gymId, gymId),
+        search ? ilike(taxRate.name, `%${search}%`) : undefined
+      )
+    ),
   ]);
 
-  const total = totalRow?.total ?? 0;
   const result = {
     data,
     meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
@@ -67,11 +70,9 @@ export const getTaxRate = async (gymId: string, id: string) => {
     return JSON.parse(cached);
   }
 
-  const [record] = await db
-    .select()
-    .from(taxRate)
-    .where(and(eq(taxRate.gymId, gymId), eq(taxRate.id, id)))
-    .limit(1);
+  const record = await db.query.taxRate.findFirst({
+    where: { gymId, id },
+  });
 
   if (!record) throw new NotFoundError("Tax rate not found");
 

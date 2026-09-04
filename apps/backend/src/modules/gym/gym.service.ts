@@ -84,11 +84,9 @@ export const onboardGym = async (gym: OnboardingInput, userId: string) => {
 };
 
 export const getGymByOwner = async (userId: string) => {
-  const [gymRecord] = await db
-    .select()
-    .from(gyms)
-    .where(eq(gyms.ownerUserId, userId))
-    .limit(1);
+  const gymRecord = await db.query.gyms.findFirst({
+    where: { ownerUserId: userId },
+  });
 
   if (!gymRecord) {
     throw new NotFoundError("Gym not found");
@@ -117,12 +115,8 @@ export const updateGym = async (input: UpdateGymInput, userId: string) => {
   return gymRecord;
 };
 export const getGymBySlug = async (slug: string) => {
-  const [gym] = await db
-    .select()
-    .from(gyms)
-    .where(eq(gyms.slug, slug))
-    .limit(1);
-
-  return gym;
+  return db.query.gyms.findFirst({
+    where: { slug },
+  });
 };
 

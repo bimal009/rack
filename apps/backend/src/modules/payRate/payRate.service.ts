@@ -5,7 +5,7 @@ import {
   payRateInsertSchema,
   payRateUpdateSchema,
 } from "@repo/types";
-import { and, asc, count, desc, eq, ilike } from "drizzle-orm";
+import { and, eq, ilike } from "drizzle-orm";
 import { db } from "../../db";
 import { payRate } from "../../db/schema";
 import { NotFoundError, ValidationError } from "../../lib/errors";
@@ -32,24 +32,28 @@ export const listPayRates = async (gymId: string, query: PayRateListQuery) => {
   }
 
   const { page, limit, search, sortOrder, type } = query;
-  const where = and(
-    eq(payRate.gymId, gymId),
-    type ? eq(payRate.type, type) : undefined,
-    search ? ilike(payRate.name, `%${search}%`) : undefined
-  );
 
-  const [data, [totalRow]] = await Promise.all([
-    db
-      .select()
-      .from(payRate)
-      .where(where)
-      .orderBy(sortOrder === "asc" ? asc(payRate.name) : desc(payRate.name))
-      .limit(limit)
-      .offset((page - 1) * limit),
-    db.select({ total: count() }).from(payRate).where(where),
+  const [data, total] = await Promise.all([
+    db.query.payRate.findMany({
+      where: {
+        gymId,
+        type,
+        name: search ? { ilike: `%${search}%` } : undefined,
+      },
+      orderBy: { name: sortOrder },
+      limit,
+      offset: (page - 1) * limit,
+    }),
+    db.$count(
+      payRate,
+      and(
+        eq(payRate.gymId, gymId),
+        type ? eq(payRate.type, type) : undefined,
+        search ? ilike(payRate.name, `%${search}%`) : undefined
+      )
+    ),
   ]);
 
-  const total = totalRow?.total ?? 0;
   const result = {
     data,
     meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
@@ -68,11 +72,9 @@ export const getPayRate = async (gymId: string, id: string) => {
     return JSON.parse(cached);
   }
 
-  const [record] = await db
-    .select()
-    .from(payRate)
-    .where(and(eq(payRate.gymId, gymId), eq(payRate.id, id)))
-    .limit(1);
+  const record = await db.query.payRate.findFirst({
+    where: { gymId, id },
+  });
 
   if (!record) throw new NotFoundError("Pay rate not found");
 

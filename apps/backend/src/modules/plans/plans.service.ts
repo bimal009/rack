@@ -1,6 +1,4 @@
-import { eq } from "drizzle-orm";
 import { db } from "../../db";
-import { plan } from "../../db/schema";
 import { NotFoundError } from "../../lib/errors";
 import { CACHE_KEYS, CACHE_TTL, redis } from "../../lib/redis";
 
@@ -14,11 +12,10 @@ export async function get() {
     return JSON.parse(cached);
   }
 
-  const plans = await db
-    .select()
-    .from(plan)
-    .where(eq(plan.isActive, true))
-    .orderBy(plan.monthlyPrice);
+  const plans = await db.query.plan.findMany({
+    where: { isActive: true },
+    orderBy: { monthlyPrice: "asc" },
+  });
 
   if (plans.length === 0) {
     throw new NotFoundError("No plans found");

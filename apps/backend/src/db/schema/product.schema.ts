@@ -20,7 +20,6 @@ export const productVisibilityEnum = pgEnum("product_visibility", [
   "Hidden",
 ]);
 
-// Retail product sold in the gym shop. Gym-scoped.
 export const product = pgTable(
   "products",
   {
@@ -47,7 +46,6 @@ export const product = pgTable(
     }),
 
     description: text("description"),
-    features: jsonb("features").$type<string[]>().notNull().default([]),
     images: jsonb("images").$type<string[]>().notNull().default([]),
 
     createdAt: timestamp("created_at").notNull().defaultNow(),

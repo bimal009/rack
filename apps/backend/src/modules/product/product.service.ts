@@ -5,9 +5,9 @@ import {
   productInsertSchema,
   productUpdateSchema,
 } from "@repo/types";
-import { and, eq, ilike, or, sql } from "drizzle-orm";
+import { and, eq, exists, ilike, or, sql } from "drizzle-orm";
 import { db } from "../../db";
-import { product } from "../../db/schema";
+import { product, productFeatureLink } from "../../db/schema";
 import { NotFoundError, ValidationError } from "../../lib/errors";
 import { CACHE_KEYS, CACHE_TTL, redis, deleteByPattern } from "../../lib/redis";
 
@@ -19,11 +19,11 @@ const listKey = (gymId: string, query: ProductListQuery): string => {
     sortOrder,
     categoryId,
     brandId,
-    feature,
+    featureId,
     visibility,
     isActive,
   } = query;
-  return `${CACHE_KEYS.PRODUCT}:${gymId}:list:${page}:${limit}:${search ?? ""}:${sortOrder}:${categoryId ?? ""}:${brandId ?? ""}:${feature ?? ""}:${visibility ?? ""}:${isActive ?? ""}`;
+  return `${CACHE_KEYS.PRODUCT}:${gymId}:list:${page}:${limit}:${search ?? ""}:${sortOrder}:${categoryId ?? ""}:${brandId ?? ""}:${featureId ?? ""}:${visibility ?? ""}:${isActive ?? ""}`;
 };
 
 const itemKey = (gymId: string, id: string): string =>
@@ -45,7 +45,7 @@ export const listProducts = async (gymId: string, query: ProductListQuery) => {
     sortOrder,
     categoryId,
     brandId,
-    feature,
+    featureId,
     visibility,
     isActive,
   } = query;
@@ -61,9 +61,7 @@ export const listProducts = async (gymId: string, query: ProductListQuery) => {
         OR: search
           ? [{ name: { ilike: `%${search}%` } }, { sku: { ilike: `%${search}%` } }]
           : undefined,
-        RAW: feature
-          ? (table) => sql`${table.features} ? ${feature}`
-          : undefined,
+        features: featureId ? { featureId } : undefined,
       },
       orderBy: { name: sortOrder },
       limit,
@@ -72,6 +70,7 @@ export const listProducts = async (gymId: string, query: ProductListQuery) => {
         category: { columns: { id: true, name: true } },
         brand: { columns: { id: true, name: true } },
         taxRate: { columns: { id: true, name: true, rate: true } },
+        features: { with: { feature: { columns: { id: true, name: true } } } },
       },
     }),
     db.$count(
@@ -85,7 +84,19 @@ export const listProducts = async (gymId: string, query: ProductListQuery) => {
         search
           ? or(ilike(product.name, `%${search}%`), ilike(product.sku, `%${search}%`))
           : undefined,
-        feature ? sql`${product.features} ? ${feature}` : undefined
+        featureId
+          ? exists(
+              db
+                .select({ one: sql`1` })
+                .from(productFeatureLink)
+                .where(
+                  and(
+                    eq(productFeatureLink.productId, product.id),
+                    eq(productFeatureLink.featureId, featureId)
+                  )
+                )
+            )
+          : undefined
       )
     ),
   ]);
@@ -112,6 +123,7 @@ export const getProduct = async (gymId: string, id: string) => {
       category: { columns: { id: true, name: true } },
       brand: { columns: { id: true, name: true } },
       taxRate: { columns: { id: true, name: true, rate: true } },
+      features: { with: { feature: { columns: { id: true, name: true } } } },
     },
   });
 
@@ -124,9 +136,14 @@ export const getProduct = async (gymId: string, id: string) => {
 
 const assertRefsBelongToGym = async (
   gymId: string,
-  refs: { categoryId?: string; brandId?: string; taxRateId?: string }
+  refs: {
+    categoryId?: string;
+    brandId?: string;
+    taxRateId?: string;
+    featureIds?: string[];
+  }
 ): Promise<void> => {
-  const [category, brand, taxRate] = await Promise.all([
+  const [category, brand, taxRate, features] = await Promise.all([
     refs.categoryId
       ? db.query.productCategory.findFirst({
           where: { id: refs.categoryId, gymId },
@@ -145,6 +162,12 @@ const assertRefsBelongToGym = async (
           columns: { id: true },
         })
       : undefined,
+    refs.featureIds?.length
+      ? db.query.productFeature.findMany({
+          where: { gymId, id: { in: refs.featureIds } },
+          columns: { id: true },
+        })
+      : undefined,
   ]);
 
   if (refs.categoryId && !category) {
@@ -156,6 +179,9 @@ const assertRefsBelongToGym = async (
   if (refs.taxRateId && !taxRate) {
     throw new ValidationError("Tax rate does not belong to this gym");
   }
+  if (features && features.length !== new Set(refs.featureIds).size) {
+    throw new ValidationError("One or more features do not belong to this gym");
+  }
 };
 
 export const createProduct = async (gymId: string, input: NewProduct) => {
@@ -164,29 +190,44 @@ export const createProduct = async (gymId: string, input: NewProduct) => {
     throw new ValidationError("Invalid product", result.error.flatten());
   }
 
-  const { description, sku, ...values } = result.data;
+  const { description, sku, featureIds, ...values } = result.data;
 
   await assertRefsBelongToGym(gymId, {
     categoryId: values.categoryId,
     brandId: values.brandId,
     taxRateId: values.taxRateId,
+    featureIds,
   });
 
-  const [record] = await db
-    .insert(product)
-    .values({
-      gymId,
-      ...values,
-      description: description || null,
-      sku: sku || null,
-    })
-    .returning({ id: product.id });
+  const created = await db.transaction(async (tx) => {
+    const [record] = await tx
+      .insert(product)
+      .values({
+        gymId,
+        ...values,
+        description: description || null,
+        sku: sku || null,
+      })
+      .returning({ id: product.id });
 
-  if (!record) throw new NotFoundError("Product not found");
+    if (!record) throw new NotFoundError("Product not found");
+
+    if (featureIds.length > 0) {
+      await tx.insert(productFeatureLink).values(
+        [...new Set(featureIds)].map((featureId) => ({
+          gymId,
+          productId: record.id,
+          featureId,
+        }))
+      );
+    }
+
+    return record;
+  });
 
   await invalidate(gymId);
 
-  return getProduct(gymId, record.id);
+  return getProduct(gymId, created.id);
 };
 
 export const updateProduct = async (
@@ -199,7 +240,7 @@ export const updateProduct = async (
     throw new ValidationError("Invalid product", result.error.flatten());
   }
 
-  const { description, sku, ...rest } = result.data;
+  const { description, sku, featureIds, ...rest } = result.data;
 
   const values: Record<string, unknown> = { ...rest };
   if (description !== undefined) values.description = description || null;
@@ -209,15 +250,39 @@ export const updateProduct = async (
     categoryId: values.categoryId as string | undefined,
     brandId: values.brandId as string | undefined,
     taxRateId: values.taxRateId as string | undefined,
+    featureIds,
   });
 
-  const [record] = await db
-    .update(product)
-    .set({ ...values, updatedAt: new Date() })
-    .where(and(eq(product.gymId, gymId), eq(product.id, id)))
-    .returning({ id: product.id });
+  await db.transaction(async (tx) => {
+    const existing = await tx.query.product.findFirst({
+      where: { gymId, id },
+      columns: { id: true },
+    });
 
-  if (!record) throw new NotFoundError("Product not found");
+    if (!existing) throw new NotFoundError("Product not found");
+
+    if (Object.keys(values).length > 0) {
+      await tx
+        .update(product)
+        .set({ ...values, updatedAt: new Date() })
+        .where(and(eq(product.gymId, gymId), eq(product.id, id)));
+    }
+
+    if (featureIds) {
+      await tx
+        .delete(productFeatureLink)
+        .where(eq(productFeatureLink.productId, id));
+      if (featureIds.length > 0) {
+        await tx.insert(productFeatureLink).values(
+          [...new Set(featureIds)].map((featureId) => ({
+            gymId,
+            productId: id,
+            featureId,
+          }))
+        );
+      }
+    }
+  });
 
   await invalidate(gymId);
 

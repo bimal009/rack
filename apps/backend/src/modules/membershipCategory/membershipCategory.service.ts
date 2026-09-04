@@ -5,7 +5,7 @@ import {
   membershipCategoryInsertSchema,
   membershipCategoryUpdateSchema,
 } from "@repo/types";
-import { and, asc, count, desc, eq, ilike } from "drizzle-orm";
+import { and, eq, ilike } from "drizzle-orm";
 import { db } from "../../db";
 import { membershipCategory } from "../../db/schema";
 import { NotFoundError, ValidationError } from "../../lib/errors";
@@ -40,27 +40,26 @@ export const listMembershipCategories = async (
   }
 
   const { page, limit, search, sortOrder } = query;
-  const where = and(
-    eq(membershipCategory.gymId, gymId),
-    search ? ilike(membershipCategory.name, `%${search}%`) : undefined
-  );
 
-  const [data, [totalRow]] = await Promise.all([
-    db
-      .select()
-      .from(membershipCategory)
-      .where(where)
-      .orderBy(
-        sortOrder === "asc"
-          ? asc(membershipCategory.name)
-          : desc(membershipCategory.name)
+  const [data, total] = await Promise.all([
+    db.query.membershipCategory.findMany({
+      where: {
+        gymId,
+        name: search ? { ilike: `%${search}%` } : undefined,
+      },
+      orderBy: { name: sortOrder },
+      limit,
+      offset: (page - 1) * limit,
+    }),
+    db.$count(
+      membershipCategory,
+      and(
+        eq(membershipCategory.gymId, gymId),
+        search ? ilike(membershipCategory.name, `%${search}%`) : undefined
       )
-      .limit(limit)
-      .offset((page - 1) * limit),
-    db.select({ total: count() }).from(membershipCategory).where(where),
+    ),
   ]);
 
-  const total = totalRow?.total ?? 0;
   const result = {
     data,
     meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
@@ -79,13 +78,9 @@ export const getMembershipCategory = async (gymId: string, id: string) => {
     return JSON.parse(cached);
   }
 
-  const [record] = await db
-    .select()
-    .from(membershipCategory)
-    .where(
-      and(eq(membershipCategory.gymId, gymId), eq(membershipCategory.id, id))
-    )
-    .limit(1);
+  const record = await db.query.membershipCategory.findFirst({
+    where: { gymId, id },
+  });
 
   if (!record) throw new NotFoundError("Membership category not found");
 

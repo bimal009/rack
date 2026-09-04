@@ -9,7 +9,7 @@ import {
 import { ForbiddenError, NotFoundError, ValidationError } from "../../lib/errors";
 import { db } from "../../db";
 import { staff, user } from "../../db/schema";
-import { and, asc, count, desc, eq, ilike, or } from "drizzle-orm";
+import { and, eq, exists, ilike, or, sql } from "drizzle-orm";
 import { CACHE_KEYS, CACHE_TTL, redis, deleteByPattern } from "../../lib/redis";
 
 const staffListKey = (gymId: string, query: StaffListQuery): string => {
@@ -91,61 +91,46 @@ export const getAll = async (gymId: string, query: StaffListQuery) => {
 
   const { page, limit, sortOrder, search, role, status } = query;
 
-  const where = and(
-    eq(staff.gymId, gymId),
-    role ? eq(staff.role, role) : undefined,
-    status ? eq(staff.isActive, status === "active") : undefined,
-    search
-      ? or(ilike(user.name, `%${search}%`), ilike(user.email, `%${search}%`))
-      : undefined
-  );
-
-  const [data, [totalRow]] = await Promise.all([
-    db
-      .select({
-        id: staff.id,
-        gymId: staff.gymId,
-        userId: staff.userId,
-        role: staff.role,
-        isOwner: staff.isOwner,
-        isActive: staff.isActive,
-        phone: staff.phone,
-        dateOfBirth: staff.dateOfBirth,
-        gender: staff.gender,
-        address: staff.address,
-        payType: staff.payType,
-        payRate: staff.payRate,
-        instructorTypeId: staff.instructorTypeId,
-        experience: staff.experience,
-        certifications: staff.certifications,
-        canBeBooked: staff.canBeBooked,
-        visibility: staff.visibility,
-        maxConcurrentBookings: staff.maxConcurrentBookings,
-        createdAt: staff.createdAt,
-        updatedAt: staff.updatedAt,
-        user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          image: user.image,
-        },
-      })
-      .from(staff)
-      .innerJoin(user, eq(staff.userId, user.id))
-      .where(where)
-      .orderBy(
-        sortOrder === "asc" ? asc(staff.createdAt) : desc(staff.createdAt)
+  const [data, total] = await Promise.all([
+    db.query.staff.findMany({
+      where: {
+        gymId,
+        role,
+        isActive: status ? status === "active" : undefined,
+        user: search
+          ? { OR: [{ name: { ilike: `%${search}%` } }, { email: { ilike: `%${search}%` } }] }
+          : undefined,
+      },
+      orderBy: { createdAt: sortOrder },
+      limit,
+      offset: (page - 1) * limit,
+      with: {
+        user: { columns: { id: true, name: true, email: true, image: true } },
+      },
+    }),
+    db.$count(
+      staff,
+      and(
+        eq(staff.gymId, gymId),
+        role ? eq(staff.role, role) : undefined,
+        status ? eq(staff.isActive, status === "active") : undefined,
+        search
+          ? exists(
+              db
+                .select({ one: sql`1` })
+                .from(user)
+                .where(
+                  and(
+                    eq(user.id, staff.userId),
+                    or(ilike(user.name, `%${search}%`), ilike(user.email, `%${search}%`))
+                  )
+                )
+            )
+          : undefined
       )
-      .limit(limit)
-      .offset((page - 1) * limit),
-    db
-      .select({ total: count() })
-      .from(staff)
-      .innerJoin(user, eq(staff.userId, user.id))
-      .where(where),
+    ),
   ]);
 
-  const total = totalRow?.total ?? 0;
   const result = {
     data,
     meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
@@ -164,11 +149,9 @@ export const getStaffById = async (gymId: string, id: string) => {
     return JSON.parse(cached);
   }
 
-  const [record] = await db
-    .select()
-    .from(staff)
-    .where(and(eq(staff.gymId, gymId), eq(staff.id, id)))
-    .limit(1);
+  const record = await db.query.staff.findFirst({
+    where: { gymId, id },
+  });
 
   if (!record) throw new NotFoundError("Staff not found");
 
@@ -185,17 +168,9 @@ export const getStaffByGym = async (gymId: string, userId: string) => {
     return JSON.parse(cached);
   }
 
-  const [gymStaff] = await db
-    .select()
-    .from(staff)
-    .where(
-      and(
-        eq(staff.gymId, gymId),
-        eq(staff.userId, userId),
-        eq(staff.isActive, true)
-      )
-    )
-    .limit(1);
+  const gymStaff = await db.query.staff.findFirst({
+    where: { gymId, userId, isActive: true },
+  });
 
   if (gymStaff) {
     await redis.set(cacheKey, JSON.stringify(gymStaff), "EX", CACHE_TTL.MEDIUM);
@@ -214,11 +189,10 @@ export const updateStaff = async (
     throw new ValidationError("Invalid staff data", result.error.flatten());
   }
 
-  const [existing] = await db
-    .select({ isOwner: staff.isOwner })
-    .from(staff)
-    .where(and(eq(staff.gymId, gymId), eq(staff.id, id)))
-    .limit(1);
+  const existing = await db.query.staff.findFirst({
+    where: { gymId, id },
+    columns: { isOwner: true },
+  });
 
   if (!existing) throw new NotFoundError("Staff not found");
 
@@ -240,11 +214,10 @@ export const updateStaff = async (
 };
 
 export const deleteStaff = async (gymId: string, id: string) => {
-  const [existing] = await db
-    .select({ isOwner: staff.isOwner })
-    .from(staff)
-    .where(and(eq(staff.gymId, gymId), eq(staff.id, id)))
-    .limit(1);
+  const existing = await db.query.staff.findFirst({
+    where: { gymId, id },
+    columns: { isOwner: true },
+  });
 
   if (!existing) throw new NotFoundError("Staff not found");
 

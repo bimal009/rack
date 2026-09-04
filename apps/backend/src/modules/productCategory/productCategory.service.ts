@@ -5,7 +5,7 @@ import {
   productCategoryInsertSchema,
   productCategoryUpdateSchema,
 } from "@repo/types";
-import { and, asc, count, desc, eq, ilike } from "drizzle-orm";
+import { and, eq, ilike } from "drizzle-orm";
 import { db } from "../../db";
 import { productCategory } from "../../db/schema";
 import { NotFoundError, ValidationError } from "../../lib/errors";
@@ -38,27 +38,26 @@ export const listProductCategories = async (
   }
 
   const { page, limit, search, sortOrder } = query;
-  const where = and(
-    eq(productCategory.gymId, gymId),
-    search ? ilike(productCategory.name, `%${search}%`) : undefined
-  );
 
-  const [data, [totalRow]] = await Promise.all([
-    db
-      .select()
-      .from(productCategory)
-      .where(where)
-      .orderBy(
-        sortOrder === "asc"
-          ? asc(productCategory.name)
-          : desc(productCategory.name)
+  const [data, total] = await Promise.all([
+    db.query.productCategory.findMany({
+      where: {
+        gymId,
+        name: search ? { ilike: `%${search}%` } : undefined,
+      },
+      orderBy: { name: sortOrder },
+      limit,
+      offset: (page - 1) * limit,
+    }),
+    db.$count(
+      productCategory,
+      and(
+        eq(productCategory.gymId, gymId),
+        search ? ilike(productCategory.name, `%${search}%`) : undefined
       )
-      .limit(limit)
-      .offset((page - 1) * limit),
-    db.select({ total: count() }).from(productCategory).where(where),
+    ),
   ]);
 
-  const total = totalRow?.total ?? 0;
   const result = {
     data,
     meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
@@ -77,11 +76,9 @@ export const getProductCategory = async (gymId: string, id: string) => {
     return JSON.parse(cached);
   }
 
-  const [record] = await db
-    .select()
-    .from(productCategory)
-    .where(and(eq(productCategory.gymId, gymId), eq(productCategory.id, id)))
-    .limit(1);
+  const record = await db.query.productCategory.findFirst({
+    where: { gymId, id },
+  });
 
   if (!record) throw new NotFoundError("Product category not found");
 

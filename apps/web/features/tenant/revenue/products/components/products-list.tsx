@@ -56,7 +56,7 @@ export function ProductsList() {
     page: filters.page,
     search: debouncedSearch || undefined,
     categoryId: filters.categoryId ?? undefined,
-    feature: filters.feature ?? undefined,
+    featureId: filters.featureId ?? undefined,
     isActive: filters.status ? filters.status === "active" : undefined,
     sortOrder: filters.sort,
   }
@@ -173,10 +173,10 @@ export function ProductsList() {
                 </DropdownMenuRadioGroup>
                 <DropdownMenuSeparator />
                 <DropdownMenuRadioGroup
-                  value={filters.feature ?? "all"}
+                  value={filters.featureId ?? "all"}
                   onValueChange={(value) =>
                     setFilters({
-                      feature: value === "all" ? null : value,
+                      featureId: value === "all" ? null : value,
                       page: 1,
                     })
                   }
@@ -185,7 +185,7 @@ export function ProductsList() {
                   <DropdownMenuSeparator />
                   <DropdownMenuRadioItem value="all">All</DropdownMenuRadioItem>
                   {(productFeatures.data?.data ?? []).map((f) => (
-                    <DropdownMenuRadioItem key={f.id} value={f.name}>
+                    <DropdownMenuRadioItem key={f.id} value={f.id}>
                       {f.name}
                     </DropdownMenuRadioItem>
                   ))}

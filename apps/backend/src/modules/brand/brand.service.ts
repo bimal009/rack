@@ -5,7 +5,7 @@ import {
   brandInsertSchema,
   brandUpdateSchema,
 } from "@repo/types";
-import { and, asc, count, desc, eq, ilike } from "drizzle-orm";
+import { and, eq, ilike } from "drizzle-orm";
 import { db } from "../../db";
 import { brand } from "../../db/schema";
 import { NotFoundError, ValidationError } from "../../lib/errors";
@@ -32,23 +32,26 @@ export const listBrands = async (gymId: string, query: BrandListQuery) => {
   }
 
   const { page, limit, search, sortOrder } = query;
-  const where = and(
-    eq(brand.gymId, gymId),
-    search ? ilike(brand.name, `%${search}%`) : undefined
-  );
 
-  const [data, [totalRow]] = await Promise.all([
-    db
-      .select()
-      .from(brand)
-      .where(where)
-      .orderBy(sortOrder === "asc" ? asc(brand.name) : desc(brand.name))
-      .limit(limit)
-      .offset((page - 1) * limit),
-    db.select({ total: count() }).from(brand).where(where),
+  const [data, total] = await Promise.all([
+    db.query.brand.findMany({
+      where: {
+        gymId,
+        name: search ? { ilike: `%${search}%` } : undefined,
+      },
+      orderBy: { name: sortOrder },
+      limit,
+      offset: (page - 1) * limit,
+    }),
+    db.$count(
+      brand,
+      and(
+        eq(brand.gymId, gymId),
+        search ? ilike(brand.name, `%${search}%`) : undefined
+      )
+    ),
   ]);
 
-  const total = totalRow?.total ?? 0;
   const result = {
     data,
     meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
@@ -67,11 +70,9 @@ export const getBrand = async (gymId: string, id: string) => {
     return JSON.parse(cached);
   }
 
-  const [record] = await db
-    .select()
-    .from(brand)
-    .where(and(eq(brand.gymId, gymId), eq(brand.id, id)))
-    .limit(1);
+  const record = await db.query.brand.findFirst({
+    where: { gymId, id },
+  });
 
   if (!record) throw new NotFoundError("Brand not found");
 

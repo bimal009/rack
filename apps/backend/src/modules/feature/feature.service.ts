@@ -5,7 +5,7 @@ import {
   gymFeatureInsertSchema,
   gymFeatureUpdateSchema,
 } from "@repo/types";
-import { and, asc, count, desc, eq, ilike } from "drizzle-orm";
+import { and, eq, ilike } from "drizzle-orm";
 import { db } from "../../db";
 import { gymFeature } from "../../db/schema";
 import { NotFoundError, ValidationError } from "../../lib/errors";
@@ -15,23 +15,26 @@ export const listFeatures = async (
   query: GymFeatureListQuery
 ) => {
   const { page, limit, search, sortOrder } = query;
-  const where = and(
-    eq(gymFeature.gymId, gymId),
-    search ? ilike(gymFeature.name, `%${search}%`) : undefined
-  );
 
-  const [data, [totalRow]] = await Promise.all([
-    db
-      .select()
-      .from(gymFeature)
-      .where(where)
-      .orderBy(sortOrder === "asc" ? asc(gymFeature.name) : desc(gymFeature.name))
-      .limit(limit)
-      .offset((page - 1) * limit),
-    db.select({ total: count() }).from(gymFeature).where(where),
+  const [data, total] = await Promise.all([
+    db.query.gymFeature.findMany({
+      where: {
+        gymId,
+        name: search ? { ilike: `%${search}%` } : undefined,
+      },
+      orderBy: { name: sortOrder },
+      limit,
+      offset: (page - 1) * limit,
+    }),
+    db.$count(
+      gymFeature,
+      and(
+        eq(gymFeature.gymId, gymId),
+        search ? ilike(gymFeature.name, `%${search}%`) : undefined
+      )
+    ),
   ]);
 
-  const total = totalRow?.total ?? 0;
   return {
     data,
     meta: { page, limit, total, totalPages: Math.ceil(total / limit) },

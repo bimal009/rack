@@ -212,6 +212,7 @@ export const relations = defineRelations(schema, (r) => ({
       from: r.product.taxRateId,
       to: r.taxRate.id,
     }),
+    features: r.many.productFeatureLink(),
   },
 
   productCategory: {
@@ -245,6 +246,25 @@ export const relations = defineRelations(schema, (r) => ({
     gym: r.one.gyms({
       from: r.productFeature.gymId,
       to: r.gyms.id,
+      optional: false,
+    }),
+    products: r.many.productFeatureLink(),
+  },
+
+  productFeatureLink: {
+    gym: r.one.gyms({
+      from: r.productFeatureLink.gymId,
+      to: r.gyms.id,
+      optional: false,
+    }),
+    product: r.one.product({
+      from: r.productFeatureLink.productId,
+      to: r.product.id,
+      optional: false,
+    }),
+    feature: r.one.productFeature({
+      from: r.productFeatureLink.featureId,
+      to: r.productFeature.id,
       optional: false,
     }),
   },

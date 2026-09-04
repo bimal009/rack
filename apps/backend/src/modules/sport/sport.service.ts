@@ -5,7 +5,7 @@ import {
   gymSportInsertSchema,
   gymSportUpdateSchema,
 } from "@repo/types";
-import { and, asc, count, desc, eq, ilike } from "drizzle-orm";
+import { and, eq, ilike } from "drizzle-orm";
 import { db } from "../../db";
 import { gymSport } from "../../db/schema";
 import { NotFoundError, ValidationError } from "../../lib/errors";
@@ -32,23 +32,26 @@ export const listSports = async (gymId: string, query: GymSportListQuery) => {
   }
 
   const { page, limit, search, sortOrder } = query;
-  const where = and(
-    eq(gymSport.gymId, gymId),
-    search ? ilike(gymSport.name, `%${search}%`) : undefined
-  );
 
-  const [data, [totalRow]] = await Promise.all([
-    db
-      .select()
-      .from(gymSport)
-      .where(where)
-      .orderBy(sortOrder === "asc" ? asc(gymSport.name) : desc(gymSport.name))
-      .limit(limit)
-      .offset((page - 1) * limit),
-    db.select({ total: count() }).from(gymSport).where(where),
+  const [data, total] = await Promise.all([
+    db.query.gymSport.findMany({
+      where: {
+        gymId,
+        name: search ? { ilike: `%${search}%` } : undefined,
+      },
+      orderBy: { name: sortOrder },
+      limit,
+      offset: (page - 1) * limit,
+    }),
+    db.$count(
+      gymSport,
+      and(
+        eq(gymSport.gymId, gymId),
+        search ? ilike(gymSport.name, `%${search}%`) : undefined
+      )
+    ),
   ]);
 
-  const total = totalRow?.total ?? 0;
   const result = {
     data,
     meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
@@ -67,11 +70,9 @@ export const getSport = async (gymId: string, id: string) => {
     return JSON.parse(cached);
   }
 
-  const [record] = await db
-    .select()
-    .from(gymSport)
-    .where(and(eq(gymSport.gymId, gymId), eq(gymSport.id, id)))
-    .limit(1);
+  const record = await db.query.gymSport.findFirst({
+    where: { gymId, id },
+  });
 
   if (!record) throw new NotFoundError("Sport not found");
 

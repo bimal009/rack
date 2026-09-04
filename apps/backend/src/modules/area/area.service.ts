@@ -5,9 +5,9 @@ import {
   areaInsertSchema,
   areaUpdateSchema,
 } from "@repo/types";
-import { and, asc, count, desc, eq, ilike } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "../../db";
-import { area, areaType } from "../../db/schema";
+import { area } from "../../db/schema";
 import { NotFoundError, ValidationError } from "../../lib/errors";
 import { CACHE_KEYS, CACHE_TTL, redis, deleteByPattern } from "../../lib/redis";
 
@@ -32,41 +32,32 @@ export const listAreas = async (gymId: string, query: AreaListQuery) => {
   }
 
   const { page, limit, search, sortOrder, status, areaTypeId } = query;
-  const where = and(
-    eq(area.gymId, gymId),
-    status ? eq(area.status, status) : undefined,
-    areaTypeId ? eq(area.areaTypeId, areaTypeId) : undefined,
-    search ? ilike(area.name, `%${search}%`) : undefined
-  );
 
-  const [data, [totalRow]] = await Promise.all([
-    db
-      .select({
-        id: area.id,
-        gymId: area.gymId,
-        areaTypeId: area.areaTypeId,
-        name: area.name,
-        description: area.description,
-        images: area.images,
-        pricePerHour: area.pricePerHour,
-        maxConcurrentBookings: area.maxConcurrentBookings,
-        visibility: area.visibility,
-        status: area.status,
-        attributes: area.attributes,
-        areaType: { id: areaType.id, name: areaType.name },
-        createdAt: area.createdAt,
-        updatedAt: area.updatedAt,
-      })
-      .from(area)
-      .leftJoin(areaType, eq(area.areaTypeId, areaType.id))
-      .where(where)
-      .orderBy(sortOrder === "asc" ? asc(area.name) : desc(area.name))
-      .limit(limit)
-      .offset((page - 1) * limit),
-    db.select({ total: count() }).from(area).where(where),
+  const [data, total] = await Promise.all([
+    db.query.area.findMany({
+      where: {
+        gymId,
+        status,
+        areaTypeId,
+        name: search ? { ilike: `%${search}%` } : undefined,
+      },
+      orderBy: { name: sortOrder },
+      limit,
+      offset: (page - 1) * limit,
+      with: {
+        areaType: { columns: { id: true, name: true } },
+      },
+    }),
+    db.$count(
+      area,
+      and(
+        eq(area.gymId, gymId),
+        status ? eq(area.status, status) : undefined,
+        areaTypeId ? eq(area.areaTypeId, areaTypeId) : undefined
+      )
+    ),
   ]);
 
-  const total = totalRow?.total ?? 0;
   const result = {
     data,
     meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
@@ -85,27 +76,12 @@ export const getArea = async (gymId: string, id: string) => {
     return JSON.parse(cached);
   }
 
-  const [record] = await db
-    .select({
-      id: area.id,
-      gymId: area.gymId,
-      areaTypeId: area.areaTypeId,
-      name: area.name,
-      description: area.description,
-      images: area.images,
-      pricePerHour: area.pricePerHour,
-      maxConcurrentBookings: area.maxConcurrentBookings,
-      visibility: area.visibility,
-      status: area.status,
-      attributes: area.attributes,
-      areaType: { id: areaType.id, name: areaType.name },
-      createdAt: area.createdAt,
-      updatedAt: area.updatedAt,
-    })
-    .from(area)
-    .leftJoin(areaType, eq(area.areaTypeId, areaType.id))
-    .where(and(eq(area.gymId, gymId), eq(area.id, id)))
-    .limit(1);
+  const record = await db.query.area.findFirst({
+    where: { gymId, id },
+    with: {
+      areaType: { columns: { id: true, name: true } },
+    },
+  });
 
   if (!record) throw new NotFoundError("Area not found");
 

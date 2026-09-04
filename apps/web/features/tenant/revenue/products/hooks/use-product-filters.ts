@@ -15,7 +15,7 @@ export function useProductFilters() {
       page: parseAsInteger.withDefault(1),
       search: parseAsString.withDefault(""),
       categoryId: parseAsString,
-      feature: parseAsString,
+      featureId: parseAsString,
       status: parseAsStringLiteral(PRODUCT_STATUSES),
       sort: parseAsStringLiteral(["asc", "desc"] as const).withDefault("desc"),
     },

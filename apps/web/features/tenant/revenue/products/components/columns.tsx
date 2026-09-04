@@ -90,14 +90,14 @@ export function createProductColumns({
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={() => onEdit(row.original)}>
               <PenSquare />
-              Edit product
+              Edit
             </DropdownMenuItem>
             <DropdownMenuItem
               variant="destructive"
               onClick={() => onDelete(row.original)}
             >
               <Trash2 />
-              Delete product
+              Delete
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

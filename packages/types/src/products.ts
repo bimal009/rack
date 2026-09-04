@@ -15,6 +15,18 @@ const taxRateRefSchema = z.object({
   rate: z.number(),
 });
 
+// Shape returned by the product's relational query `with`: the junction row
+// plus its resolved feature ref.
+const productFeatureLinkRefSchema = z.object({
+  id: z.string().uuid(),
+  gymId: z.string().uuid(),
+  productId: z.string().uuid(),
+  featureId: z.string().uuid(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+  feature: relatedRefSchema,
+});
+
 export const productSchema = z.object({
   id: z.string().uuid(),
   gymId: z.string().uuid(),
@@ -33,13 +45,15 @@ export const productSchema = z.object({
   taxRate: taxRateRefSchema.nullable(),
 
   description: z.string().nullable(),
-  features: z.array(z.string()),
+  features: z.array(productFeatureLinkRefSchema),
   images: z.array(z.string()),
 
   createdAt: z.date(),
   updatedAt: z.date(),
 });
 export type Product = z.infer<typeof productSchema>;
+
+const uuidArray = z.array(z.string().uuid());
 
 const productFields = z
   .object({
@@ -55,7 +69,7 @@ const productFields = z
     taxRateId: z.string().uuid().optional(),
 
     description: z.string().trim().max(300).optional().or(z.literal("")),
-    features: z.array(z.string().trim().min(1)).default([]),
+    featureIds: uuidArray.default([]),
     images: z.array(z.string()).default([]),
   })
   .strict();
@@ -71,7 +85,7 @@ export const productListQuerySchema = z
     ...paginationFields,
     categoryId: z.string().uuid().optional(),
     brandId: z.string().uuid().optional(),
-    feature: z.string().trim().min(1).optional(),
+    featureId: z.string().uuid().optional(),
     visibility: productVisibilityEnumSchema.optional(),
     isActive: z
       .enum(["true", "false"])

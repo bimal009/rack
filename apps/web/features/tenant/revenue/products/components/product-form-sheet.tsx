@@ -66,7 +66,7 @@ interface ProductFormValues {
   taxRateId: string
 
   description: string
-  features: string[]
+  featureIds: string[]
   images: string[]
 }
 
@@ -83,7 +83,7 @@ function toFormValues(product?: Product | null): ProductFormValues {
       costPrice: "",
       taxRateId: "",
       description: "",
-      features: [],
+      featureIds: [],
       images: [],
     }
   }
@@ -98,7 +98,7 @@ function toFormValues(product?: Product | null): ProductFormValues {
     costPrice: product.costPrice != null ? String(product.costPrice) : "",
     taxRateId: product.taxRateId ?? "",
     description: product.description ?? "",
-    features: product.features,
+    featureIds: product.features.map((f) => f.featureId),
     images: product.images,
   }
 }
@@ -142,7 +142,7 @@ function ProductFormBody({
       costPrice: values.costPrice === "" ? undefined : Number(values.costPrice),
       taxRateId: values.taxRateId || undefined,
       description: values.description || undefined,
-      features: values.features,
+      featureIds: values.featureIds,
       images: values.images,
     })
 
@@ -403,12 +403,9 @@ function ProductFormBody({
             description="Tags shown to members browsing the shop."
             placeholder="Search tags..."
             emptyMessage="No tags found."
-            options={(productFeatures.data?.data ?? []).map((f) => ({
-              id: f.name,
-              name: f.name,
-            }))}
-            selected={values.features}
-            onChange={(tags) => setValues((v) => ({ ...v, features: tags }))}
+            options={productFeatures.data?.data ?? []}
+            selected={values.featureIds}
+            onChange={(ids) => setValues((v) => ({ ...v, featureIds: ids }))}
           />
 
           <Field>

@@ -5,7 +5,7 @@ import {
   instructorTypeInsertSchema,
   instructorTypeUpdateSchema,
 } from "@repo/types";
-import { and, asc, count, desc, eq, ilike } from "drizzle-orm";
+import { and, eq, ilike } from "drizzle-orm";
 import { db } from "../../db";
 import { instructorType } from "../../db/schema";
 import { NotFoundError, ValidationError } from "../../lib/errors";
@@ -38,25 +38,26 @@ export const listInstructorTypes = async (
   }
 
   const { page, limit, search, sortOrder } = query;
-  const where = and(
-    eq(instructorType.gymId, gymId),
-    search ? ilike(instructorType.name, `%${search}%`) : undefined
-  );
 
-  const [data, [totalRow]] = await Promise.all([
-    db
-      .select()
-      .from(instructorType)
-      .where(where)
-      .orderBy(
-        sortOrder === "asc" ? asc(instructorType.name) : desc(instructorType.name)
+  const [data, total] = await Promise.all([
+    db.query.instructorType.findMany({
+      where: {
+        gymId,
+        name: search ? { ilike: `%${search}%` } : undefined,
+      },
+      orderBy: { name: sortOrder },
+      limit,
+      offset: (page - 1) * limit,
+    }),
+    db.$count(
+      instructorType,
+      and(
+        eq(instructorType.gymId, gymId),
+        search ? ilike(instructorType.name, `%${search}%`) : undefined
       )
-      .limit(limit)
-      .offset((page - 1) * limit),
-    db.select({ total: count() }).from(instructorType).where(where),
+    ),
   ]);
 
-  const total = totalRow?.total ?? 0;
   const result = {
     data,
     meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
@@ -75,11 +76,9 @@ export const getInstructorType = async (gymId: string, id: string) => {
     return JSON.parse(cached);
   }
 
-  const [record] = await db
-    .select()
-    .from(instructorType)
-    .where(and(eq(instructorType.gymId, gymId), eq(instructorType.id, id)))
-    .limit(1);
+  const record = await db.query.instructorType.findFirst({
+    where: { gymId, id },
+  });
 
   if (!record) throw new NotFoundError("Instructor type not found");
 
