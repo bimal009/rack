@@ -37,8 +37,7 @@ export function OpeningHoursStep({
           When are you open?
         </h1>
         <p className="text-sm text-muted-foreground">
-          Set your weekly hours. Add more than one time range for split
-          shifts, e.g. 4–10 and 5–9.
+          Set your weekly hours. Turn off a day if you&apos;re closed.
         </p>
       </div>
 

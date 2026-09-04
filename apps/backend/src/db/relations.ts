@@ -42,6 +42,8 @@ export const relations = defineRelations(schema, (r) => ({
     products: r.many.product(),
     productFeatures: r.many.productFeature(),
     subscriptions: r.many.gymSubscription(),
+    memberships: r.many.gymMembership(),
+    operatingHours: r.many.gymOperatingHour(),
   },
 
   permission: {
@@ -92,6 +94,7 @@ export const relations = defineRelations(schema, (r) => ({
       from: r.member.userId,
       to: r.user.id,
     }),
+    memberships: r.many.gymMembership(),
   },
 
   gymPlan: {
@@ -107,6 +110,33 @@ export const relations = defineRelations(schema, (r) => ({
     }),
     sports: r.many.gymPlanSport(),
     features: r.many.gymPlanFeature(),
+    memberships: r.many.gymMembership(),
+  },
+
+  gymMembership: {
+    gym: r.one.gyms({
+      from: r.gymMembership.gymId,
+      to: r.gyms.id,
+      optional: false,
+    }),
+    member: r.one.member({
+      from: r.gymMembership.memberId,
+      to: r.member.id,
+      optional: false,
+    }),
+    plan: r.one.gymPlan({
+      from: r.gymMembership.planId,
+      to: r.gymPlan.id,
+      optional: false,
+    }),
+  },
+
+  gymOperatingHour: {
+    gym: r.one.gyms({
+      from: r.gymOperatingHour.gymId,
+      to: r.gyms.id,
+      optional: false,
+    }),
   },
 
   membershipCategory: {

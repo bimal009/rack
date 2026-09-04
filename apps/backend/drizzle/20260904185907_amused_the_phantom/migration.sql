@@ -1,0 +1,2 @@
+ALTER TABLE "gym_operating_hours" ALTER COLUMN "open" SET DATA TYPE varchar(5) USING "open"::varchar(5);--> statement-breakpoint
+ALTER TABLE "gym_operating_hours" ALTER COLUMN "close" SET DATA TYPE varchar(5) USING "close"::varchar(5);

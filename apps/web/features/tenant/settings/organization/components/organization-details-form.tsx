@@ -5,7 +5,6 @@ import { toast } from "sonner"
 import {
   CURRENCY_OPTIONS,
   DEFAULT_OPENING_HOURS,
-  WEEKDAYS,
   updateGymSchema,
   type Currency,
   type GymRecord,
@@ -37,15 +36,6 @@ import { OpeningHoursEditor } from "@/components/opening-hours-editor"
 import { fieldErrors } from "../../lib/validation"
 import { useGymQuery, useUpdateGymMutation } from "../../hooks/useOrganization"
 
-function normalizeOpeningHours(
-  raw: Partial<OpeningHours> | null | undefined
-): OpeningHours {
-  return WEEKDAYS.reduce((acc, day) => {
-    acc[day] = raw?.[day] ?? DEFAULT_OPENING_HOURS[day]
-    return acc
-  }, {} as OpeningHours)
-}
-
 interface OrganizationFormValues {
   businessName: string
   address: string
@@ -64,7 +54,7 @@ function toFormValues(gym: GymRecord): OrganizationFormValues {
     email: gym.email,
     website: gym.website ?? "",
     currency: gym.currency,
-    openingHours: normalizeOpeningHours(gym.openingHours),
+    openingHours: gym.openingHours ?? DEFAULT_OPENING_HOURS,
   }
 }
 
@@ -228,8 +218,7 @@ function OrganizationForm({ gym }: OrganizationFormProps) {
         <FieldLegend>Opening Hours</FieldLegend>
         <FieldGroup>
           <FieldDescription>
-            Add more than one time range for a day to schedule split shifts,
-            e.g. 4–10 and 5–9.
+            Turn off a day if your gym is closed on it.
           </FieldDescription>
           <OpeningHoursEditor
             value={values.openingHours}

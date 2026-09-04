@@ -1,8 +1,14 @@
-import { OnboardingInput, onboardingSchema, UpdateGymInput, updateGymSchema } from "@repo/types";
+import {
+  OnboardingInput,
+  onboardingSchema,
+  UpdateGymInput,
+  updateGymSchema,
+} from "@repo/types";
 import { eq } from "drizzle-orm";
 import { InternalServerError, NotFoundError, ValidationError } from "../../lib/errors";
 import {
   gymFeature,
+  gymOperatingHour,
   gymSport,
   gyms,
   membershipCategory,
@@ -39,7 +45,7 @@ export const onboardGym = async (gym: OnboardingInput, userId: string) => {
     );
   }
 
-  const { specialties, features, ...gymData } = result.data;
+  const { specialties, features, openingHours, ...gymData } = result.data;
 
   return db.transaction(async (tx) => {
     const [gymRecord] = await tx
@@ -79,7 +85,18 @@ export const onboardGym = async (gym: OnboardingInput, userId: string) => {
       DEFAULT_PRODUCT_FEATURES.map((name) => ({ gymId: gymRecord.id, name }))
     );
 
-    return gymRecord;
+    if (openingHours.length > 0) {
+      await tx.insert(gymOperatingHour).values(
+        openingHours.map((range) => ({
+          gymId: gymRecord.id,
+          day: range.day,
+          open: range.open.slice(0, 5),
+          close: range.close.slice(0, 5),
+        }))
+      );
+    }
+
+    return { ...gymRecord, openingHours };
   });
 };
 
@@ -92,7 +109,12 @@ export const getGymByOwner = async (userId: string) => {
     throw new NotFoundError("Gym not found");
   }
 
-  return gymRecord;
+  const openingHours = await db.query.gymOperatingHour.findMany({
+    where: { gymId: gymRecord.id },
+    columns: { day: true, open: true, close: true },
+  });
+
+  return { ...gymRecord, openingHours };
 };
 
 export const updateGym = async (input: UpdateGymInput, userId: string) => {
@@ -102,17 +124,34 @@ export const updateGym = async (input: UpdateGymInput, userId: string) => {
     throw new ValidationError("Invalid gym details", result.error.flatten());
   }
 
-  const [gymRecord] = await db
-    .update(gyms)
-    .set(result.data)
-    .where(eq(gyms.ownerUserId, userId))
-    .returning();
+  const { openingHours, ...gymData } = result.data;
 
-  if (!gymRecord) {
-    throw new NotFoundError("Gym not found");
-  }
+  return db.transaction(async (tx) => {
+    const [gymRecord] = await tx
+      .update(gyms)
+      .set(gymData)
+      .where(eq(gyms.ownerUserId, userId))
+      .returning();
 
-  return gymRecord;
+    if (!gymRecord) {
+      throw new NotFoundError("Gym not found");
+    }
+
+    await tx.delete(gymOperatingHour).where(eq(gymOperatingHour.gymId, gymRecord.id));
+
+    if (openingHours.length > 0) {
+      await tx.insert(gymOperatingHour).values(
+        openingHours.map((range) => ({
+          gymId: gymRecord.id,
+          day: range.day,
+          open: range.open.slice(0, 5),
+          close: range.close.slice(0, 5),
+        }))
+      );
+    }
+
+    return { ...gymRecord, openingHours };
+  });
 };
 export const getGymBySlug = async (slug: string) => {
   return db.query.gyms.findFirst({

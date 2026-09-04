@@ -46,20 +46,21 @@ export const CURRENCY_OPTIONS = ["NPR", "USD", "INR", "EUR", "GBP"] as const;
 export type Currency = (typeof CURRENCY_OPTIONS)[number];
 
 export const WEEKDAYS = [
+  "Sunday",
   "Monday",
   "Tuesday",
   "Wednesday",
   "Thursday",
   "Friday",
   "Saturday",
-  "Sunday",
 ] as const;
 export type Weekday = (typeof WEEKDAYS)[number];
 
 const TIME_PATTERN = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
-export const timeRangeSchema = z
+export const operatingHourSchema = z
   .object({
+    day: z.enum(WEEKDAYS),
     open: z.string().regex(TIME_PATTERN, "Use 24-hour HH:MM"),
     close: z.string().regex(TIME_PATTERN, "Use 24-hour HH:MM"),
   })
@@ -68,37 +69,21 @@ export const timeRangeSchema = z
     path: ["close"],
   });
 
-export type TimeRange = z.infer<typeof timeRangeSchema>;
+export type OperatingHour = z.infer<typeof operatingHourSchema>;
 
-export const dayScheduleSchema = z.object({
-  closed: z.boolean(),
-  ranges: z.array(timeRangeSchema),
-});
-
-export type DaySchedule = z.infer<typeof dayScheduleSchema>;
-
-export const openingHoursSchema = z.object({
-  Monday: dayScheduleSchema,
-  Tuesday: dayScheduleSchema,
-  Wednesday: dayScheduleSchema,
-  Thursday: dayScheduleSchema,
-  Friday: dayScheduleSchema,
-  Saturday: dayScheduleSchema,
-  Sunday: dayScheduleSchema,
-});
+export const openingHoursSchema = z
+  .array(operatingHourSchema)
+  .refine((hours) => new Set(hours.map((h) => h.day)).size === hours.length, {
+    message: "Each day can only have one set of hours",
+  });
 
 export type OpeningHours = z.infer<typeof openingHoursSchema>;
 
-export const DEFAULT_OPENING_HOURS: OpeningHours = WEEKDAYS.reduce(
-  (acc, day) => {
-    acc[day] =
-      day === "Sunday"
-        ? { closed: true, ranges: [] }
-        : { closed: false, ranges: [{ open: "06:00", close: "22:00" }] };
-    return acc;
-  },
-  {} as OpeningHours
-);
+export const DEFAULT_OPENING_HOURS: OpeningHours = WEEKDAYS.map((day) => ({
+  day,
+  open: "06:00",
+  close: "22:00",
+}));
 
 export const onboardingSchema = z.object({
   businessType: z.enum([
