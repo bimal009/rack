@@ -1,6 +1,25 @@
-import type { Member } from "./schema"
+// Placeholder seed data still used by the schedule and attendance mock
+// features, which don't have a real backend yet. The members feature itself
+// is wired to the live API and no longer uses this file.
+export interface MockMember {
+  id: string
+  firstName: string
+  lastName: string
+  email: string
+  phone: string
+  dateOfBirth: string
+  gender: string
+  address: string
+  memberships: { membershipId: string; membershipName: string }[]
+  joined: string
+  status: "Active" | "On Hold" | "Expired"
+}
 
-export const initialMembers: Member[] = [
+export function fullName(member: Pick<MockMember, "firstName" | "lastName">) {
+  return `${member.firstName} ${member.lastName}`.trim()
+}
+
+export const initialMembers: MockMember[] = [
   {
     id: "mem_1",
     firstName: "Savannah",

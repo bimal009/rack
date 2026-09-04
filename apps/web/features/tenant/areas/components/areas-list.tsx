@@ -56,13 +56,19 @@ export function AreasList() {
       updateArea.mutate(
         { id: editingArea.id, input: values },
         {
-          onSuccess: () => toast.success(`${values.name} updated`),
+          onSuccess: () => {
+            toast.success(`${values.name} updated`)
+            setSheetOpen(false)
+          },
           onError: (error) => toast.error(error.message),
         }
       )
     } else {
       createArea.mutate(values, {
-        onSuccess: () => toast.success(`${values.name} created`),
+        onSuccess: () => {
+          toast.success(`${values.name} created`)
+          setSheetOpen(false)
+        },
         onError: (error) => toast.error(error.message),
       })
     }

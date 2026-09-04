@@ -11,7 +11,7 @@ import { generateClassId, initialClasses } from "@/features/tenant/classes/lib/d
 import { classSchema, type ClassInput, type ClassSession } from "@/features/tenant/classes/lib/schema"
 import { ClassFormSheet } from "@/features/tenant/classes/components/class-form-sheet"
 import { areaName, instructorName } from "@/features/tenant/classes/components/columns"
-import { fullName as fullMemberName } from "@/features/tenant/members/components/columns"
+import { fullName as fullMemberName } from "@/features/tenant/members/lib/data"
 import { initialMembers } from "@/features/tenant/members/lib/data"
 import { fullName } from "@/features/tenant/staff/components/columns"
 import { initialStaff } from "@/features/tenant/staff/lib/data"

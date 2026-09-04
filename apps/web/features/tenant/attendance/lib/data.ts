@@ -1,5 +1,4 @@
-import { initialMembers } from "@/features/tenant/members/lib/data"
-import { fullName } from "@/features/tenant/members/components/columns"
+import { fullName, initialMembers } from "@/features/tenant/members/lib/data"
 
 import type { AttendanceRecord } from "./schema"
 

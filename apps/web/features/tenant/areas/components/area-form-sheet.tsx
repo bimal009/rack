@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent, type KeyboardEvent } from "react"
 import { useParams } from "next/navigation"
-import { Banknote, Check, Info, MapPin, SlidersHorizontal, X } from "lucide-react"
+import { Banknote, Check, Info, MapPin, Save, SlidersHorizontal, X } from "lucide-react"
 
 import { Button } from "@repo/ui/components/ui/button"
 import {
@@ -32,6 +32,7 @@ import {
   SheetFooter,
   SheetHeader,
 } from "@repo/ui/components/ui/sheet"
+import { Spinner } from "@repo/ui/components/ui/spinner"
 import { Textarea } from "@repo/ui/components/ui/textarea"
 import { cn } from "@repo/ui/lib/utils"
 
@@ -421,6 +422,7 @@ function AreaFormBody({ area, pending, onSubmit, onCancel }: AreaFormBodyProps) 
           Cancel
         </Button>
         <Button type="submit" disabled={pending}>
+          {pending ? <Spinner /> : <Save className="size-4" />}
           {isEdit ? "Save changes" : "Create area"}
         </Button>
       </SheetFooter>
@@ -451,10 +453,7 @@ export function AreaFormSheet({
             key={area?.id ?? "new"}
             area={area}
             pending={pending}
-            onSubmit={(values) => {
-              onSubmit(values)
-              onOpenChange(false)
-            }}
+            onSubmit={onSubmit}
             onCancel={() => onOpenChange(false)}
           />
         )}

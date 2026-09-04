@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent } from "react"
 import { useParams } from "next/navigation"
-import { Banknote, BadgeDollarSign, Info, Target } from "lucide-react"
+import { Banknote, BadgeDollarSign, Info, Save, Target } from "lucide-react"
 import {
   payRateEntranceMethodEnumSchema,
   payRateInsertSchema,
@@ -41,6 +41,7 @@ import {
   SheetFooter,
   SheetHeader,
 } from "@repo/ui/components/ui/sheet"
+import { Spinner } from "@repo/ui/components/ui/spinner"
 import { Switch } from "@repo/ui/components/ui/switch"
 import { cn } from "@repo/ui/lib/utils"
 
@@ -409,6 +410,7 @@ function FormBody({ policy, pending, onSubmit, onCancel }: FormBodyProps) {
           Cancel
         </Button>
         <Button type="submit" disabled={pending}>
+          {pending ? <Spinner /> : <Save className="size-4" />}
           {isEdit ? "Save changes" : "Add pay rate"}
         </Button>
       </SheetFooter>
@@ -439,10 +441,7 @@ export function PayRateFormSheet({
             key={policy?.id ?? "new"}
             policy={policy}
             pending={pending}
-            onSubmit={(values) => {
-              onSubmit(values)
-              onOpenChange(false)
-            }}
+            onSubmit={onSubmit}
             onCancel={() => onOpenChange(false)}
           />
         )}

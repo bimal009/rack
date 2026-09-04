@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent } from "react"
 import { useParams } from "next/navigation"
-import { Banknote, Check, CreditCard, Info, SquareCheck, Tags } from "lucide-react"
+import { Banknote, Check, CreditCard, Info, Save, SquareCheck, Tags } from "lucide-react"
 import {
   gymPlanBillingTypeEnumSchema,
   gymPlanBillingUnitEnumSchema,
@@ -47,6 +47,7 @@ import {
   SheetFooter,
   SheetHeader,
 } from "@repo/ui/components/ui/sheet"
+import { Spinner } from "@repo/ui/components/ui/spinner"
 import { Switch } from "@repo/ui/components/ui/switch"
 import { Textarea } from "@repo/ui/components/ui/textarea"
 import { cn } from "@repo/ui/lib/utils"
@@ -705,6 +706,7 @@ function PlanFormBody({ plan, pending, onSubmit, onCancel }: PlanFormBodyProps) 
           Cancel
         </Button>
         <Button type="submit" disabled={pending}>
+          {pending ? <Spinner /> : <Save className="size-4" />}
           {isEdit ? "Save changes" : "Create plan"}
         </Button>
       </SheetFooter>
@@ -735,10 +737,7 @@ export function PlanFormSheet({
             key={plan?.id ?? "new"}
             plan={plan}
             pending={pending}
-            onSubmit={(values) => {
-              onSubmit(values)
-              onOpenChange(false)
-            }}
+            onSubmit={onSubmit}
             onCancel={() => onOpenChange(false)}
           />
         )}

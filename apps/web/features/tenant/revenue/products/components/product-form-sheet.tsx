@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent } from "react"
 import { useParams } from "next/navigation"
-import { Banknote, ImageIcon, Info, ShoppingBag } from "lucide-react"
+import { Banknote, Check, ImageIcon, Info, ShoppingBag } from "lucide-react"
 import {
   productInsertSchema,
   productVisibilityEnumSchema,
@@ -41,6 +41,7 @@ import {
   SheetFooter,
   SheetHeader,
 } from "@repo/ui/components/ui/sheet"
+import { Spinner } from "@repo/ui/components/ui/spinner"
 import { Switch } from "@repo/ui/components/ui/switch"
 import { Textarea } from "@repo/ui/components/ui/textarea"
 
@@ -424,6 +425,7 @@ function ProductFormBody({
           Cancel
         </Button>
         <Button type="submit" disabled={pending}>
+          {pending ? <Spinner /> : <Check className="size-4" />}
           {isEdit ? "Save changes" : "Create product"}
         </Button>
       </SheetFooter>
@@ -454,10 +456,7 @@ export function ProductFormSheet({
             key={product?.id ?? "new"}
             product={product}
             pending={pending}
-            onSubmit={(values) => {
-              onSubmit(values)
-              onOpenChange(false)
-            }}
+            onSubmit={onSubmit}
             onCancel={() => onOpenChange(false)}
           />
         )}

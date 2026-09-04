@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, type FormEvent } from "react"
-import { IdCard } from "lucide-react"
+import { IdCard, Save } from "lucide-react"
 import type { InstructorTypeRecord, NewInstructorType } from "@repo/types"
 import { instructorTypeInsertSchema } from "@repo/types"
 
@@ -20,6 +20,7 @@ import {
   SheetFooter,
   SheetHeader,
 } from "@repo/ui/components/ui/sheet"
+import { Spinner } from "@repo/ui/components/ui/spinner"
 import { Textarea } from "@repo/ui/components/ui/textarea"
 
 import { FormSection, FormSheetHeader } from "@/features/tenant/components/form-section"
@@ -144,6 +145,7 @@ function FormBody({ type, pending, onSubmit, onCancel }: FormBodyProps) {
           Cancel
         </Button>
         <Button type="submit" disabled={pending}>
+          {pending ? <Spinner /> : <Save className="size-4" />}
           {isEdit ? "Save changes" : "Add instructor type"}
         </Button>
       </SheetFooter>
@@ -174,10 +176,7 @@ export function InstructorTypeFormSheet({
             key={type?.id ?? "new"}
             type={type}
             pending={pending}
-            onSubmit={(values) => {
-              onSubmit(values)
-              onOpenChange(false)
-            }}
+            onSubmit={onSubmit}
             onCancel={() => onOpenChange(false)}
           />
         )}

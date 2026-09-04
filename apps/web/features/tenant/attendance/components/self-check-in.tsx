@@ -14,7 +14,7 @@ import {
 import { Field, FieldLabel } from "@repo/ui/components/ui/field"
 
 import { AuthHeader } from "@/features/auth/components/auth-header"
-import { fullName } from "@/features/tenant/members/components/columns"
+import { fullName } from "@/features/tenant/members/lib/data"
 import { initialMembers } from "@/features/tenant/members/lib/data"
 
 import { initialAttendance } from "../lib/data"

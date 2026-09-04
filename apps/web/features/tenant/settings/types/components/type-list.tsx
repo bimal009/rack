@@ -133,13 +133,19 @@ export function TypeList<TRow extends { id: string; name: string }, TInput>({
       update.mutate(
         { id: editing.id, input: values },
         {
-          onSuccess: () => toast.success(`${editing.name} updated`),
+          onSuccess: () => {
+            toast.success(`${editing.name} updated`)
+            setSheetOpen(false)
+          },
           onError: (error) => toast.error(error.message),
         }
       )
     } else {
       create.mutate(values, {
-        onSuccess: () => toast.success(`${label} added`),
+        onSuccess: () => {
+          toast.success(`${label} added`)
+          setSheetOpen(false)
+        },
         onError: (error) => toast.error(error.message),
       })
     }

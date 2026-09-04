@@ -39,7 +39,7 @@ import { cn } from "@repo/ui/lib/utils"
 
 import { TimeSelect } from "@/components/time-select"
 import { FormSection, FormSheetHeader } from "@/features/tenant/components/form-section"
-import { fullName } from "@/features/tenant/members/components/columns"
+import { fullName } from "@/features/tenant/members/lib/data"
 import { initialMembers } from "@/features/tenant/members/lib/data"
 import { initialAreaTypes } from "@/features/tenant/settings/types/lib/data"
 

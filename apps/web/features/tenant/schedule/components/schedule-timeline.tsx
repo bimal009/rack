@@ -5,7 +5,7 @@ import { Ticket } from "lucide-react"
 
 import type { ClassSession } from "@/features/tenant/classes/lib/schema"
 import { initialAreaTypes } from "@/features/tenant/settings/types/lib/data"
-import { fullName as fullMemberName } from "@/features/tenant/members/components/columns"
+import { fullName as fullMemberName } from "@/features/tenant/members/lib/data"
 import { initialMembers } from "@/features/tenant/members/lib/data"
 import { fullName } from "@/features/tenant/staff/components/columns"
 import { initialStaff } from "@/features/tenant/staff/lib/data"

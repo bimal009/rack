@@ -77,7 +77,7 @@ export function MembersList() {
             value={activeStatusLabel}
             onChange={(value) =>
               setFilters({
-                status: value === "All" ? null : (value as (typeof statusOptions)[number]),
+                status: value === "All" ? null : (value as Exclude<(typeof statusOptions)[number], "All">),
                 page: 1,
               })
             }

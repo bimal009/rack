@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent } from "react"
 import { useParams } from "next/navigation"
-import { Banknote, Check, LayoutGrid } from "lucide-react"
+import { Banknote, Check, LayoutGrid, Save } from "lucide-react"
 import { areaTypeInsertSchema } from "@repo/types"
 import type { AreaType, NewAreaType } from "@repo/types"
 
@@ -27,6 +27,7 @@ import {
   SheetFooter,
   SheetHeader,
 } from "@repo/ui/components/ui/sheet"
+import { Spinner } from "@repo/ui/components/ui/spinner"
 import { Switch } from "@repo/ui/components/ui/switch"
 import { Textarea } from "@repo/ui/components/ui/textarea"
 import { cn } from "@repo/ui/lib/utils"
@@ -262,6 +263,7 @@ function FormBody({ area, pending, onSubmit, onCancel }: FormBodyProps) {
           Cancel
         </Button>
         <Button type="submit" disabled={pending}>
+          {pending ? <Spinner /> : <Save className="size-4" />}
           {isEdit ? "Save changes" : "Add area type"}
         </Button>
       </SheetFooter>
@@ -292,10 +294,7 @@ export function AreaTypeFormSheet({
             key={area?.id ?? "new"}
             area={area}
             pending={pending}
-            onSubmit={(values) => {
-              onSubmit(values)
-              onOpenChange(false)
-            }}
+            onSubmit={onSubmit}
             onCancel={() => onOpenChange(false)}
           />
         )}

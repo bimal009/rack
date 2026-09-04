@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, type FormEvent } from "react"
-import { Tag } from "lucide-react"
+import { Save, Tag } from "lucide-react"
 import { z } from "zod"
 
 import { Button } from "@repo/ui/components/ui/button"
@@ -20,6 +20,7 @@ import {
   SheetFooter,
   SheetHeader,
 } from "@repo/ui/components/ui/sheet"
+import { Spinner } from "@repo/ui/components/ui/spinner"
 
 import { FormSection, FormSheetHeader } from "@/features/tenant/components/form-section"
 
@@ -135,6 +136,7 @@ function Body({
           Cancel
         </Button>
         <Button type="submit" disabled={pending}>
+          {pending ? <Spinner /> : <Save className="size-4" />}
           {isEdit ? "Save changes" : `Add ${label.toLowerCase()}`}
         </Button>
       </SheetFooter>
@@ -163,10 +165,7 @@ export function TypeFormSheet({
             namePlaceholder={namePlaceholder}
             item={item}
             pending={pending}
-            onSubmit={(values) => {
-              onSubmit(values)
-              onOpenChange(false)
-            }}
+            onSubmit={onSubmit}
             onCancel={() => onOpenChange(false)}
           />
         )}
