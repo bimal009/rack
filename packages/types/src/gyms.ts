@@ -125,7 +125,6 @@ export const updateGymSchema = z.object({
   email: z.string().email("Valid email required"),
   website: z.string().url().optional().or(z.literal("")),
   currency: z.enum(CURRENCY_OPTIONS),
-  openingHours: openingHoursSchema,
 }).strict();
 
 export type UpdateGymInput = z.infer<typeof updateGymSchema>;
@@ -140,7 +139,6 @@ export interface GymRecord {
   email: string;
   website: string | null;
   currency: Currency;
-  openingHours: OpeningHours;
   createdAt: string;
   updatedAt: string;
 }

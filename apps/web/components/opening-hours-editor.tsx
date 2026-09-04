@@ -15,9 +15,15 @@ interface DayScheduleEditorProps {
   day: Weekday
   range: TimeRange | null
   onChange: (range: TimeRange | null) => void
+  closedLabel?: string
 }
 
-function DayScheduleEditor({ day, range, onChange }: DayScheduleEditorProps) {
+function DayScheduleEditor({
+  day,
+  range,
+  onChange,
+  closedLabel = "Closed",
+}: DayScheduleEditorProps) {
   const closed = range === null
 
   return (
@@ -33,7 +39,7 @@ function DayScheduleEditor({ day, range, onChange }: DayScheduleEditorProps) {
       </div>
 
       {closed ? (
-        <p className="text-sm text-muted-foreground">Closed</p>
+        <p className="text-sm text-muted-foreground">{closedLabel}</p>
       ) : (
         <div className="flex items-center gap-2">
           <TimeSelect
@@ -54,9 +60,14 @@ function DayScheduleEditor({ day, range, onChange }: DayScheduleEditorProps) {
 interface OpeningHoursEditorProps {
   value: OpeningHours
   onChange: (value: OpeningHours) => void
+  closedLabel?: string
 }
 
-export function OpeningHoursEditor({ value, onChange }: OpeningHoursEditorProps) {
+export function OpeningHoursEditor({
+  value,
+  onChange,
+  closedLabel,
+}: OpeningHoursEditorProps) {
   return (
     <div className="flex flex-col gap-3">
       {WEEKDAYS.map((day) => {
@@ -67,6 +78,7 @@ export function OpeningHoursEditor({ value, onChange }: OpeningHoursEditorProps)
             key={day}
             day={day}
             range={range}
+            closedLabel={closedLabel}
             onChange={(newRange) => {
               const otherDays = value.filter((r) => r.day !== day)
               onChange(newRange ? [...otherDays, { day, ...newRange }] : otherDays)

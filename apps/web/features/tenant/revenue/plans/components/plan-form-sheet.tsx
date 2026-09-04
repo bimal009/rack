@@ -2,19 +2,32 @@
 
 import { useState, type FormEvent } from "react"
 import { useParams } from "next/navigation"
-import { Banknote, Check, CreditCard, Info, Save, SquareCheck, Tags } from "lucide-react"
+import {
+  Banknote,
+  Check,
+  Clock,
+  CreditCard,
+  Info,
+  PenSquare,
+  RotateCcw,
+  Save,
+  SquareCheck,
+  Tags,
+} from "lucide-react"
 import {
   gymPlanBillingTypeEnumSchema,
   gymPlanBillingUnitEnumSchema,
   gymPlanCoverageEnumSchema,
   gymPlanInsertSchema,
   gymPlanVisibilityEnumSchema,
+  WEEKDAYS,
   type GymPlan,
   type GymPlanBillingType,
   type GymPlanBillingUnit,
   type GymPlanCoverage,
   type GymPlanVisibility,
   type NewGymPlan,
+  type OpeningHours,
 } from "@repo/types"
 
 import { Button } from "@repo/ui/components/ui/button"
@@ -52,8 +65,10 @@ import { Switch } from "@repo/ui/components/ui/switch"
 import { Textarea } from "@repo/ui/components/ui/textarea"
 import { cn } from "@repo/ui/lib/utils"
 
+import { OpeningHoursEditor } from "@/components/opening-hours-editor"
 import { FormSection, FormSheetHeader } from "@/features/tenant/components/form-section"
 import { MultiSelectCombobox } from "@/features/tenant/components/multi-select-combobox"
+import { useOperatingHoursQuery } from "@/features/tenant/settings/organization/hooks/use-operating-hours"
 import { useAreaTypesQuery } from "@/features/tenant/settings/types/hooks/use-area-types"
 import { useClassTypesQuery } from "@/features/tenant/settings/types/hooks/use-class-types"
 import { useGymFeaturesQuery } from "@/features/tenant/settings/types/hooks/use-gym-features"
@@ -103,6 +118,8 @@ interface PlanFormValues {
 
   sportIds: string[]
   featureIds: string[]
+
+  operatingHourOverrides: OpeningHours
 }
 
 function toFormValues(plan?: GymPlan | null): PlanFormValues {
@@ -129,6 +146,7 @@ function toFormValues(plan?: GymPlan | null): PlanFormValues {
       sessions: "",
       sportIds: [],
       featureIds: [],
+      operatingHourOverrides: [],
     }
   }
   return {
@@ -154,6 +172,7 @@ function toFormValues(plan?: GymPlan | null): PlanFormValues {
     sessions: plan.sessions ?? "",
     sportIds: plan.sports.map((s) => s.sportId),
     featureIds: plan.features.map((f) => f.featureId),
+    operatingHourOverrides: plan.operatingHourOverrides,
   }
 }
 
@@ -242,12 +261,17 @@ function PlanFormBody({ plan, pending, onSubmit, onCancel }: PlanFormBodyProps) 
   const classTypes = useClassTypesQuery(tenant, { limit: 100 })
   const areaTypes = useAreaTypesQuery(tenant, { limit: 100 })
   const instructorTypes = useInstructorTypesQuery(tenant, { limit: 100 })
+  const gymHours = useOperatingHoursQuery(tenant)
 
   const [values, setValues] = useState<PlanFormValues>(() => toFormValues(plan))
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [overridingHours, setOverridingHours] = useState(
+    values.operatingHourOverrides.length > 0
+  )
   const isEdit = Boolean(plan)
   const isRestricted = values.coverage === "Restricted"
   const isCustomBilling = values.billingType === "custom"
+  const defaultHours = gymHours.data ?? []
 
   function toggle(
     key: "coverageClasses" | "coverageAreas" | "coverageInstructors",
@@ -298,6 +322,7 @@ function PlanFormBody({ plan, pending, onSubmit, onCancel }: PlanFormBodyProps) 
       sessions: values.sessions || undefined,
       sportIds: values.sportIds,
       featureIds: values.featureIds,
+      operatingHourOverrides: values.operatingHourOverrides,
     })
 
     if (!result.success) {
@@ -698,6 +723,70 @@ function PlanFormBody({ plan, pending, onSubmit, onCancel }: PlanFormBodyProps) 
               onChange={(ids) => setValues((v) => ({ ...v, sportIds: ids }))}
             />
           </div>
+        </FormSection>
+
+        <FormSection
+          icon={Clock}
+          title="Access hours"
+          description={
+            overridingHours
+              ? "Restrict this plan to a narrower window than the gym's own hours. Turn off a day to use the gym's hours for it."
+              : "This plan currently follows the gym's default hours."
+          }
+        >
+          {overridingHours ? (
+            <>
+              <OpeningHoursEditor
+                value={values.operatingHourOverrides}
+                onChange={(operatingHourOverrides) =>
+                  setValues((v) => ({ ...v, operatingHourOverrides }))
+                }
+                closedLabel="Uses gym hours"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  setOverridingHours(false)
+                  setValues((v) => ({ ...v, operatingHourOverrides: [] }))
+                }}
+                className="flex w-fit items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground"
+              >
+                <RotateCcw className="size-3.5" />
+                Use the gym&apos;s default hours instead
+              </button>
+            </>
+          ) : (
+            <>
+              <div className="flex flex-col gap-1.5 rounded-lg border border-border bg-muted/30 p-3">
+                {WEEKDAYS.map((day) => {
+                  const range = defaultHours.find((r) => r.day === day)
+                  return (
+                    <div
+                      key={day}
+                      className="flex items-center justify-between text-sm"
+                    >
+                      <span className="text-foreground">{day}</span>
+                      <span className="text-muted-foreground">
+                        {range ? `${range.open} – ${range.close}` : "Closed"}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={!gymHours.data}
+                onClick={() => {
+                  setOverridingHours(true)
+                  setValues((v) => ({ ...v, operatingHourOverrides: defaultHours }))
+                }}
+              >
+                <PenSquare className="size-4" />
+                Override hours for this plan
+              </Button>
+            </>
+          )}
         </FormSection>
       </SheetBody>
 

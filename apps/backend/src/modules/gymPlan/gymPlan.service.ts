@@ -7,7 +7,12 @@ import {
 } from "@repo/types";
 import { and, eq } from "drizzle-orm";
 import { db } from "../../db";
-import { gymPlan, gymPlanFeature, gymPlanSport } from "../../db/schema";
+import {
+  gymPlan,
+  gymPlanFeature,
+  gymPlanOperatingHourOverride,
+  gymPlanSport,
+} from "../../db/schema";
 import { NotFoundError, ValidationError } from "../../lib/errors";
 import { CACHE_KEYS, CACHE_TTL, redis, deleteByPattern } from "../../lib/redis";
 
@@ -20,7 +25,7 @@ const listKey = (gymId: string, query: GymPlanListQuery): string => {
 const itemKey = (gymId: string, id: string): string =>
   `${CACHE_KEYS.GYM_PLAN}:${gymId}:item:${id}`;
 
-const invalidate = (gymId: string): Promise<number> =>
+export const invalidateGymPlanCache = (gymId: string): Promise<number> =>
   deleteByPattern(`${CACHE_KEYS.GYM_PLAN}:${gymId}:*`);
 
 export const listGymPlans = async (gymId: string, query: GymPlanListQuery) => {
@@ -48,6 +53,9 @@ export const listGymPlans = async (gymId: string, query: GymPlanListQuery) => {
         category: { columns: { id: true, name: true } },
         sports: { with: { sport: { columns: { id: true, name: true } } } },
         features: { with: { feature: { columns: { id: true, name: true } } } },
+        operatingHourOverrides: {
+          columns: { day: true, open: true, close: true },
+        },
       },
     }),
     db.$count(
@@ -83,6 +91,9 @@ export const getGymPlan = async (gymId: string, id: string) => {
       category: { columns: { id: true, name: true } },
       sports: { with: { sport: { columns: { id: true, name: true } } } },
       features: { with: { feature: { columns: { id: true, name: true } } } },
+      operatingHourOverrides: {
+        columns: { day: true, open: true, close: true },
+      },
     },
   });
 
@@ -102,6 +113,7 @@ export const createGymPlan = async (gymId: string, input: NewGymPlan) => {
   const {
     sportIds = [],
     featureIds = [],
+    operatingHourOverrides = [],
     description,
     sessions,
     ...values
@@ -169,10 +181,20 @@ export const createGymPlan = async (gymId: string, input: NewGymPlan) => {
       );
     }
 
+    if (operatingHourOverrides.length > 0) {
+      await tx.insert(gymPlanOperatingHourOverride).values(
+        operatingHourOverrides.map((override) => ({
+          gymId,
+          planId: plan.id,
+          ...override,
+        }))
+      );
+    }
+
     return plan;
   });
 
-  await invalidate(gymId);
+  await invalidateGymPlanCache(gymId);
 
   return getGymPlan(gymId, created.id);
 };
@@ -187,7 +209,8 @@ export const updateGymPlan = async (
     throw new ValidationError("Invalid plan", result.error.flatten());
   }
 
-  const { sportIds, featureIds, description, sessions, ...rest } = result.data;
+  const { sportIds, featureIds, operatingHourOverrides, description, sessions, ...rest } =
+    result.data;
 
   const values: Record<string, unknown> = { ...rest };
   if (description !== undefined) values.description = description || null;
@@ -264,9 +287,24 @@ export const updateGymPlan = async (
         );
       }
     }
+
+    if (operatingHourOverrides) {
+      await tx
+        .delete(gymPlanOperatingHourOverride)
+        .where(eq(gymPlanOperatingHourOverride.planId, id));
+      if (operatingHourOverrides.length > 0) {
+        await tx.insert(gymPlanOperatingHourOverride).values(
+          operatingHourOverrides.map((override) => ({
+            gymId,
+            planId: id,
+            ...override,
+          }))
+        );
+      }
+    }
   });
 
-  await invalidate(gymId);
+  await invalidateGymPlanCache(gymId);
 
   return getGymPlan(gymId, id);
 };
@@ -279,7 +317,7 @@ export const deleteGymPlan = async (gymId: string, id: string) => {
 
   if (!record) throw new NotFoundError("Plan not found");
 
-  await invalidate(gymId);
+  await invalidateGymPlanCache(gymId);
 
   return record;
 };

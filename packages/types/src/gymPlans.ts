@@ -5,6 +5,7 @@ import {
   gymPlanSportRefSchema,
   relatedRefSchema,
 } from "./gymPlanRefs";
+import { openingHoursSchema } from "./gyms";
 
 export const gymPlanVisibilityEnumSchema = z.enum([
   "Public",
@@ -58,6 +59,8 @@ export const gymPlanSchema = z.object({
   sports: z.array(gymPlanSportRefSchema),
   features: z.array(gymPlanFeatureRefSchema),
 
+  operatingHourOverrides: openingHoursSchema,
+
   createdAt: z.date(),
   updatedAt: z.date(),
 });
@@ -98,6 +101,8 @@ const gymPlanFields = z
 
     sportIds: uuidArray.default([]),
     featureIds: uuidArray.default([]),
+
+    operatingHourOverrides: openingHoursSchema.default([]),
   })
   .strict();
 

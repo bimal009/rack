@@ -44,6 +44,7 @@ export const relations = defineRelations(schema, (r) => ({
     subscriptions: r.many.gymSubscription(),
     memberships: r.many.gymMembership(),
     operatingHours: r.many.gymOperatingHour(),
+    planOperatingHourOverrides: r.many.gymPlanOperatingHourOverride(),
   },
 
   permission: {
@@ -111,6 +112,7 @@ export const relations = defineRelations(schema, (r) => ({
     sports: r.many.gymPlanSport(),
     features: r.many.gymPlanFeature(),
     memberships: r.many.gymMembership(),
+    operatingHourOverrides: r.many.gymPlanOperatingHourOverride(),
   },
 
   gymMembership: {
@@ -135,6 +137,19 @@ export const relations = defineRelations(schema, (r) => ({
     gym: r.one.gyms({
       from: r.gymOperatingHour.gymId,
       to: r.gyms.id,
+      optional: false,
+    }),
+  },
+
+  gymPlanOperatingHourOverride: {
+    gym: r.one.gyms({
+      from: r.gymPlanOperatingHourOverride.gymId,
+      to: r.gyms.id,
+      optional: false,
+    }),
+    plan: r.one.gymPlan({
+      from: r.gymPlanOperatingHourOverride.planId,
+      to: r.gymPlan.id,
       optional: false,
     }),
   },

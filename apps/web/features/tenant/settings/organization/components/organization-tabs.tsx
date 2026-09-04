@@ -7,6 +7,7 @@ import { cn } from "@repo/ui/lib/utils"
 
 const tabs = [
   { label: "Details", segment: "details" },
+  { label: "Hours", segment: "hours" },
   { label: "Subscription", segment: "subscription" },
   { label: "Permissions", segment: "permissions" },
   { label: "Notifications", segment: "notifications" },

@@ -1,6 +1,7 @@
 export * from "./user.schema"
 export * from "./gym.schema"
 export * from "./gymOperatingHours.schema"
+export * from "./gymPlanOperatingHourOverride.schema"
 export * from "./permissions.schema"
 export * from "./roles.schema"
 export * from "./staff.schema"

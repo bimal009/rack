@@ -4,11 +4,9 @@ import { useState, type FormEvent } from "react"
 import { toast } from "sonner"
 import {
   CURRENCY_OPTIONS,
-  DEFAULT_OPENING_HOURS,
   updateGymSchema,
   type Currency,
   type GymRecord,
-  type OpeningHours,
 } from "@repo/types"
 
 import { Button } from "@repo/ui/components/ui/button"
@@ -18,8 +16,6 @@ import {
   FieldError,
   FieldGroup,
   FieldLabel,
-  FieldLegend,
-  FieldSet,
 } from "@repo/ui/components/ui/field"
 import { Input } from "@repo/ui/components/ui/input"
 import {
@@ -31,8 +27,6 @@ import {
 } from "@repo/ui/components/ui/select"
 import { Skeleton } from "@repo/ui/components/ui/skeleton"
 
-import { OpeningHoursEditor } from "@/components/opening-hours-editor"
-
 import { fieldErrors } from "../../lib/validation"
 import { useGymQuery, useUpdateGymMutation } from "../../hooks/useOrganization"
 
@@ -43,7 +37,6 @@ interface OrganizationFormValues {
   email: string
   website: string
   currency: Currency
-  openingHours: OpeningHours
 }
 
 function toFormValues(gym: GymRecord): OrganizationFormValues {
@@ -54,7 +47,6 @@ function toFormValues(gym: GymRecord): OrganizationFormValues {
     email: gym.email,
     website: gym.website ?? "",
     currency: gym.currency,
-    openingHours: gym.openingHours ?? DEFAULT_OPENING_HOURS,
   }
 }
 
@@ -67,7 +59,6 @@ function OrganizationForm({ gym }: OrganizationFormProps) {
     toFormValues(gym)
   )
   const [errors, setErrors] = useState<Record<string, string>>({})
-  const [openingHoursError, setOpeningHoursError] = useState("")
   const updateGym = useUpdateGymMutation()
 
   function handleSubmit(event: FormEvent) {
@@ -80,16 +71,10 @@ function OrganizationForm({ gym }: OrganizationFormProps) {
 
     if (!result.success) {
       setErrors(fieldErrors(result.error))
-      setOpeningHoursError(
-        result.error.issues.some((issue) => issue.path[0] === "openingHours")
-          ? "Check your opening hours. Each closing time must be after its opening time."
-          : ""
-      )
       return
     }
 
     setErrors({})
-    setOpeningHoursError("")
     updateGym.mutate(result.data, {
       onSuccess: () => toast.success("Organization details updated"),
       onError: (error) =>
@@ -213,22 +198,6 @@ function OrganizationForm({ gym }: OrganizationFormProps) {
           </Field>
         </div>
       </FieldGroup>
-
-      <FieldSet>
-        <FieldLegend>Opening Hours</FieldLegend>
-        <FieldGroup>
-          <FieldDescription>
-            Turn off a day if your gym is closed on it.
-          </FieldDescription>
-          <OpeningHoursEditor
-            value={values.openingHours}
-            onChange={(openingHours) =>
-              setValues((v) => ({ ...v, openingHours }))
-            }
-          />
-          <FieldError>{openingHoursError}</FieldError>
-        </FieldGroup>
-      </FieldSet>
 
       <div className="flex justify-end border-t border-border pt-4">
         <Button type="submit" disabled={updateGym.isPending}>

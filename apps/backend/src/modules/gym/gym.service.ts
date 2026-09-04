@@ -109,12 +109,7 @@ export const getGymByOwner = async (userId: string) => {
     throw new NotFoundError("Gym not found");
   }
 
-  const openingHours = await db.query.gymOperatingHour.findMany({
-    where: { gymId: gymRecord.id },
-    columns: { day: true, open: true, close: true },
-  });
-
-  return { ...gymRecord, openingHours };
+  return gymRecord;
 };
 
 export const updateGym = async (input: UpdateGymInput, userId: string) => {
@@ -124,34 +119,17 @@ export const updateGym = async (input: UpdateGymInput, userId: string) => {
     throw new ValidationError("Invalid gym details", result.error.flatten());
   }
 
-  const { openingHours, ...gymData } = result.data;
+  const [gymRecord] = await db
+    .update(gyms)
+    .set(result.data)
+    .where(eq(gyms.ownerUserId, userId))
+    .returning();
 
-  return db.transaction(async (tx) => {
-    const [gymRecord] = await tx
-      .update(gyms)
-      .set(gymData)
-      .where(eq(gyms.ownerUserId, userId))
-      .returning();
+  if (!gymRecord) {
+    throw new NotFoundError("Gym not found");
+  }
 
-    if (!gymRecord) {
-      throw new NotFoundError("Gym not found");
-    }
-
-    await tx.delete(gymOperatingHour).where(eq(gymOperatingHour.gymId, gymRecord.id));
-
-    if (openingHours.length > 0) {
-      await tx.insert(gymOperatingHour).values(
-        openingHours.map((range) => ({
-          gymId: gymRecord.id,
-          day: range.day,
-          open: range.open.slice(0, 5),
-          close: range.close.slice(0, 5),
-        }))
-      );
-    }
-
-    return { ...gymRecord, openingHours };
-  });
+  return gymRecord;
 };
 export const getGymBySlug = async (slug: string) => {
   return db.query.gyms.findFirst({
