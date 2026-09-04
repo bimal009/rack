@@ -35,7 +35,7 @@ import { authClient } from "@/auth-client"
 const mainNav = [
   { title: "Dashboard", icon: LayoutGrid, segment: "dashboard" },
   { title: "Members", icon: Users, segment: "members" },
-  { title: "Revenue", icon: Wallet, segment: "revenue/memberships", match: "revenue" },
+  { title: "Revenue", icon: Wallet, segment: "revenue/plans", match: "revenue" },
   { title: "Attendance", icon: ClipboardCheck, segment: "attendance" },
   { title: "Schedule", icon: CalendarRange, segment: "schedule" },
   { title: "Areas", icon: MapPin, segment: "areas" },

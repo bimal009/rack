@@ -8,7 +8,7 @@ import { CreditCard, Layers, Receipt, ShoppingBag } from "lucide-react"
 import { cn } from "@repo/ui/lib/utils"
 
 const navItems = [
-  { label: "Memberships", segment: "memberships", icon: CreditCard },
+  { label: "Plans", segment: "plans", icon: CreditCard },
   { label: "Products", segment: "products", icon: ShoppingBag },
   { label: "Packages", segment: "packages", icon: Layers },
   { label: "Orders", segment: "orders", icon: Receipt },

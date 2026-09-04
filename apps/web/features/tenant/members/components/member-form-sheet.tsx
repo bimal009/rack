@@ -40,7 +40,7 @@ import {
 } from "@repo/ui/components/ui/sheet"
 
 import { FormSection, FormSheetHeader } from "@/features/tenant/components/form-section"
-import { useMembershipPlansQuery } from "@/features/tenant/revenue/memberships/hooks/use-memberships"
+import { useGymPlansQuery } from "@/features/tenant/revenue/plans/hooks/use-plans"
 
 import { fieldErrors } from "../lib/validation"
 import {
@@ -101,7 +101,7 @@ interface MemberFormBodyProps {
 
 function MemberFormBody({ member, onSubmit, onCancel }: MemberFormBodyProps) {
   const tenant = useParams<{ tenant: string }>().tenant
-  const membershipPlans = useMembershipPlansQuery(tenant, { limit: 100 })
+  const gymPlans = useGymPlansQuery(tenant, { limit: 100 })
   const [values, setValues] = useState<MemberFormValues>(() =>
     toFormValues(member)
   )
@@ -344,7 +344,7 @@ function MemberFormBody({ member, onSubmit, onCancel }: MemberFormBodyProps) {
                   <Select
                     value={membership.membershipId}
                     onValueChange={(membershipId) => {
-                      const found = membershipPlans.data?.data.find(
+                      const found = gymPlans.data?.data.find(
                         (m) => m.id === membershipId
                       )
                       updateMembership(index, {
@@ -361,7 +361,7 @@ function MemberFormBody({ member, onSubmit, onCancel }: MemberFormBodyProps) {
                       </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
-                      {(membershipPlans.data?.data ?? [])
+                      {(gymPlans.data?.data ?? [])
                         .filter((m) => m.isActive)
                         .map((m) => (
                           <SelectItem key={m.id} value={m.id}>

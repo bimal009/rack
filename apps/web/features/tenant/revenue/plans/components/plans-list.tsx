@@ -10,7 +10,7 @@ import {
   SearchIcon,
 } from "lucide-react"
 import { toast } from "sonner"
-import type { MembershipPlan, MembershipPlanListQuery, NewMembershipPlan } from "@repo/types"
+import type { GymPlan, GymPlanListQuery, NewGymPlan } from "@repo/types"
 
 import { Button } from "@repo/ui/components/ui/button"
 import { DataTable } from "@repo/ui/components/ui/data-table"
@@ -31,26 +31,26 @@ import { useMembershipCategoriesQuery } from "@/features/tenant/settings/types/h
 import { useDebounce } from "@/hooks/use-debounce"
 
 import {
-  useCreateMembershipPlan,
-  useDeleteMembershipPlan,
-  useMembershipPlansQuery,
-  useUpdateMembershipPlan,
-} from "../hooks/use-memberships"
-import { useMembershipFilters } from "../hooks/use-membership-filters"
-import { createMembershipColumns } from "./columns"
-import { MembershipFormSheet } from "./membership-form-sheet"
+  useCreateGymPlan,
+  useDeleteGymPlan,
+  useGymPlansQuery,
+  useUpdateGymPlan,
+} from "../hooks/use-plans"
+import { usePlanFilters } from "../hooks/use-plan-filters"
+import { createGymPlanColumns } from "./columns"
+import { PlanFormSheet } from "./plan-form-sheet"
 
-export function MembershipsList() {
+export function PlansList() {
   const tenant = useParams<{ tenant: string }>().tenant
-  const [filters, setFilters] = useMembershipFilters()
+  const [filters, setFilters] = usePlanFilters()
   const [sheetOpen, setSheetOpen] = useState(false)
-  const [editing, setEditing] = useState<MembershipPlan | null>(null)
-  const [deleting, setDeleting] = useState<MembershipPlan | null>(null)
+  const [editing, setEditing] = useState<GymPlan | null>(null)
+  const [deleting, setDeleting] = useState<GymPlan | null>(null)
 
   const categories = useMembershipCategoriesQuery(tenant, { limit: 100 })
   const debouncedSearch = useDebounce(filters.search, 350)
 
-  const params: Partial<MembershipPlanListQuery> = {
+  const params: Partial<GymPlanListQuery> = {
     page: filters.page,
     search: debouncedSearch || undefined,
     categoryId: filters.categoryId ?? undefined,
@@ -58,10 +58,10 @@ export function MembershipsList() {
     sortOrder: filters.sort,
   }
 
-  const query = useMembershipPlansQuery(tenant, params)
-  const createMembership = useCreateMembershipPlan(tenant)
-  const updateMembership = useUpdateMembershipPlan(tenant)
-  const deleteMembership = useDeleteMembershipPlan(tenant)
+  const query = useGymPlansQuery(tenant, params)
+  const createPlan = useCreateGymPlan(tenant)
+  const updatePlan = useUpdateGymPlan(tenant)
+  const deletePlan = useDeleteGymPlan(tenant)
 
   const rows = query.data?.data ?? []
   const meta = query.data?.meta
@@ -70,19 +70,20 @@ export function MembershipsList() {
   const activeCategoryLabel = filters.categoryId
     ? (categories.data?.data.find((c) => c.id === filters.categoryId)?.name ?? "All")
     : "All"
+
   function handleAdd() {
     setEditing(null)
     setSheetOpen(true)
   }
 
-  function handleEdit(membership: MembershipPlan) {
-    setEditing(membership)
+  function handleEdit(plan: GymPlan) {
+    setEditing(plan)
     setSheetOpen(true)
   }
 
-  function handleSubmit(values: NewMembershipPlan) {
+  function handleSubmit(values: NewGymPlan) {
     if (editing) {
-      updateMembership.mutate(
+      updatePlan.mutate(
         { id: editing.id, input: values },
         {
           onSuccess: () => toast.success(`${values.name} updated`),
@@ -90,7 +91,7 @@ export function MembershipsList() {
         }
       )
     } else {
-      createMembership.mutate(values, {
+      createPlan.mutate(values, {
         onSuccess: () => toast.success(`${values.name} created`),
         onError: (error) => toast.error(error.message),
       })
@@ -100,7 +101,7 @@ export function MembershipsList() {
   function handleDelete() {
     if (!deleting) return
     const name = deleting.name
-    deleteMembership.mutate(deleting.id, {
+    deletePlan.mutate(deleting.id, {
       onSuccess: () => toast.success(`${name} deleted`),
       onError: (error) => toast.error(error.message),
     })
@@ -109,7 +110,7 @@ export function MembershipsList() {
 
   const columns = useMemo(
     () =>
-      createMembershipColumns({
+      createGymPlanColumns({
         onEdit: handleEdit,
         onDelete: setDeleting,
       }),
@@ -139,7 +140,7 @@ export function MembershipsList() {
             <Input
               value={filters.search}
               onChange={(e) => setFilters({ search: e.target.value, page: 1 })}
-              placeholder="Search memberships..."
+              placeholder="Search plans..."
               className="rounded-full pl-9 shadow-none"
             />
           </div>
@@ -183,7 +184,7 @@ export function MembershipsList() {
             </DropdownMenu>
             <Button onClick={handleAdd} className="flex-1 sm:flex-none">
               <Plus className="size-4" />
-              Add Membership
+              Add Plan
             </Button>
           </div>
         </div>
@@ -203,7 +204,7 @@ export function MembershipsList() {
           enablePagination={false}
           isLoading={query.isLoading}
           skeletonRows={8}
-          emptyMessage="No memberships found."
+          emptyMessage="No plans found."
         />
       )}
 
@@ -233,21 +234,21 @@ export function MembershipsList() {
         </div>
       )}
 
-      <MembershipFormSheet
+      <PlanFormSheet
         open={sheetOpen}
         onOpenChange={setSheetOpen}
-        membership={editing}
-        pending={createMembership.isPending || updateMembership.isPending}
+        plan={editing}
+        pending={createPlan.isPending || updatePlan.isPending}
         onSubmit={handleSubmit}
       />
 
       <DeleteConfirmDialog
         open={Boolean(deleting)}
         onOpenChange={(open) => !open && setDeleting(null)}
-        title="Delete membership?"
+        title="Delete plan?"
         description={
           deleting
-            ? `"${deleting.name}" will be removed. Members already on this membership keep their access until it ends.`
+            ? `"${deleting.name}" will be removed. Members already on this plan keep their access until it ends.`
             : ""
         }
         onConfirm={handleDelete}

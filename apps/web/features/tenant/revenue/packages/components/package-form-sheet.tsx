@@ -44,7 +44,7 @@ import { Textarea } from "@repo/ui/components/ui/textarea"
 
 import { FormSection, FormSheetHeader } from "@/features/tenant/components/form-section"
 
-import { useMembershipPlansQuery } from "../../memberships/hooks/use-memberships"
+import { useGymPlansQuery } from "../../plans/hooks/use-plans"
 import { initialProducts } from "../../products/lib/data"
 import { fieldErrors } from "../../lib/validation"
 import {
@@ -106,7 +106,7 @@ interface PackageFormBodyProps {
 
 function PackageFormBody({ pkg, onSubmit, onCancel }: PackageFormBodyProps) {
   const tenant = useParams<{ tenant: string }>().tenant
-  const membershipPlans = useMembershipPlansQuery(tenant, { limit: 100 })
+  const gymPlans = useGymPlansQuery(tenant, { limit: 100 })
   const [values, setValues] = useState<PackageFormValues>(() =>
     toFormValues(pkg)
   )
@@ -133,7 +133,7 @@ function PackageFormBody({ pkg, onSubmit, onCancel }: PackageFormBodyProps) {
 
   function pickableOptions(type: PackageItemType) {
     return type === "plan"
-      ? (membershipPlans.data?.data ?? []).map((p) => ({ refId: p.id, name: p.name }))
+      ? (gymPlans.data?.data ?? []).map((p) => ({ refId: p.id, name: p.name }))
       : initialProducts.map((p) => ({ refId: p.id, name: p.name }))
   }
 

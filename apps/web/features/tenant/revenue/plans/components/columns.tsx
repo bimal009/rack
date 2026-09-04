@@ -1,7 +1,7 @@
 "use client"
 
 import { MoreHorizontal, PenSquare, Trash2 } from "lucide-react"
-import type { MembershipPlan } from "@repo/types"
+import type { GymPlan } from "@repo/types"
 
 import { Badge } from "@repo/ui/components/ui/badge"
 import {
@@ -22,22 +22,19 @@ const currency = new Intl.NumberFormat("en-US", {
   currencyDisplay: "code",
 })
 
-interface MembershipColumnActions {
-  onEdit: (membership: MembershipPlan) => void
-  onDelete: (membership: MembershipPlan) => void
+interface PlanColumnActions {
+  onEdit: (plan: GymPlan) => void
+  onDelete: (plan: GymPlan) => void
 }
 
-export function createMembershipColumns({
-  onEdit,
-  onDelete,
-}: MembershipColumnActions) {
-  const columnHelper = createDataTableColumnHelper<MembershipPlan>()
+export function createGymPlanColumns({ onEdit, onDelete }: PlanColumnActions) {
+  const columnHelper = createDataTableColumnHelper<GymPlan>()
 
   return columnHelper.columns([
     createSelectionColumn(columnHelper),
     createIndexColumn(columnHelper),
     columnHelper.accessor("name", {
-      header: "Membership",
+      header: "Plan",
       cell: ({ row }) => (
         <div className="min-w-0">
           <p className="truncate text-sm font-medium text-foreground">

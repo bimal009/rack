@@ -4,17 +4,17 @@ import { useState, type FormEvent } from "react"
 import { useParams } from "next/navigation"
 import { Banknote, Check, CreditCard, Info, SquareCheck, Tags } from "lucide-react"
 import {
-  membershipPlanBillingTypeEnumSchema,
-  membershipPlanBillingUnitEnumSchema,
-  membershipPlanCoverageEnumSchema,
-  membershipPlanInsertSchema,
-  membershipPlanVisibilityEnumSchema,
-  type MembershipPlan,
-  type MembershipPlanBillingType,
-  type MembershipPlanBillingUnit,
-  type MembershipPlanCoverage,
-  type MembershipPlanVisibility,
-  type NewMembershipPlan,
+  gymPlanBillingTypeEnumSchema,
+  gymPlanBillingUnitEnumSchema,
+  gymPlanCoverageEnumSchema,
+  gymPlanInsertSchema,
+  gymPlanVisibilityEnumSchema,
+  type GymPlan,
+  type GymPlanBillingType,
+  type GymPlanBillingUnit,
+  type GymPlanCoverage,
+  type GymPlanVisibility,
+  type NewGymPlan,
 } from "@repo/types"
 
 import { Button } from "@repo/ui/components/ui/button"
@@ -72,7 +72,7 @@ import { useMembershipCategoriesQuery } from "@/features/tenant/settings/types/h
 
 import { fieldErrors } from "../../lib/validation"
 
-const billingTypeLabels: Record<MembershipPlanBillingType, string> = {
+const billingTypeLabels: Record<GymPlanBillingType, string> = {
   one_time: "One-time",
   weekly: "Weekly",
   monthly: "Monthly",
@@ -81,27 +81,27 @@ const billingTypeLabels: Record<MembershipPlanBillingType, string> = {
   custom: "Custom",
 }
 
-const billingUnitLabels: Record<MembershipPlanBillingUnit, string> = {
+const billingUnitLabels: Record<GymPlanBillingUnit, string> = {
   day: "day(s)",
   week: "week(s)",
   month: "month(s)",
 }
 
-interface MembershipFormValues {
+interface PlanFormValues {
   name: string
   categoryId: string
-  visibility: MembershipPlanVisibility
+  visibility: GymPlanVisibility
   description: string
   isActive: boolean
 
   pricePerPeriod: string
-  billingType: MembershipPlanBillingType | ""
-  billingIntervalUnit: MembershipPlanBillingUnit | ""
+  billingType: GymPlanBillingType | ""
+  billingIntervalUnit: GymPlanBillingUnit | ""
   billingIntervalCount: string
   signupFee: string
   requirePaymentUpfront: boolean
 
-  coverage: MembershipPlanCoverage
+  coverage: GymPlanCoverage
   coverageClasses: string[]
   coverageAreas: string[]
   coverageInstructors: string[]
@@ -114,7 +114,7 @@ interface MembershipFormValues {
   featureIds: string[]
 }
 
-function toFormValues(plan?: MembershipPlan | null): MembershipFormValues {
+function toFormValues(plan?: GymPlan | null): PlanFormValues {
   if (!plan) {
     return {
       name: "",
@@ -300,19 +300,14 @@ function CoveragePicker({
   )
 }
 
-interface MembershipFormBodyProps {
-  membership?: MembershipPlan | null
+interface PlanFormBodyProps {
+  plan?: GymPlan | null
   pending?: boolean
-  onSubmit: (values: NewMembershipPlan) => void
+  onSubmit: (values: NewGymPlan) => void
   onCancel: () => void
 }
 
-function MembershipFormBody({
-  membership,
-  pending,
-  onSubmit,
-  onCancel,
-}: MembershipFormBodyProps) {
+function PlanFormBody({ plan, pending, onSubmit, onCancel }: PlanFormBodyProps) {
   const tenant = useParams<{ tenant: string }>().tenant
   const categories = useMembershipCategoriesQuery(tenant, { limit: 100 })
   const sports = useGymSportsQuery(tenant, { limit: 100 })
@@ -321,11 +316,9 @@ function MembershipFormBody({
   const areaTypes = useAreaTypesQuery(tenant, { limit: 100 })
   const instructorTypes = useInstructorTypesQuery(tenant, { limit: 100 })
 
-  const [values, setValues] = useState<MembershipFormValues>(() =>
-    toFormValues(membership)
-  )
+  const [values, setValues] = useState<PlanFormValues>(() => toFormValues(plan))
   const [errors, setErrors] = useState<Record<string, string>>({})
-  const isEdit = Boolean(membership)
+  const isEdit = Boolean(plan)
   const isRestricted = values.coverage === "Restricted"
   const isCustomBilling = values.billingType === "custom"
 
@@ -344,7 +337,7 @@ function MembershipFormBody({
   function handleSubmit(event: FormEvent) {
     event.preventDefault()
 
-    const result = membershipPlanInsertSchema.safeParse({
+    const result = gymPlanInsertSchema.safeParse({
       name: values.name,
       categoryId: values.categoryId,
       visibility: values.visibility,
@@ -393,11 +386,11 @@ function MembershipFormBody({
       <SheetHeader>
         <FormSheetHeader
           icon={CreditCard}
-          title={isEdit ? "Edit membership" : "Add membership"}
+          title={isEdit ? "Edit plan" : "Add plan"}
           description={
             isEdit
-              ? "Update this membership's pricing and details."
-              : "Create a membership members can subscribe to."
+              ? "Update this plan's pricing and details."
+              : "Create a plan members can subscribe to."
           }
         />
       </SheetHeader>
@@ -406,9 +399,9 @@ function MembershipFormBody({
         <FormSection icon={Info} title="General">
           <div className="grid grid-cols-2 gap-4">
             <Field data-invalid={Boolean(errors.name)}>
-              <FieldLabel htmlFor="membership-name">Membership name</FieldLabel>
+              <FieldLabel htmlFor="plan-name">Plan name</FieldLabel>
               <Input
-                id="membership-name"
+                id="plan-name"
                 placeholder="Gold Membership"
                 value={values.name}
                 aria-invalid={Boolean(errors.name)}
@@ -420,7 +413,7 @@ function MembershipFormBody({
             </Field>
 
             <Field data-invalid={Boolean(errors.categoryId)}>
-              <FieldLabel htmlFor="membership-category">Category</FieldLabel>
+              <FieldLabel htmlFor="plan-category">Category</FieldLabel>
               <Select
                 value={values.categoryId}
                 onValueChange={(value) =>
@@ -428,7 +421,7 @@ function MembershipFormBody({
                 }
               >
                 <SelectTrigger
-                  id="membership-category"
+                  id="plan-category"
                   className="w-full"
                   aria-invalid={Boolean(errors.categoryId)}
                 >
@@ -454,21 +447,21 @@ function MembershipFormBody({
 
           <div className="grid grid-cols-2 gap-4">
             <Field>
-              <FieldLabel htmlFor="membership-visibility">Visibility</FieldLabel>
+              <FieldLabel htmlFor="plan-visibility">Visibility</FieldLabel>
               <Select
                 value={values.visibility}
                 onValueChange={(value) =>
                   setValues((v) => ({
                     ...v,
-                    visibility: value as MembershipPlanVisibility,
+                    visibility: value as GymPlanVisibility,
                   }))
                 }
               >
-                <SelectTrigger id="membership-visibility" className="w-full">
+                <SelectTrigger id="plan-visibility" className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {membershipPlanVisibilityEnumSchema.options.map((visibility) => (
+                  {gymPlanVisibilityEnumSchema.options.map((visibility) => (
                     <SelectItem key={visibility} value={visibility}>
                       {visibility}
                     </SelectItem>
@@ -479,24 +472,24 @@ function MembershipFormBody({
 
             <div className="flex items-center gap-2.5 pt-6">
               <Switch
-                id="membership-active"
+                id="plan-active"
                 checked={values.isActive}
                 onCheckedChange={(checked) =>
                   setValues((v) => ({ ...v, isActive: checked }))
                 }
               />
-              <Label htmlFor="membership-active">Active</Label>
+              <Label htmlFor="plan-active">Active</Label>
             </div>
           </div>
 
           <Field data-invalid={Boolean(errors.description)}>
-            <FieldLabel htmlFor="membership-description">
+            <FieldLabel htmlFor="plan-description">
               Description{" "}
               <span className="text-muted-foreground">(optional)</span>
             </FieldLabel>
             <Textarea
-              id="membership-description"
-              placeholder="What members get with this membership"
+              id="plan-description"
+              placeholder="What members get with this plan"
               value={values.description}
               aria-invalid={Boolean(errors.description)}
               onChange={(e) =>
@@ -510,13 +503,13 @@ function MembershipFormBody({
         <FormSection icon={Banknote} title="Pricing">
           <div className="grid grid-cols-2 gap-4">
             <Field data-invalid={Boolean(errors.pricePerPeriod)}>
-              <FieldLabel htmlFor="membership-price">Price per period</FieldLabel>
+              <FieldLabel htmlFor="plan-price">Price per period</FieldLabel>
               <InputGroup>
                 <InputGroupAddon>
                   <InputGroupText>NPR</InputGroupText>
                 </InputGroupAddon>
                 <InputGroupInput
-                  id="membership-price"
+                  id="plan-price"
                   type="number"
                   inputMode="decimal"
                   min="0"
@@ -536,25 +529,25 @@ function MembershipFormBody({
             </Field>
 
             <Field data-invalid={Boolean(errors.billingType)}>
-              <FieldLabel htmlFor="membership-billing-type">Type</FieldLabel>
+              <FieldLabel htmlFor="plan-billing-type">Type</FieldLabel>
               <Select
                 value={values.billingType}
                 onValueChange={(value) =>
                   setValues((v) => ({
                     ...v,
-                    billingType: value as MembershipPlanBillingType,
+                    billingType: value as GymPlanBillingType,
                   }))
                 }
               >
                 <SelectTrigger
-                  id="membership-billing-type"
+                  id="plan-billing-type"
                   className="w-full"
                   aria-invalid={Boolean(errors.billingType)}
                 >
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>
                 <SelectContent>
-                  {membershipPlanBillingTypeEnumSchema.options.map((type) => (
+                  {gymPlanBillingTypeEnumSchema.options.map((type) => (
                     <SelectItem key={type} value={type}>
                       {billingTypeLabels[type]}
                     </SelectItem>
@@ -568,11 +561,9 @@ function MembershipFormBody({
           {isCustomBilling && (
             <div className="grid grid-cols-2 gap-4 rounded-lg border border-border bg-muted/20 p-4">
               <Field data-invalid={Boolean(errors.billingIntervalCount)}>
-                <FieldLabel htmlFor="membership-billing-count">
-                  Period
-                </FieldLabel>
+                <FieldLabel htmlFor="plan-billing-count">Period</FieldLabel>
                 <Input
-                  id="membership-billing-count"
+                  id="plan-billing-count"
                   type="number"
                   inputMode="numeric"
                   min="1"
@@ -591,25 +582,25 @@ function MembershipFormBody({
               </Field>
 
               <Field data-invalid={Boolean(errors.billingIntervalUnit)}>
-                <FieldLabel htmlFor="membership-billing-unit">Unit</FieldLabel>
+                <FieldLabel htmlFor="plan-billing-unit">Unit</FieldLabel>
                 <Select
                   value={values.billingIntervalUnit}
                   onValueChange={(value) =>
                     setValues((v) => ({
                       ...v,
-                      billingIntervalUnit: value as MembershipPlanBillingUnit,
+                      billingIntervalUnit: value as GymPlanBillingUnit,
                     }))
                   }
                 >
                   <SelectTrigger
-                    id="membership-billing-unit"
+                    id="plan-billing-unit"
                     className="w-full"
                     aria-invalid={Boolean(errors.billingIntervalUnit)}
                   >
                     <SelectValue placeholder="Select unit" />
                   </SelectTrigger>
                   <SelectContent>
-                    {membershipPlanBillingUnitEnumSchema.options.map((unit) => (
+                    {gymPlanBillingUnitEnumSchema.options.map((unit) => (
                       <SelectItem key={unit} value={unit}>
                         {billingUnitLabels[unit]}
                       </SelectItem>
@@ -622,13 +613,13 @@ function MembershipFormBody({
           )}
 
           <Field data-invalid={Boolean(errors.signupFee)}>
-            <FieldLabel htmlFor="membership-signup-fee">Signup fee</FieldLabel>
+            <FieldLabel htmlFor="plan-signup-fee">Signup fee</FieldLabel>
             <InputGroup>
               <InputGroupAddon>
                 <InputGroupText>NPR</InputGroupText>
               </InputGroupAddon>
               <InputGroupInput
-                id="membership-signup-fee"
+                id="plan-signup-fee"
                 type="number"
                 inputMode="decimal"
                 min="0"
@@ -650,7 +641,7 @@ function MembershipFormBody({
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center gap-2.5">
               <Switch
-                id="membership-require-payment"
+                id="plan-require-payment"
                 checked={values.requirePaymentUpfront}
                 onCheckedChange={(checked) =>
                   setValues((v) => ({
@@ -659,12 +650,12 @@ function MembershipFormBody({
                   }))
                 }
               />
-              <Label htmlFor="membership-require-payment">
+              <Label htmlFor="plan-require-payment">
                 Require payment upfront
               </Label>
             </div>
             <FieldDescription>
-              The membership only starts once it has been paid.
+              The plan only starts once it has been paid.
             </FieldDescription>
           </div>
         </FormSection>
@@ -672,25 +663,25 @@ function MembershipFormBody({
         <FormSection
           icon={SquareCheck}
           title="Validity"
-          description="What this membership grants access to."
+          description="What this plan grants access to."
         >
           <div className="grid grid-cols-2 gap-4">
             <Field>
-              <FieldLabel htmlFor="membership-coverage">Coverage</FieldLabel>
+              <FieldLabel htmlFor="plan-coverage">Coverage</FieldLabel>
               <Select
                 value={values.coverage}
                 onValueChange={(value) =>
                   setValues((v) => ({
                     ...v,
-                    coverage: value as MembershipPlanCoverage,
+                    coverage: value as GymPlanCoverage,
                   }))
                 }
               >
-                <SelectTrigger id="membership-coverage" className="w-full">
+                <SelectTrigger id="plan-coverage" className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {membershipPlanCoverageEnumSchema.options.map((coverage) => (
+                  {gymPlanCoverageEnumSchema.options.map((coverage) => (
                     <SelectItem key={coverage} value={coverage}>
                       {coverage}
                     </SelectItem>
@@ -705,9 +696,9 @@ function MembershipFormBody({
             </Field>
 
             <Field>
-              <FieldLabel htmlFor="membership-sessions">Sessions</FieldLabel>
+              <FieldLabel htmlFor="plan-sessions">Sessions</FieldLabel>
               <Input
-                id="membership-sessions"
+                id="plan-sessions"
                 placeholder="e.g. 10/month"
                 value={values.sessions}
                 onChange={(e) =>
@@ -772,7 +763,7 @@ function MembershipFormBody({
             />
             <MultiSelectCombobox
               label="Sports"
-              description="Sports this membership covers."
+              description="Sports this plan covers."
               placeholder="Search sports..."
               emptyMessage="No sports found."
               options={sports.data?.data ?? []}
@@ -788,35 +779,35 @@ function MembershipFormBody({
           Cancel
         </Button>
         <Button type="submit" disabled={pending}>
-          {isEdit ? "Save changes" : "Create membership"}
+          {isEdit ? "Save changes" : "Create plan"}
         </Button>
       </SheetFooter>
     </form>
   )
 }
 
-interface MembershipFormSheetProps {
+interface PlanFormSheetProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  membership?: MembershipPlan | null
+  plan?: GymPlan | null
   pending?: boolean
-  onSubmit: (values: NewMembershipPlan) => void
+  onSubmit: (values: NewGymPlan) => void
 }
 
-export function MembershipFormSheet({
+export function PlanFormSheet({
   open,
   onOpenChange,
-  membership,
+  plan,
   pending,
   onSubmit,
-}: MembershipFormSheetProps) {
+}: PlanFormSheetProps) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="sm:max-w-xl">
         {open && (
-          <MembershipFormBody
-            key={membership?.id ?? "new"}
-            membership={membership}
+          <PlanFormBody
+            key={plan?.id ?? "new"}
+            plan={plan}
             pending={pending}
             onSubmit={(values) => {
               onSubmit(values)
