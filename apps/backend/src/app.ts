@@ -10,6 +10,7 @@ import { handleError } from "./lib/errors";
 import gymRoutes from "./modules/gym/gym.routes";
 import plansRoutes from "./modules/plans/plans.routes";
 import staffRoutes from "./modules/staff/staff.routes";
+import memberRoutes from "./modules/member/member.routes";
 import mediaRoutes from "./modules/media/media.routes";
 import sportRoutes from "./modules/sport/sport.routes";
 import featureRoutes from "./modules/feature/feature.routes";
@@ -57,6 +58,7 @@ app.use(express.json({ limit: "10kb" }));
 
 app.use("/api/v1/gyms", gymRoutes);
 app.use("/api/v1/gyms/:slug/staff", staffRoutes);
+app.use("/api/v1/gyms/:slug/members", memberRoutes);
 app.use("/api/v1/gyms/:slug/sports", sportRoutes);
 app.use("/api/v1/gyms/:slug/features", featureRoutes);
 app.use("/api/v1/gyms/:slug/settings/area-types", areaTypeRoutes);
