@@ -20,17 +20,6 @@ import {
 import { Button } from "@repo/ui/components/ui/button"
 import { Checkbox } from "@repo/ui/components/ui/checkbox"
 import {
-  Combobox,
-  ComboboxChip,
-  ComboboxChips,
-  ComboboxChipsInput,
-  ComboboxContent,
-  ComboboxEmpty,
-  ComboboxItem,
-  ComboboxList,
-  useComboboxAnchor,
-} from "@repo/ui/components/ui/combobox"
-import {
   Field,
   FieldDescription,
   FieldError,
@@ -63,6 +52,7 @@ import { Textarea } from "@repo/ui/components/ui/textarea"
 import { cn } from "@repo/ui/lib/utils"
 
 import { FormSection, FormSheetHeader } from "@/features/tenant/components/form-section"
+import { MultiSelectCombobox } from "@/features/tenant/components/multi-select-combobox"
 import { useAreaTypesQuery } from "@/features/tenant/settings/types/hooks/use-area-types"
 import { useClassTypesQuery } from "@/features/tenant/settings/types/hooks/use-class-types"
 import { useGymFeaturesQuery } from "@/features/tenant/settings/types/hooks/use-gym-features"
@@ -169,70 +159,6 @@ function toFormValues(plan?: GymPlan | null): PlanFormValues {
 function listOrNull(none: boolean, ids: string[]): string[] | null {
   if (none) return null
   return ids.length > 0 ? ids : null
-}
-
-interface ComboboxOption {
-  value: string
-  label: string
-}
-
-interface MultiSelectComboboxProps {
-  label: string
-  description?: string
-  placeholder: string
-  emptyMessage: string
-  options: { id: string; name: string }[]
-  selected: string[]
-  onChange: (ids: string[]) => void
-}
-
-function MultiSelectCombobox({
-  label,
-  description,
-  placeholder,
-  emptyMessage,
-  options,
-  selected,
-  onChange,
-}: MultiSelectComboboxProps) {
-  const anchor = useComboboxAnchor()
-  const items: ComboboxOption[] = options.map((option) => ({
-    value: option.id,
-    label: option.name,
-  }))
-  const selectedItems = items.filter((item) => selected.includes(item.value))
-
-  return (
-    <Field>
-      <FieldLabel>{label}</FieldLabel>
-      <Combobox
-        items={items}
-        multiple
-        value={selectedItems}
-        onValueChange={(next) => onChange(next.map((item) => item.value))}
-      >
-        <ComboboxChips ref={anchor}>
-          {selectedItems.map((item) => (
-            <ComboboxChip key={item.value}>{item.label}</ComboboxChip>
-          ))}
-          <ComboboxChipsInput
-            placeholder={selectedItems.length === 0 ? placeholder : undefined}
-          />
-        </ComboboxChips>
-        <ComboboxContent anchor={anchor}>
-          <ComboboxEmpty>{emptyMessage}</ComboboxEmpty>
-          <ComboboxList>
-            {(item: ComboboxOption) => (
-              <ComboboxItem key={item.value} value={item}>
-                {item.label}
-              </ComboboxItem>
-            )}
-          </ComboboxList>
-        </ComboboxContent>
-      </Combobox>
-      {description && <FieldDescription>{description}</FieldDescription>}
-    </Field>
-  )
 }
 
 interface CoveragePickerProps {

@@ -13,6 +13,7 @@ const navItems = [
   { label: "Brands", segment: "brands" },
   { label: "Tax Rates", segment: "tax-rates" },
   { label: "Product Categories", segment: "product-categories" },
+  { label: "Product Features", segment: "product-features" },
   { label: "Membership Categories", segment: "membership-categories" },
 ]
 

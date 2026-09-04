@@ -7,7 +7,6 @@ import { Badge } from "@repo/ui/components/ui/badge"
 import {
   createDataTableColumnHelper,
   createIndexColumn,
-  createSelectionColumn,
 } from "@repo/ui/components/ui/data-table"
 import {
   DropdownMenu,
@@ -31,7 +30,6 @@ export function createGymPlanColumns({ onEdit, onDelete }: PlanColumnActions) {
   const columnHelper = createDataTableColumnHelper<GymPlan>()
 
   return columnHelper.columns([
-    createSelectionColumn(columnHelper),
     createIndexColumn(columnHelper),
     columnHelper.accessor("name", {
       header: "Plan",

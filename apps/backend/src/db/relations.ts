@@ -39,6 +39,8 @@ export const relations = defineRelations(schema, (r) => ({
     members: r.many.member(),
     rolePermissionOverrides: r.many.gymRolePermissionOverride(),
     gymPlans: r.many.gymPlan(),
+    products: r.many.product(),
+    productFeatures: r.many.productFeature(),
     subscriptions: r.many.gymSubscription(),
   },
 
@@ -188,6 +190,62 @@ export const relations = defineRelations(schema, (r) => ({
     areaType: r.one.areaType({
       from: r.area.areaTypeId,
       to: r.areaType.id,
+    }),
+  },
+
+  product: {
+    gym: r.one.gyms({
+      from: r.product.gymId,
+      to: r.gyms.id,
+      optional: false,
+    }),
+    category: r.one.productCategory({
+      from: r.product.categoryId,
+      to: r.productCategory.id,
+      optional: false,
+    }),
+    brand: r.one.brand({
+      from: r.product.brandId,
+      to: r.brand.id,
+    }),
+    taxRate: r.one.taxRate({
+      from: r.product.taxRateId,
+      to: r.taxRate.id,
+    }),
+  },
+
+  productCategory: {
+    gym: r.one.gyms({
+      from: r.productCategory.gymId,
+      to: r.gyms.id,
+      optional: false,
+    }),
+    products: r.many.product(),
+  },
+
+  brand: {
+    gym: r.one.gyms({
+      from: r.brand.gymId,
+      to: r.gyms.id,
+      optional: false,
+    }),
+    products: r.many.product(),
+  },
+
+  taxRate: {
+    gym: r.one.gyms({
+      from: r.taxRate.gymId,
+      to: r.gyms.id,
+      optional: false,
+    }),
+    products: r.many.product(),
+  },
+
+  productFeature: {
+    gym: r.one.gyms({
+      from: r.productFeature.gymId,
+      to: r.gyms.id,
+      optional: false,
     }),
   },
 

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, type FormEvent } from "react"
+import { useParams } from "next/navigation"
 import { Banknote, Plus, Receipt, ShoppingCart, Trash2, UserRound } from "lucide-react"
 
 import { Button } from "@repo/ui/components/ui/button"
@@ -33,7 +34,7 @@ import { FormSection, FormSheetHeader } from "@/features/tenant/components/form-
 import { fullName } from "@/features/tenant/members/components/columns"
 import { initialMembers } from "@/features/tenant/members/lib/data"
 import { initialPackages } from "@/features/tenant/revenue/packages/lib/data"
-import { initialProducts } from "@/features/tenant/revenue/products/lib/data"
+import { useProductsQuery } from "@/features/tenant/revenue/products/hooks/use-products"
 
 import { generateOrderId } from "../lib/data"
 import { orderStatuses, type Order, type OrderStatus } from "../lib/schema"
@@ -54,16 +55,6 @@ const currency = new Intl.NumberFormat("en-US", {
   currencyDisplay: "code",
 })
 
-function pickableOptions(type: SaleItemType) {
-  return type === "product"
-    ? initialProducts
-        .filter((p) => p.active)
-        .map((p) => ({ refId: p.id, name: p.name, price: p.price }))
-    : initialPackages
-        .filter((p) => p.active)
-        .map((p) => ({ refId: p.id, name: p.name, price: p.price }))
-}
-
 function formatOrderDate(date: Date) {
   const months = [
     "Jan", "Feb", "Mar", "Apr", "May", "Jun",
@@ -78,6 +69,8 @@ interface OrderFormBodyProps {
 }
 
 function OrderFormBody({ onSubmit, onCancel }: OrderFormBodyProps) {
+  const tenant = useParams<{ tenant: string }>().tenant
+  const products = useProductsQuery(tenant, { limit: 100 })
   const [memberEmail, setMemberEmail] = useState<string | null>(null)
   const [items, setItems] = useState<SaleItem[]>([])
   const [status, setStatus] = useState<OrderStatus>("Paid")
@@ -85,6 +78,16 @@ function OrderFormBody({ onSubmit, onCancel }: OrderFormBodyProps) {
 
   const member = initialMembers.find((m) => m.email === memberEmail) ?? null
   const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0)
+
+  function pickableOptions(type: SaleItemType) {
+    return type === "product"
+      ? (products.data?.data ?? [])
+          .filter((p) => p.isActive)
+          .map((p) => ({ refId: p.id, name: p.name, price: p.price }))
+      : initialPackages
+          .filter((p) => p.active)
+          .map((p) => ({ refId: p.id, name: p.name, price: p.price }))
+  }
 
   function addItem(type: SaleItemType) {
     setItems((prev) => [

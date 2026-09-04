@@ -1,23 +1,18 @@
 "use client"
 
+import { useState, type FormEvent } from "react"
+import { useParams } from "next/navigation"
+import { Banknote, ImageIcon, Info, ShoppingBag } from "lucide-react"
 import {
-  useEffect,
-  useRef,
-  useState,
-  type ChangeEvent,
-  type FormEvent,
-} from "react"
-import { Banknote, ImageIcon, Info, Plus, ShoppingBag, X } from "lucide-react"
+  productInsertSchema,
+  productVisibilityEnumSchema,
+  type NewProduct,
+  type Product,
+  type ProductVisibility,
+} from "@repo/types"
 
+import { MultiImageUpload } from "@/features/media"
 import { Button } from "@repo/ui/components/ui/button"
-import {
-  Combobox,
-  ComboboxContent,
-  ComboboxEmpty,
-  ComboboxInput,
-  ComboboxItem,
-  ComboboxList,
-} from "@repo/ui/components/ui/combobox"
 import {
   Field,
   FieldDescription,
@@ -50,130 +45,105 @@ import { Switch } from "@repo/ui/components/ui/switch"
 import { Textarea } from "@repo/ui/components/ui/textarea"
 
 import { FormSection, FormSheetHeader } from "@/features/tenant/components/form-section"
+import { MultiSelectCombobox } from "@/features/tenant/components/multi-select-combobox"
+import { useBrandsQuery } from "@/features/tenant/settings/types/hooks/use-brands"
+import { useProductCategoriesQuery } from "@/features/tenant/settings/types/hooks/use-product-categories"
+import { useProductFeaturesQuery } from "@/features/tenant/settings/types/hooks/use-product-features"
+import { useTaxRatesQuery } from "@/features/tenant/settings/types/hooks/use-tax-rates"
 
 import { fieldErrors } from "../../lib/validation"
-import {
-  productBrands,
-  productCategories,
-  productFeatureOptions,
-  productRevenueAccounts,
-  productSchema,
-  productTaxRates,
-  productVisibilities,
-  type Product,
-  type ProductBrand,
-  type ProductCategory,
-  type ProductInput,
-  type ProductVisibility,
-} from "../lib/schema"
 
 interface ProductFormValues {
   name: string
-  category: ProductCategory | ""
-  brand: ProductBrand | ""
-  barcode: string
+  categoryId: string
+  brandId: string
   sku: string
   visibility: ProductVisibility
-  active: boolean
+  isActive: boolean
 
   price: string
   costPrice: string
-  revenueAccount: string
-  taxRate: string
+  taxRateId: string
 
   description: string
-  features: string
+  features: string[]
+  images: string[]
 }
 
 function toFormValues(product?: Product | null): ProductFormValues {
   if (!product) {
     return {
       name: "",
-      category: "",
-      brand: "",
-      barcode: "",
+      categoryId: "",
+      brandId: "",
       sku: "",
       visibility: "Public",
-      active: true,
+      isActive: true,
       price: "",
       costPrice: "",
-      revenueAccount: "",
-      taxRate: "",
+      taxRateId: "",
       description: "",
-      features: "",
+      features: [],
+      images: [],
     }
   }
   return {
     name: product.name,
-    category: product.category,
-    brand: product.brand ?? "",
-    barcode: product.barcode ?? "",
+    categoryId: product.categoryId,
+    brandId: product.brandId ?? "",
     sku: product.sku ?? "",
     visibility: product.visibility,
-    active: product.active,
+    isActive: product.isActive,
     price: String(product.price),
     costPrice: product.costPrice != null ? String(product.costPrice) : "",
-    revenueAccount: product.revenueAccount ?? "",
-    taxRate: product.taxRate ?? "",
+    taxRateId: product.taxRateId ?? "",
     description: product.description ?? "",
-    features: product.features ?? "",
+    features: product.features,
+    images: product.images,
   }
-}
-
-interface ImagePreview {
-  id: string
-  url: string
 }
 
 interface ProductFormBodyProps {
   product?: Product | null
-  onSubmit: (values: ProductInput) => void
+  pending?: boolean
+  onSubmit: (values: NewProduct) => void
   onCancel: () => void
 }
 
-function ProductFormBody({ product, onSubmit, onCancel }: ProductFormBodyProps) {
+function ProductFormBody({
+  product,
+  pending,
+  onSubmit,
+  onCancel,
+}: ProductFormBodyProps) {
+  const tenant = useParams<{ tenant: string }>().tenant
+  const categories = useProductCategoriesQuery(tenant, { limit: 100 })
+  const brands = useBrandsQuery(tenant, { limit: 100 })
+  const taxRates = useTaxRatesQuery(tenant, { limit: 100 })
+  const productFeatures = useProductFeaturesQuery(tenant, { limit: 100 })
+
   const [values, setValues] = useState<ProductFormValues>(() =>
     toFormValues(product)
   )
   const [errors, setErrors] = useState<Record<string, string>>({})
-  const [images, setImages] = useState<ImagePreview[]>([])
-  const createdUrls = useRef<string[]>([])
   const isEdit = Boolean(product)
-
-  useEffect(() => {
-    // Intentionally reads the ref at cleanup time to revoke every object URL
-    // created over the component's lifetime, not just what existed on mount.
-    return () => {
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-      createdUrls.current.forEach((url) => URL.revokeObjectURL(url))
-    }
-  }, [])
-
-  function handleFilesSelected(event: ChangeEvent<HTMLInputElement>) {
-    const files = event.target.files
-    if (!files?.length) return
-
-    const next = Array.from(files).map((file) => ({
-      id: `${file.name}-${Math.random().toString(36).slice(2, 8)}`,
-      url: URL.createObjectURL(file),
-    }))
-    createdUrls.current.push(...next.map((n) => n.url))
-    setImages((prev) => [...prev, ...next])
-    event.target.value = ""
-  }
-
-  function removeImage(id: string) {
-    setImages((prev) => prev.filter((img) => img.id !== id))
-  }
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault()
 
-    const result = productSchema.safeParse({
-      ...values,
-      category: values.category || undefined,
-      brand: values.brand || undefined,
-      costPrice: values.costPrice === "" ? undefined : values.costPrice,
+    const result = productInsertSchema.safeParse({
+      name: values.name,
+      categoryId: values.categoryId,
+      brandId: values.brandId || undefined,
+      sku: values.sku || undefined,
+      visibility: values.visibility,
+      isActive: values.isActive,
+      price: values.price === "" ? undefined : Number(values.price),
+      costPrice: values.costPrice === "" ? undefined : Number(values.costPrice),
+      taxRateId: values.taxRateId || undefined,
+      description: values.description || undefined,
+      features: values.features,
+      images: values.images,
     })
 
     if (!result.success) {
@@ -215,50 +185,58 @@ function ProductFormBody({ product, onSubmit, onCancel }: ProductFormBodyProps) 
           </Field>
 
           <div className="grid grid-cols-2 gap-4">
-            <Field data-invalid={Boolean(errors.category)}>
-              <FieldLabel htmlFor="product-category">Categories</FieldLabel>
+            <Field data-invalid={Boolean(errors.categoryId)}>
+              <FieldLabel htmlFor="product-category">Category</FieldLabel>
               <Select
-                value={values.category}
+                value={values.categoryId}
                 onValueChange={(value) =>
-                  setValues((v) => ({
-                    ...v,
-                    category: value as ProductCategory,
-                  }))
+                  setValues((v) => ({ ...v, categoryId: value ?? "" }))
                 }
               >
                 <SelectTrigger
                   id="product-category"
                   className="w-full"
-                  aria-invalid={Boolean(errors.category)}
+                  aria-invalid={Boolean(errors.categoryId)}
                 >
-                  <SelectValue placeholder="Select category" />
+                  <SelectValue placeholder="Select category">
+                    {() =>
+                      categories.data?.data.find(
+                        (category) => category.id === values.categoryId
+                      )?.name ?? "Select category"
+                    }
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
-                  {productCategories.map((category) => (
-                    <SelectItem key={category} value={category}>
-                      {category}
+                  {(categories.data?.data ?? []).map((category) => (
+                    <SelectItem key={category.id} value={category.id}>
+                      {category.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              <FieldError>{errors.category}</FieldError>
+              <FieldError>{errors.categoryId}</FieldError>
             </Field>
 
             <Field>
               <FieldLabel htmlFor="product-brand">Brand</FieldLabel>
               <Select
-                value={values.brand}
+                value={values.brandId}
                 onValueChange={(value) =>
-                  setValues((v) => ({ ...v, brand: value as ProductBrand }))
+                  setValues((v) => ({ ...v, brandId: value ?? "" }))
                 }
               >
                 <SelectTrigger id="product-brand" className="w-full">
-                  <SelectValue placeholder="Select brand" />
+                  <SelectValue placeholder="Select brand">
+                    {() =>
+                      brands.data?.data.find((b) => b.id === values.brandId)
+                        ?.name ?? "Select brand"
+                    }
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
-                  {productBrands.map((brand) => (
-                    <SelectItem key={brand} value={brand}>
-                      {brand}
+                  {(brands.data?.data ?? []).map((b) => (
+                    <SelectItem key={b.id} value={b.id}>
+                      {b.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -266,37 +244,17 @@ function ProductFormBody({ product, onSubmit, onCancel }: ProductFormBodyProps) 
             </Field>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <Field>
-              <FieldLabel htmlFor="product-barcode">Barcode</FieldLabel>
-              <Input
-                id="product-barcode"
-                placeholder="Scan or enter a code"
-                value={values.barcode}
-                onChange={(e) =>
-                  setValues((v) => ({ ...v, barcode: e.target.value }))
-                }
-              />
-            </Field>
-
-            <Field>
-              <FieldLabel htmlFor="product-sku">
-                SKU / Product code
-              </FieldLabel>
-              <Input
-                id="product-sku"
-                placeholder="e.g. WP-1KG"
-                value={values.sku}
-                onChange={(e) =>
-                  setValues((v) => ({ ...v, sku: e.target.value }))
-                }
-              />
-            </Field>
-          </div>
-          <FieldDescription className="-mt-3">
-            Scan the item here to fill this in. The till adds this product
-            when the code is scanned.
-          </FieldDescription>
+          <Field>
+            <FieldLabel htmlFor="product-sku">SKU / Product code</FieldLabel>
+            <Input
+              id="product-sku"
+              placeholder="e.g. WP-1KG"
+              value={values.sku}
+              onChange={(e) =>
+                setValues((v) => ({ ...v, sku: e.target.value }))
+              }
+            />
+          </Field>
 
           <Field>
             <FieldLabel htmlFor="product-visibility">Visibility</FieldLabel>
@@ -313,7 +271,7 @@ function ProductFormBody({ product, onSubmit, onCancel }: ProductFormBodyProps) 
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {productVisibilities.map((visibility) => (
+                {productVisibilityEnumSchema.options.map((visibility) => (
                   <SelectItem key={visibility} value={visibility}>
                     {visibility}
                   </SelectItem>
@@ -325,9 +283,9 @@ function ProductFormBody({ product, onSubmit, onCancel }: ProductFormBodyProps) 
           <div className="flex items-center gap-2.5">
             <Switch
               id="product-active"
-              checked={values.active}
+              checked={values.isActive}
               onCheckedChange={(checked) =>
-                setValues((v) => ({ ...v, active: checked }))
+                setValues((v) => ({ ...v, isActive: checked }))
               }
             />
             <Label htmlFor="product-active">Active</Label>
@@ -347,8 +305,8 @@ function ProductFormBody({ product, onSubmit, onCancel }: ProductFormBodyProps) 
                   type="number"
                   inputMode="decimal"
                   min="0"
-                  step="0.01"
-                  placeholder="0.00"
+                  step="1"
+                  placeholder="0"
                   value={values.price}
                   aria-invalid={Boolean(errors.price)}
                   onChange={(e) =>
@@ -372,8 +330,8 @@ function ProductFormBody({ product, onSubmit, onCancel }: ProductFormBodyProps) 
                   type="number"
                   inputMode="decimal"
                   min="0"
-                  step="0.01"
-                  placeholder="0.00"
+                  step="1"
+                  placeholder="0"
                   value={values.costPrice}
                   aria-invalid={Boolean(errors.costPrice)}
                   onChange={(e) =>
@@ -391,57 +349,36 @@ function ProductFormBody({ product, onSubmit, onCancel }: ProductFormBodyProps) 
             </Field>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <Field>
-              <FieldLabel htmlFor="product-revenue-account">
-                Revenue Account
-              </FieldLabel>
-              <Select
-                value={values.revenueAccount}
-                onValueChange={(value) =>
-                  setValues((v) => ({ ...v, revenueAccount: value ?? "" }))
-                }
-              >
-                <SelectTrigger
-                  id="product-revenue-account"
-                  className="w-full"
-                >
-                  <SelectValue placeholder="Select account" />
-                </SelectTrigger>
-                <SelectContent>
-                  {productRevenueAccounts.map((account) => (
-                    <SelectItem key={account} value={account}>
-                      {account}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </Field>
-
-            <Field>
-              <FieldLabel htmlFor="product-tax-rate">Tax rate</FieldLabel>
-              <Select
-                value={values.taxRate}
-                onValueChange={(value) =>
-                  setValues((v) => ({ ...v, taxRate: value ?? "" }))
-                }
-              >
-                <SelectTrigger id="product-tax-rate" className="w-full">
-                  <SelectValue placeholder="Select rate" />
-                </SelectTrigger>
-                <SelectContent>
-                  {productTaxRates.map((rate) => (
-                    <SelectItem key={rate} value={rate}>
-                      {rate}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FieldDescription>
-                Overrides the revenue account default at point of sale.
-              </FieldDescription>
-            </Field>
-          </div>
+          <Field>
+            <FieldLabel htmlFor="product-tax-rate">Tax rate</FieldLabel>
+            <Select
+              value={values.taxRateId}
+              onValueChange={(value) =>
+                setValues((v) => ({ ...v, taxRateId: value ?? "" }))
+              }
+            >
+              <SelectTrigger id="product-tax-rate" className="w-full">
+                <SelectValue placeholder="Select rate">
+                  {() => {
+                    const rate = taxRates.data?.data.find(
+                      (r) => r.id === values.taxRateId
+                    )
+                    return rate ? `${rate.name} (${rate.rate}%)` : "Select rate"
+                  }}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {(taxRates.data?.data ?? []).map((rate) => (
+                  <SelectItem key={rate.id} value={rate.id}>
+                    {rate.name} ({rate.rate}%)
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <FieldDescription>
+              Applied to this product&apos;s price at point of sale.
+            </FieldDescription>
+          </Field>
         </FormSection>
 
         <FormSection icon={ImageIcon} title="Presentation">
@@ -461,68 +398,26 @@ function ProductFormBody({ product, onSubmit, onCancel }: ProductFormBodyProps) 
             <FieldError>{errors.description}</FieldError>
           </Field>
 
-          <Field>
-            <FieldLabel htmlFor="product-features">Features</FieldLabel>
-            <Combobox
-              items={productFeatureOptions}
-              value={values.features || null}
-              onValueChange={(value) =>
-                setValues((v) => ({ ...v, features: value ?? "" }))
-              }
-            >
-              <ComboboxInput
-                id="product-features"
-                placeholder="Search features..."
-              />
-              <ComboboxContent>
-                <ComboboxEmpty>No features found.</ComboboxEmpty>
-                <ComboboxList>
-                  {(item: string) => (
-                    <ComboboxItem key={item} value={item}>
-                      {item}
-                    </ComboboxItem>
-                  )}
-                </ComboboxList>
-              </ComboboxContent>
-            </Combobox>
-          </Field>
+          <MultiSelectCombobox
+            label="Features"
+            description="Tags shown to members browsing the shop."
+            placeholder="Search tags..."
+            emptyMessage="No tags found."
+            options={(productFeatures.data?.data ?? []).map((f) => ({
+              id: f.name,
+              name: f.name,
+            }))}
+            selected={values.features}
+            onChange={(tags) => setValues((v) => ({ ...v, features: tags }))}
+          />
 
           <Field>
             <FieldLabel>Images</FieldLabel>
-            <div className="flex flex-wrap gap-2">
-              {images.map((image) => (
-                <div
-                  key={image.id}
-                  className="group relative size-16 shrink-0 overflow-hidden rounded-lg border border-border"
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={image.url}
-                    alt=""
-                    className="size-full object-cover"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeImage(image.id)}
-                    className="absolute top-0.5 right-0.5 flex size-4 items-center justify-center rounded-full bg-foreground/70 text-background opacity-0 transition-opacity group-hover:opacity-100"
-                  >
-                    <X className="size-2.5" />
-                    <span className="sr-only">Remove image</span>
-                  </button>
-                </div>
-              ))}
-              <label className="flex size-16 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-dashed border-input text-muted-foreground transition-colors hover:bg-muted/50">
-                <Plus className="size-4" />
-                <span className="sr-only">Add image</span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  className="hidden"
-                  onChange={handleFilesSelected}
-                />
-              </label>
-            </div>
+            <MultiImageUpload
+              folder="products"
+              value={values.images}
+              onChange={(images) => setValues((v) => ({ ...v, images }))}
+            />
           </Field>
         </FormSection>
       </SheetBody>
@@ -531,7 +426,7 @@ function ProductFormBody({ product, onSubmit, onCancel }: ProductFormBodyProps) 
         <Button type="button" variant="outline" onClick={onCancel}>
           Cancel
         </Button>
-        <Button type="submit">
+        <Button type="submit" disabled={pending}>
           {isEdit ? "Save changes" : "Create product"}
         </Button>
       </SheetFooter>
@@ -543,13 +438,15 @@ interface ProductFormSheetProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   product?: Product | null
-  onSubmit: (values: ProductInput) => void
+  pending?: boolean
+  onSubmit: (values: NewProduct) => void
 }
 
 export function ProductFormSheet({
   open,
   onOpenChange,
   product,
+  pending,
   onSubmit,
 }: ProductFormSheetProps) {
   return (
@@ -559,6 +456,7 @@ export function ProductFormSheet({
           <ProductFormBody
             key={product?.id ?? "new"}
             product={product}
+            pending={pending}
             onSubmit={(values) => {
               onSubmit(values)
               onOpenChange(false)

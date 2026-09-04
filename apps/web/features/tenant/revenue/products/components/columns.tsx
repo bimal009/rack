@@ -1,12 +1,12 @@
 "use client"
 
 import { MoreHorizontal, PenSquare, Trash2 } from "lucide-react"
+import type { Product } from "@repo/types"
 
 import { Badge } from "@repo/ui/components/ui/badge"
 import {
   createDataTableColumnHelper,
   createIndexColumn,
-  createSelectionColumn,
 } from "@repo/ui/components/ui/data-table"
 import {
   DropdownMenu,
@@ -14,8 +14,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@repo/ui/components/ui/dropdown-menu"
-
-import type { Product } from "../lib/schema"
 
 const currency = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -35,7 +33,6 @@ export function createProductColumns({
   const columnHelper = createDataTableColumnHelper<Product>()
 
   return columnHelper.columns([
-    createSelectionColumn(columnHelper),
     createIndexColumn(columnHelper),
     columnHelper.accessor("name", {
       header: "Product",
@@ -46,7 +43,7 @@ export function createProductColumns({
           </p>
           {row.original.brand ? (
             <p className="truncate text-xs text-muted-foreground">
-              {row.original.brand}
+              {row.original.brand.name}
             </p>
           ) : null}
         </div>
@@ -57,7 +54,7 @@ export function createProductColumns({
       enableGlobalFilter: false,
       cell: ({ getValue }) => (
         <Badge variant="outline" className="rounded-full font-normal">
-          {getValue()}
+          {getValue().name}
         </Badge>
       ),
     }),
@@ -70,7 +67,7 @@ export function createProductColumns({
         </span>
       ),
     }),
-    columnHelper.accessor("active", {
+    columnHelper.accessor("isActive", {
       header: "Status",
       enableGlobalFilter: false,
       cell: ({ getValue }) => (

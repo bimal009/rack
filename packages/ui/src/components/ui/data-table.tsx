@@ -46,8 +46,6 @@ import {
   TableRow,
 } from "@repo/ui/components/ui/table"
 
-// Every DataTable instance shares this feature set. Register once here so
-// each usage stays generic and only supplies data + columns.
 export const dataTableFeatures = tableFeatures({
   columnFilteringFeature,
   globalFilteringFeature,
@@ -68,7 +66,6 @@ export function createDataTableColumnHelper<TData extends RowData>() {
   return createColumnHelper<DataTableFeatures, TData>()
 }
 
-/** Checkbox column for select-all / select-row, matching the row-selection convention used across list tables. */
 export function createSelectionColumn<TData extends RowData>(
   columnHelper: ColumnHelper<DataTableFeatures, TData>
 ) {

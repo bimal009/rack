@@ -199,7 +199,6 @@ export function PlansList() {
           columns={columns}
           data={rows}
           getRowId={(row) => row.id}
-          enableRowSelection
           enableSearch={false}
           enablePagination={false}
           isLoading={query.isLoading}
