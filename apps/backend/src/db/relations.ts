@@ -90,18 +90,82 @@ export const relations = defineRelations(schema, (r) => ({
       from: r.member.userId,
       to: r.user.id,
     }),
-    memberships: r.many.memberMembership(),
   },
 
   memberMembership: {
-    member: r.one.member({
-      from: r.memberMembership.memberId,
-      to: r.member.id,
-      optional: false,
-    }),
     gym: r.one.gyms({
       from: r.memberMembership.gymId,
       to: r.gyms.id,
+      optional: false,
+    }),
+    category: r.one.membershipCategory({
+      from: r.memberMembership.categoryId,
+      to: r.membershipCategory.id,
+      optional: false,
+    }),
+    sports: r.many.membershipSport(),
+    features: r.many.membershipFeature(),
+  },
+
+  membershipCategory: {
+    gym: r.one.gyms({
+      from: r.membershipCategory.gymId,
+      to: r.gyms.id,
+      optional: false,
+    }),
+    memberships: r.many.memberMembership(),
+  },
+
+  gymSport: {
+    gym: r.one.gyms({
+      from: r.gymSport.gymId,
+      to: r.gyms.id,
+      optional: false,
+    }),
+    memberships: r.many.membershipSport(),
+  },
+
+  gymFeature: {
+    gym: r.one.gyms({
+      from: r.gymFeature.gymId,
+      to: r.gyms.id,
+      optional: false,
+    }),
+    memberships: r.many.membershipFeature(),
+  },
+
+  membershipSport: {
+    gym: r.one.gyms({
+      from: r.membershipSport.gymId,
+      to: r.gyms.id,
+      optional: false,
+    }),
+    membership: r.one.memberMembership({
+      from: r.membershipSport.membershipId,
+      to: r.memberMembership.id,
+      optional: false,
+    }),
+    sport: r.one.gymSport({
+      from: r.membershipSport.sportId,
+      to: r.gymSport.id,
+      optional: false,
+    }),
+  },
+
+  membershipFeature: {
+    gym: r.one.gyms({
+      from: r.membershipFeature.gymId,
+      to: r.gyms.id,
+      optional: false,
+    }),
+    membership: r.one.memberMembership({
+      from: r.membershipFeature.membershipId,
+      to: r.memberMembership.id,
+      optional: false,
+    }),
+    feature: r.one.gymFeature({
+      from: r.membershipFeature.featureId,
+      to: r.gymFeature.id,
       optional: false,
     }),
   },
