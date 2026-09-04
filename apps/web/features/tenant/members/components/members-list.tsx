@@ -1,179 +1,203 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { Download, LayoutGrid, List, Plus, SlidersHorizontal } from "lucide-react"
+import { useParams } from "next/navigation"
+import { ChevronLeft, ChevronRight, ListFilter, Plus, SearchIcon } from "lucide-react"
 import { toast } from "sonner"
+import type { MemberListQuery, MemberWithUser } from "@repo/types"
 
 import { Button } from "@repo/ui/components/ui/button"
 import { DataTable } from "@repo/ui/components/ui/data-table"
-
-import { FilterPills } from "@/features/tenant/components/filter-pills"
-import { exportToCsv } from "@/features/tenant/lib/export-csv"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@repo/ui/components/ui/dropdown-menu"
+import { Input } from "@repo/ui/components/ui/input"
 
 import { DeleteConfirmDialog } from "@/features/tenant/components/delete-confirm-dialog"
-import { initialMembers } from "../lib/data"
-import type { Member, MemberInput } from "../lib/schema"
-import { createMemberColumns, fullName } from "./columns"
+import { FilterPills } from "@/features/tenant/components/filter-pills"
+import { useDebounce } from "@/hooks/use-debounce"
+
+import { useDeleteMember, useMembersQuery } from "../hooks/use-members"
+import { useMemberFilters } from "../hooks/use-member-filters"
+import { createMemberColumns } from "./columns"
 import { MemberFormSheet } from "./member-form-sheet"
 import { MemberQrDialog } from "./member-qr-dialog"
 
-const filters = ["All", "Active", "On Hold", "Expired"] as const
-
-function generateId() {
-  return `mem_${Math.random().toString(36).slice(2, 10)}`
-}
-
-function today() {
-  const months = [
-    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-  ]
-  const date = new Date()
-  return `${date.getDate()} ${months[date.getMonth()]} ${String(date.getFullYear()).slice(-2)}`
-}
+const statusOptions = ["All", "Active", "On Hold", "Expired"] as const
 
 export function MembersList() {
-  const [members, setMembers] = useState<Member[]>(initialMembers)
-  const [filter, setFilter] = useState<(typeof filters)[number]>("All")
-  const [view, setView] = useState<"list" | "grid">("list")
+  const tenant = useParams<{ tenant: string }>().tenant
+  const [filters, setFilters] = useMemberFilters()
   const [sheetOpen, setSheetOpen] = useState(false)
-  const [editingMember, setEditingMember] = useState<Member | null>(null)
-  const [deletingMember, setDeletingMember] = useState<Member | null>(null)
-  const [qrMember, setQrMember] = useState<Member | null>(null)
+  const [editing, setEditing] = useState<MemberWithUser | null>(null)
+  const [deleting, setDeleting] = useState<MemberWithUser | null>(null)
+  const [qrMember, setQrMember] = useState<MemberWithUser | null>(null)
 
-  const visible =
-    filter === "All" ? members : members.filter((m) => m.status === filter)
+  const deleteMember = useDeleteMember(tenant)
+  const debouncedSearch = useDebounce(filters.search, 350)
 
-  function handleAdd() {
-    setEditingMember(null)
-    setSheetOpen(true)
+  const params: Partial<MemberListQuery> = {
+    page: filters.page,
+    search: debouncedSearch || undefined,
+    status: filters.status ?? undefined,
+    sortOrder: filters.sort,
   }
 
-  function handleEdit(member: Member) {
-    setEditingMember(member)
-    setSheetOpen(true)
-  }
-
-  function handleSubmit(values: MemberInput, avatarUrl?: string) {
-    if (editingMember) {
-      setMembers((prev) =>
-        prev.map((member) =>
-          member.id === editingMember.id
-            ? { ...member, ...values, avatarUrl }
-            : member
-        )
-      )
-      toast.success(`${fullName(values)} updated`)
-    } else {
-      setMembers((prev) => [
-        {
-          ...values,
-          id: generateId(),
-          avatarUrl,
-          joined: today(),
-          status: "Active",
-        },
-        ...prev,
-      ])
-      toast.success(`${fullName(values)} added`)
-    }
-  }
-
-  function handleDelete() {
-    if (!deletingMember) return
-    setMembers((prev) =>
-      prev.filter((member) => member.id !== deletingMember.id)
-    )
-    toast.success(`${fullName(deletingMember)} removed`)
-    setDeletingMember(null)
-  }
-
-  function handleExport() {
-    exportToCsv(
-      "members.csv",
-      visible.map((member) => ({
-        Name: fullName(member),
-        Email: member.email,
-        Phone: member.phone,
-        Plan: member.memberships.map((m) => m.membershipName).join("; "),
-        Joined: member.joined,
-        Status: member.status,
-      }))
-    )
-  }
+  const query = useMembersQuery(tenant, params)
 
   const columns = useMemo(
     () =>
       createMemberColumns({
-        onEdit: handleEdit,
-        onDelete: setDeletingMember,
+        onEdit: (row) => {
+          setEditing(row)
+          setSheetOpen(true)
+        },
+        onDelete: setDeleting,
         onShowQr: setQrMember,
       }),
     []
   )
 
+  const rows = query.data?.data ?? []
+  const meta = query.data?.meta
+  const activeStatusLabel = filters.status ?? "All"
+
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between gap-2">
-        <FilterPills options={filters} value={filter} onChange={setFilter} />
-        <Button variant="outline" onClick={handleExport}>
-          <Download className="size-4" />
-          Export
-        </Button>
-      </div>
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex w-full min-w-0 lg:w-auto">
+          <FilterPills
+            options={statusOptions}
+            value={activeStatusLabel}
+            onChange={(value) =>
+              setFilters({
+                status: value === "All" ? null : (value as (typeof statusOptions)[number]),
+                page: 1,
+              })
+            }
+          />
+        </div>
 
-      <DataTable
-        columns={columns}
-        data={visible}
-        getRowId={(row) => row.id}
-        enableRowSelection
-        searchPlaceholder="Search by name or email..."
-        toolbar={
-          <>
-            <Button variant="outline" size="icon">
-              <SlidersHorizontal className="size-4" />
-            </Button>
-            <div className="flex items-center rounded-lg border border-border p-1">
-              <Button
-                variant={view === "list" ? "secondary" : "ghost"}
-                size="icon-sm"
-                onClick={() => setView("list")}
+        <div className="flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:items-center lg:w-auto lg:justify-end">
+          <div className="relative min-w-0 flex-1 sm:max-w-xs">
+            <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={filters.search}
+              onChange={(e) => setFilters({ search: e.target.value, page: 1 })}
+              placeholder="Search by name or email..."
+              className="rounded-full pl-9 shadow-none"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={<Button variant="outline" className="flex-1 sm:flex-none" />}
               >
-                <List className="size-4" />
-              </Button>
-              <Button
-                variant={view === "grid" ? "secondary" : "ghost"}
-                size="icon-sm"
-                onClick={() => setView("grid")}
-              >
-                <LayoutGrid className="size-4" />
-              </Button>
-            </div>
-            <Button onClick={handleAdd}>
+                <ListFilter className="size-4" />
+                Filter
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-44">
+                <DropdownMenuRadioGroup
+                  value={filters.sort}
+                  onValueChange={(value) =>
+                    setFilters({ sort: value as "asc" | "desc", page: 1 })
+                  }
+                >
+                  <DropdownMenuLabel>Sort by joined</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuRadioItem value="desc">Newest first</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="asc">Oldest first</DropdownMenuRadioItem>
+                </DropdownMenuRadioGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Button
+              onClick={() => {
+                setEditing(null)
+                setSheetOpen(true)
+              }}
+              className="flex-1 sm:flex-none"
+            >
               <Plus className="size-4" />
               Add Member
             </Button>
-          </>
-        }
-      />
+          </div>
+        </div>
+      </div>
+
+      {query.isError ? (
+        <div className="rounded-xl border border-border bg-card p-8 text-center text-sm text-muted-foreground">
+          {(query.error as Error).message}
+        </div>
+      ) : (
+        <DataTable
+          columns={columns}
+          data={rows}
+          getRowId={(row) => row.id}
+          enableSearch={false}
+          enablePagination={false}
+          isLoading={query.isLoading}
+          skeletonRows={8}
+          emptyMessage="No members found."
+        />
+      )}
+
+      {meta && meta.totalPages > 1 && (
+        <div className="flex items-center justify-between gap-4">
+          <p className="text-sm text-muted-foreground">
+            Page {meta.page} of {meta.totalPages} · {meta.total} total
+          </p>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="outline"
+              size="icon-sm"
+              disabled={meta.page <= 1 || query.isPlaceholderData}
+              onClick={() => setFilters({ page: meta.page - 1 })}
+            >
+              <ChevronLeft className="size-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon-sm"
+              disabled={meta.page >= meta.totalPages || query.isPlaceholderData}
+              onClick={() => setFilters({ page: meta.page + 1 })}
+            >
+              <ChevronRight className="size-4" />
+            </Button>
+          </div>
+        </div>
+      )}
 
       <MemberFormSheet
+        tenant={tenant}
         open={sheetOpen}
-        onOpenChange={setSheetOpen}
-        member={editingMember}
-        onSubmit={handleSubmit}
+        onOpenChange={(open) => {
+          setSheetOpen(open)
+          if (!open) setEditing(null)
+        }}
+        member={editing}
       />
 
       <DeleteConfirmDialog
-        open={Boolean(deletingMember)}
-        onOpenChange={(open) => !open && setDeletingMember(null)}
+        open={Boolean(deleting)}
+        onOpenChange={(open) => !open && setDeleting(null)}
         title="Remove member?"
         description={
-          deletingMember
-            ? `"${fullName(deletingMember)}" will be removed from your member list.`
-            : ""
+          deleting ? `"${deleting.user.name}" will be removed from your member list.` : ""
         }
-        onConfirm={handleDelete}
+        onConfirm={() => {
+          if (!deleting) return
+          deleteMember.mutate(deleting.id, {
+            onSuccess: () => toast.success(`${deleting.user.name} removed`),
+            onError: (error) => toast.error(error.message),
+          })
+          setDeleting(null)
+        }}
       />
 
       <MemberQrDialog

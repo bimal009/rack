@@ -1,19 +1,24 @@
 "use client"
 
+import { useState, type FormEvent } from "react"
+import { CalendarIcon, IdCard, MapPin, UserRound } from "lucide-react"
+import { toast } from "sonner"
 import {
-  useEffect,
-  useRef,
-  useState,
-  type ChangeEvent,
-  type FormEvent,
-} from "react"
-import { useParams } from "next/navigation"
-import { Camera, CreditCard, MapPin, Plus, Trash2, UserRound, Users } from "lucide-react"
+  memberGenderEnumSchema,
+  memberStatusEnumSchema,
+  memberUpdateSchema,
+  memberWithUserInsertSchema,
+  type MemberGender,
+  type MemberStatus,
+  type MemberWithUser,
+} from "@repo/types"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/components/ui/avatar"
 import { Button } from "@repo/ui/components/ui/button"
+import { Calendar } from "@repo/ui/components/ui/calendar"
 import {
   Field,
+  FieldDescription,
   FieldError,
   FieldLabel,
 } from "@repo/ui/components/ui/field"
@@ -24,6 +29,11 @@ import {
   InputGroupInput,
   InputGroupText,
 } from "@repo/ui/components/ui/input-group"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@repo/ui/components/ui/popover"
 import {
   Select,
   SelectContent,
@@ -38,35 +48,32 @@ import {
   SheetFooter,
   SheetHeader,
 } from "@repo/ui/components/ui/sheet"
+import { Spinner } from "@repo/ui/components/ui/spinner"
 
 import { FormSection, FormSheetHeader } from "@/features/tenant/components/form-section"
-import { useGymPlansQuery } from "@/features/tenant/revenue/plans/hooks/use-plans"
+import { ImageUpload } from "@/features/media"
 
+import { useCreateMember, useUpdateMember } from "../hooks/use-members"
 import { fieldErrors } from "../lib/validation"
-import {
-  genders,
-  memberSchema,
-  type Gender,
-  type Member,
-  type MemberInput,
-  type Membership,
-} from "../lib/schema"
 import { initials } from "./columns"
 
 interface MemberFormValues {
+  image: string
+  status: MemberStatus
   firstName: string
   lastName: string
   email: string
   phone: string
   dateOfBirth: string
-  gender: Gender | ""
+  gender: MemberGender | ""
   address: string
-  memberships: Membership[]
 }
 
-function toFormValues(member?: Member | null): MemberFormValues {
+function toFormValues(member?: MemberWithUser | null): MemberFormValues {
   if (!member) {
     return {
+      image: "",
+      status: "Active",
       firstName: "",
       lastName: "",
       email: "",
@@ -74,93 +81,115 @@ function toFormValues(member?: Member | null): MemberFormValues {
       dateOfBirth: "",
       gender: "",
       address: "",
-      memberships: [],
     }
   }
+
+  const [firstName = "", ...rest] = member.user.name.trim().split(/\s+/)
+
   return {
-    firstName: member.firstName,
-    lastName: member.lastName,
-    email: member.email,
-    phone: member.phone,
+    image: member.user.image ?? "",
+    status: member.status,
+    firstName,
+    lastName: rest.join(" "),
+    email: member.user.email,
+    phone: member.phone ?? "",
     dateOfBirth: member.dateOfBirth ?? "",
     gender: member.gender ?? "",
     address: member.address ?? "",
-    memberships: member.memberships,
   }
 }
 
-interface AvatarPreview {
-  url: string
+interface MemberFormSheetProps {
+  tenant: string
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  member?: MemberWithUser | null
 }
 
-interface MemberFormBodyProps {
-  member?: Member | null
-  onSubmit: (values: MemberInput, avatarUrl?: string) => void
-  onCancel: () => void
+export function MemberFormSheet({
+  tenant,
+  open,
+  onOpenChange,
+  member,
+}: MemberFormSheetProps) {
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent className="sm:max-w-xl">
+        {open && (
+          <MemberForm
+            key={member?.id ?? "new"}
+            tenant={tenant}
+            member={member}
+            onClose={() => onOpenChange(false)}
+          />
+        )}
+      </SheetContent>
+    </Sheet>
+  )
 }
 
-function MemberFormBody({ member, onSubmit, onCancel }: MemberFormBodyProps) {
-  const tenant = useParams<{ tenant: string }>().tenant
-  const gymPlans = useGymPlansQuery(tenant, { limit: 100 })
-  const [values, setValues] = useState<MemberFormValues>(() =>
-    toFormValues(member)
-  )
-  const [errors, setErrors] = useState<Record<string, string>>({})
-  const [avatar, setAvatar] = useState<AvatarPreview | null>(
-    member?.avatarUrl ? { url: member.avatarUrl } : null
-  )
-  const createdUrls = useRef<string[]>([])
+function MemberForm({
+  tenant,
+  member,
+  onClose,
+}: {
+  tenant: string
+  member?: MemberWithUser | null
+  onClose: () => void
+}) {
   const isEdit = Boolean(member)
+  const [values, setValues] = useState<MemberFormValues>(() => toFormValues(member))
+  const [errors, setErrors] = useState<Record<string, string>>({})
+  const createMember = useCreateMember(tenant)
+  const updateMember = useUpdateMember(tenant)
 
-  useEffect(() => {
-    return () => {
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-      createdUrls.current.forEach((url) => URL.revokeObjectURL(url))
-    }
-  }, [])
+  const pending = isEdit ? updateMember.isPending : createMember.isPending
 
-  function handleAvatarSelected(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0]
-    if (!file) return
-    const url = URL.createObjectURL(file)
-    createdUrls.current.push(url)
-    setAvatar({ url })
-    event.target.value = ""
-  }
-
-  function addMembership() {
-    setValues((v) => ({
-      ...v,
-      memberships: [
-        ...v.memberships,
-        { membershipId: "", membershipName: "" },
-      ],
-    }))
-  }
-
-  function updateMembership(index: number, patch: Partial<Membership>) {
-    setValues((v) => ({
-      ...v,
-      memberships: v.memberships.map((m, i) =>
-        i === index ? { ...m, ...patch } : m
-      ),
-    }))
-  }
-
-  function removeMembership(index: number) {
-    setValues((v) => ({
-      ...v,
-      memberships: v.memberships.filter((_, i) => i !== index),
-    }))
+  function set<K extends keyof MemberFormValues>(key: K, value: MemberFormValues[K]) {
+    setValues((v) => ({ ...v, [key]: value }))
   }
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault()
 
-    const result = memberSchema.safeParse({
-      ...values,
-      gender: values.gender || undefined,
-      memberships: values.memberships.filter((m) => m.membershipId),
+    const shared = {
+      status: values.status,
+      phone: values.phone,
+      dateOfBirth: values.dateOfBirth,
+      gender: values.gender,
+      address: values.address,
+    }
+
+    if (isEdit && member) {
+      const result = memberUpdateSchema.safeParse({
+        ...shared,
+        phone: values.phone || undefined,
+      })
+      if (!result.success) {
+        setErrors(fieldErrors(result.error))
+        return
+      }
+
+      setErrors({})
+      updateMember.mutate(
+        { id: member.id, input: result.data },
+        {
+          onSuccess: () => {
+            toast.success(`${member.user.name} updated`)
+            onClose()
+          },
+          onError: (error) => toast.error(error.message),
+        }
+      )
+      return
+    }
+
+    const result = memberWithUserInsertSchema.safeParse({
+      ...shared,
+      firstName: values.firstName,
+      lastName: values.lastName,
+      email: values.email,
+      image: values.image || undefined,
     })
 
     if (!result.success) {
@@ -169,145 +198,206 @@ function MemberFormBody({ member, onSubmit, onCancel }: MemberFormBodyProps) {
     }
 
     setErrors({})
-    onSubmit(result.data, avatar?.url)
-  }
-
-  const previewMember = {
-    firstName: values.firstName || "?",
-    lastName: values.lastName || "",
+    createMember.mutate(result.data, {
+      onSuccess: () => {
+        toast.success(`${result.data.firstName} ${result.data.lastName} added`)
+        onClose()
+      },
+      onError: (error) => toast.error(error.message),
+    })
   }
 
   return (
     <form onSubmit={handleSubmit} className="flex h-full flex-col">
       <SheetHeader>
         <FormSheetHeader
-          icon={Users}
+          icon={UserRound}
           title={isEdit ? "Edit member" : "Add member"}
           description={
             isEdit
-              ? "Update this member's profile and membership."
-              : "Add a new member to your gym."
+              ? "Update this member's profile."
+              : "Creates a user account and adds them as a member."
           }
         />
       </SheetHeader>
 
       <SheetBody className="flex flex-col gap-7">
         <FormSection icon={UserRound} title="Basic information">
-          <div className="relative w-fit">
-            <Avatar className="size-16">
-              <AvatarImage src={avatar?.url} alt="" />
-              <AvatarFallback className="bg-muted text-sm font-medium text-muted-foreground">
-                {initials(previewMember)}
-              </AvatarFallback>
-            </Avatar>
-            <label className="absolute -right-0.5 -bottom-0.5 flex size-6 cursor-pointer items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm">
-              <Camera className="size-3.5" />
-              <span className="sr-only">Upload photo</span>
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleAvatarSelected}
-              />
-            </label>
-          </div>
+          <Field>
+            <FieldLabel htmlFor="member-status">Status</FieldLabel>
+            <Select
+              value={values.status}
+              onValueChange={(value) => set("status", value as MemberStatus)}
+            >
+              <SelectTrigger id="member-status" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {memberStatusEnumSchema.options.map((status) => (
+                  <SelectItem key={status} value={status}>
+                    {status}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
 
-          <div className="grid grid-cols-2 gap-4">
-            <Field data-invalid={Boolean(errors.firstName)}>
-              <FieldLabel htmlFor="member-first-name">
-                First Name <span className="text-destructive">*</span>
-              </FieldLabel>
-              <Input
-                id="member-first-name"
-                value={values.firstName}
-                aria-invalid={Boolean(errors.firstName)}
-                onChange={(e) =>
-                  setValues((v) => ({ ...v, firstName: e.target.value }))
-                }
-              />
-              <FieldError>{errors.firstName}</FieldError>
-            </Field>
-
-            <Field data-invalid={Boolean(errors.lastName)}>
-              <FieldLabel htmlFor="member-last-name">
-                Last Name <span className="text-destructive">*</span>
-              </FieldLabel>
-              <Input
-                id="member-last-name"
-                value={values.lastName}
-                aria-invalid={Boolean(errors.lastName)}
-                onChange={(e) =>
-                  setValues((v) => ({ ...v, lastName: e.target.value }))
-                }
-              />
-              <FieldError>{errors.lastName}</FieldError>
-            </Field>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <Field data-invalid={Boolean(errors.email)}>
-              <FieldLabel htmlFor="member-email">
-                Email <span className="text-destructive">*</span>
-              </FieldLabel>
-              <Input
-                id="member-email"
-                type="email"
-                value={values.email}
-                aria-invalid={Boolean(errors.email)}
-                onChange={(e) =>
-                  setValues((v) => ({ ...v, email: e.target.value }))
-                }
-              />
-              <FieldError>{errors.email}</FieldError>
-            </Field>
-
-            <Field data-invalid={Boolean(errors.phone)}>
-              <FieldLabel htmlFor="member-phone">Phone</FieldLabel>
-              <InputGroup>
-                <InputGroupAddon>
-                  <InputGroupText>+977</InputGroupText>
-                </InputGroupAddon>
-                <InputGroupInput
-                  id="member-phone"
-                  type="tel"
-                  placeholder="98XXXXXXXX"
-                  value={values.phone}
-                  aria-invalid={Boolean(errors.phone)}
-                  onChange={(e) =>
-                    setValues((v) => ({ ...v, phone: e.target.value }))
-                  }
+          {isEdit && member ? (
+            <div className="flex items-center gap-3 rounded-lg border border-border bg-muted/30 p-3">
+              <Avatar size="sm">
+                <AvatarImage src={member.user.image ?? undefined} alt="" />
+                <AvatarFallback className="bg-muted text-xs font-medium text-muted-foreground">
+                  {initials(member.user.name)}
+                </AvatarFallback>
+              </Avatar>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium text-foreground">
+                  {member.user.name}
+                </p>
+                <p className="truncate text-xs text-muted-foreground">
+                  {member.user.email}
+                </p>
+              </div>
+            </div>
+          ) : (
+            <>
+              <Field>
+                <FieldLabel>Photo</FieldLabel>
+                <ImageUpload
+                  shape="circle"
+                  folder="members/avatars"
+                  value={values.image || null}
+                  onChange={(url) => set("image", url ?? "")}
+                  disabled={pending}
                 />
-              </InputGroup>
-              <FieldError>{errors.phone}</FieldError>
-            </Field>
-          </div>
+              </Field>
+
+              <div className="grid grid-cols-2 gap-4">
+                <Field data-invalid={Boolean(errors.firstName)}>
+                  <FieldLabel htmlFor="member-first-name">
+                    First Name <span className="text-destructive">*</span>
+                  </FieldLabel>
+                  <Input
+                    id="member-first-name"
+                    placeholder="Jane"
+                    value={values.firstName}
+                    aria-invalid={Boolean(errors.firstName)}
+                    onChange={(e) => set("firstName", e.target.value)}
+                  />
+                  <FieldError>{errors.firstName}</FieldError>
+                </Field>
+
+                <Field data-invalid={Boolean(errors.lastName)}>
+                  <FieldLabel htmlFor="member-last-name">
+                    Last Name <span className="text-destructive">*</span>
+                  </FieldLabel>
+                  <Input
+                    id="member-last-name"
+                    placeholder="Doe"
+                    value={values.lastName}
+                    aria-invalid={Boolean(errors.lastName)}
+                    onChange={(e) => set("lastName", e.target.value)}
+                  />
+                  <FieldError>{errors.lastName}</FieldError>
+                </Field>
+              </div>
+
+              <Field data-invalid={Boolean(errors.email)}>
+                <FieldLabel htmlFor="member-email">
+                  Email <span className="text-destructive">*</span>
+                </FieldLabel>
+                <Input
+                  id="member-email"
+                  type="email"
+                  placeholder="jane@example.com"
+                  value={values.email}
+                  aria-invalid={Boolean(errors.email)}
+                  onChange={(e) => set("email", e.target.value)}
+                />
+                <FieldError>{errors.email}</FieldError>
+              </Field>
+            </>
+          )}
+
+          <Field data-invalid={Boolean(errors.phone)}>
+            <FieldLabel htmlFor="member-phone">
+              Phone <span className="text-destructive">*</span>
+            </FieldLabel>
+            <InputGroup>
+              <InputGroupAddon>
+                <InputGroupText>+977</InputGroupText>
+              </InputGroupAddon>
+              <InputGroupInput
+                id="member-phone"
+                type="tel"
+                placeholder="98XXXXXXXX"
+                value={values.phone}
+                aria-invalid={Boolean(errors.phone)}
+                onChange={(e) => set("phone", e.target.value)}
+              />
+            </InputGroup>
+            <FieldError>{errors.phone}</FieldError>
+          </Field>
 
           <div className="grid grid-cols-2 gap-4">
             <Field>
               <FieldLabel htmlFor="member-dob">Date of Birth</FieldLabel>
-              <Input
-                id="member-dob"
-                type="date"
-                value={values.dateOfBirth}
-                onChange={(e) =>
-                  setValues((v) => ({ ...v, dateOfBirth: e.target.value }))
-                }
-              />
+              <Popover>
+                <PopoverTrigger
+                  render={
+                    <Button
+                      id="member-dob"
+                      type="button"
+                      variant="outline"
+                      className="w-full justify-start font-normal data-[empty=true]:text-muted-foreground"
+                      data-empty={!values.dateOfBirth}
+                    />
+                  }
+                >
+                  <CalendarIcon className="size-4" />
+                  {values.dateOfBirth
+                    ? new Date(`${values.dateOfBirth}T00:00:00`).toLocaleDateString(
+                        undefined,
+                        { day: "numeric", month: "short", year: "numeric" }
+                      )
+                    : "Pick a date"}
+                </PopoverTrigger>
+                <PopoverContent align="start" className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    captionLayout="dropdown"
+                    startMonth={new Date(1940, 0)}
+                    endMonth={new Date()}
+                    disabled={{ after: new Date() }}
+                    selected={
+                      values.dateOfBirth
+                        ? new Date(`${values.dateOfBirth}T00:00:00`)
+                        : undefined
+                    }
+                    onSelect={(date) =>
+                      set(
+                        "dateOfBirth",
+                        date
+                          ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`
+                          : ""
+                      )
+                    }
+                  />
+                </PopoverContent>
+              </Popover>
             </Field>
 
             <Field>
               <FieldLabel htmlFor="member-gender">Gender</FieldLabel>
               <Select
                 value={values.gender}
-                onValueChange={(value) =>
-                  setValues((v) => ({ ...v, gender: value as Gender }))
-                }
+                onValueChange={(value) => set("gender", value as MemberGender)}
               >
                 <SelectTrigger id="member-gender" className="w-full">
                   <SelectValue placeholder="Select gender" />
                 </SelectTrigger>
                 <SelectContent>
-                  {genders.map((gender) => (
+                  {memberGenderEnumSchema.options.map((gender) => (
                     <SelectItem key={gender} value={gender}>
                       {gender}
                     </SelectItem>
@@ -325,118 +415,21 @@ function MemberFormBody({ member, onSubmit, onCancel }: MemberFormBodyProps) {
               id="member-address"
               placeholder="Street, city, postcode"
               value={values.address}
-              onChange={(e) =>
-                setValues((v) => ({ ...v, address: e.target.value }))
-              }
+              onChange={(e) => set("address", e.target.value)}
             />
           </Field>
-        </FormSection>
-
-        <FormSection
-          icon={CreditCard}
-          title="Membership"
-          description="Assign an existing membership to this member."
-        >
-          {values.memberships.length > 0 && (
-            <div className="flex flex-col gap-2">
-              {values.memberships.map((membership, index) => (
-                <div key={index} className="flex items-center gap-2">
-                  <Select
-                    value={membership.membershipId}
-                    onValueChange={(membershipId) => {
-                      const found = gymPlans.data?.data.find(
-                        (m) => m.id === membershipId
-                      )
-                      updateMembership(index, {
-                        membershipId: membershipId ?? "",
-                        membershipName: found?.name ?? "",
-                      })
-                    }}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select a membership">
-                        {() =>
-                          membership.membershipName || "Select a membership"
-                        }
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {(gymPlans.data?.data ?? [])
-                        .filter((m) => m.isActive)
-                        .map((m) => (
-                          <SelectItem key={m.id} value={m.id}>
-                            {m.name}
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
-
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon-sm"
-                    className="shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                    onClick={() => removeMembership(index)}
-                  >
-                    <Trash2 className="size-4" />
-                    <span className="sr-only">Remove membership</span>
-                  </Button>
-                </div>
-              ))}
-            </div>
-          )}
-
-          <button
-            type="button"
-            onClick={addMembership}
-            className="flex items-center justify-center gap-1.5 rounded-lg border border-dashed border-border py-2 text-sm font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
-          >
-            <Plus className="size-3.5" />
-            Add Membership
-          </button>
         </FormSection>
       </SheetBody>
 
       <SheetFooter>
-        <Button type="button" variant="outline" onClick={onCancel}>
+        <Button type="button" variant="outline" onClick={onClose}>
           Cancel
         </Button>
-        <Button type="submit">
+        <Button type="submit" disabled={pending}>
+          {pending ? <Spinner /> : <IdCard className="size-4" />}
           {isEdit ? "Save changes" : "Add member"}
         </Button>
       </SheetFooter>
     </form>
-  )
-}
-
-interface MemberFormSheetProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  member?: Member | null
-  onSubmit: (values: MemberInput, avatarUrl?: string) => void
-}
-
-export function MemberFormSheet({
-  open,
-  onOpenChange,
-  member,
-  onSubmit,
-}: MemberFormSheetProps) {
-  return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="sm:max-w-xl">
-        {open && (
-          <MemberFormBody
-            key={member?.id ?? "new"}
-            member={member}
-            onSubmit={(values, avatarUrl) => {
-              onSubmit(values, avatarUrl)
-              onOpenChange(false)
-            }}
-            onCancel={() => onOpenChange(false)}
-          />
-        )}
-      </SheetContent>
-    </Sheet>
   )
 }

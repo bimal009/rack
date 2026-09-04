@@ -31,8 +31,7 @@ import {
 } from "@repo/ui/components/ui/sheet"
 
 import { FormSection, FormSheetHeader } from "@/features/tenant/components/form-section"
-import { fullName } from "@/features/tenant/members/components/columns"
-import { initialMembers } from "@/features/tenant/members/lib/data"
+import { useMembersQuery } from "@/features/tenant/members/hooks/use-members"
 import { initialPackages } from "@/features/tenant/revenue/packages/lib/data"
 import { useProductsQuery } from "@/features/tenant/revenue/products/hooks/use-products"
 
@@ -71,12 +70,13 @@ interface OrderFormBodyProps {
 function OrderFormBody({ onSubmit, onCancel }: OrderFormBodyProps) {
   const tenant = useParams<{ tenant: string }>().tenant
   const products = useProductsQuery(tenant, { limit: 100 })
-  const [memberEmail, setMemberEmail] = useState<string | null>(null)
+  const members = useMembersQuery(tenant, { limit: 100 })
+  const [memberId, setMemberId] = useState<string | null>(null)
   const [items, setItems] = useState<SaleItem[]>([])
   const [status, setStatus] = useState<OrderStatus>("Paid")
   const [error, setError] = useState("")
 
-  const member = initialMembers.find((m) => m.email === memberEmail) ?? null
+  const member = (members.data?.data ?? []).find((m) => m.id === memberId) ?? null
   const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0)
 
   function pickableOptions(type: SaleItemType) {
@@ -123,8 +123,8 @@ function OrderFormBody({ onSubmit, onCancel }: OrderFormBodyProps) {
 
     const order: Order = {
       id: generateOrderId(),
-      memberName: fullName(member),
-      memberEmail: member.email,
+      memberName: member.user.name,
+      memberEmail: member.user.email,
       items: validItems.map((item) => ({
         name: item.name,
         qty: item.quantity,
@@ -156,13 +156,13 @@ function OrderFormBody({ onSubmit, onCancel }: OrderFormBodyProps) {
           <Field>
             <FieldLabel htmlFor="order-member">Member</FieldLabel>
             <Combobox
-              items={initialMembers.map((m) => m.email)}
-              itemToStringLabel={(email) => {
-                const found = initialMembers.find((m) => m.email === email)
-                return found ? `${fullName(found)} — ${found.email}` : email
+              items={(members.data?.data ?? []).map((m) => m.id)}
+              itemToStringLabel={(id) => {
+                const found = members.data?.data.find((m) => m.id === id)
+                return found ? `${found.user.name} — ${found.user.email}` : id
               }}
-              value={memberEmail}
-              onValueChange={setMemberEmail}
+              value={memberId}
+              onValueChange={setMemberId}
             >
               <ComboboxInput
                 id="order-member"
@@ -171,13 +171,11 @@ function OrderFormBody({ onSubmit, onCancel }: OrderFormBodyProps) {
               <ComboboxContent>
                 <ComboboxEmpty>No members found.</ComboboxEmpty>
                 <ComboboxList>
-                  {(email: string) => {
-                    const found = initialMembers.find(
-                      (m) => m.email === email
-                    )
+                  {(id: string) => {
+                    const found = members.data?.data.find((m) => m.id === id)
                     return (
-                      <ComboboxItem key={email} value={email}>
-                        {found ? `${fullName(found)} — ${found.email}` : email}
+                      <ComboboxItem key={id} value={id}>
+                        {found ? `${found.user.name} — ${found.user.email}` : id}
                       </ComboboxItem>
                     )
                   }}

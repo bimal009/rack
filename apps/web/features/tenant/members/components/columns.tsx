@@ -1,13 +1,13 @@
 "use client"
 
 import { MoreHorizontal, PenSquare, QrCode, Trash2 } from "lucide-react"
+import type { MemberStatus, MemberWithUser } from "@repo/types"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/components/ui/avatar"
 import { Badge } from "@repo/ui/components/ui/badge"
 import {
   createDataTableColumnHelper,
   createIndexColumn,
-  createSelectionColumn,
 } from "@repo/ui/components/ui/data-table"
 import {
   DropdownMenu,
@@ -16,8 +16,6 @@ import {
   DropdownMenuTrigger,
 } from "@repo/ui/components/ui/dropdown-menu"
 import { cn } from "@repo/ui/lib/utils"
-
-import type { Member, MemberStatus } from "../lib/schema"
 
 export const statusVariant: Record<
   MemberStatus,
@@ -28,20 +26,21 @@ export const statusVariant: Record<
   Expired: "destructive",
 }
 
-export function fullName(member: Pick<Member, "firstName" | "lastName">) {
-  return `${member.firstName} ${member.lastName}`.trim()
-}
-
-export function initials(member: Pick<Member, "firstName" | "lastName">) {
+export function initials(name: string) {
   return (
-    (member.firstName[0] ?? "") + (member.lastName[0] ?? "")
-  ).toUpperCase()
+    name
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase() ?? "")
+      .join("") || "?"
+  )
 }
 
 interface MemberColumnActions {
-  onEdit: (member: Member) => void
-  onDelete: (member: Member) => void
-  onShowQr: (member: Member) => void
+  onEdit: (member: MemberWithUser) => void
+  onDelete: (member: MemberWithUser) => void
+  onShowQr: (member: MemberWithUser) => void
 }
 
 export function createMemberColumns({
@@ -49,59 +48,49 @@ export function createMemberColumns({
   onDelete,
   onShowQr,
 }: MemberColumnActions) {
-  const columnHelper = createDataTableColumnHelper<Member>()
+  const columnHelper = createDataTableColumnHelper<MemberWithUser>()
 
   return columnHelper.columns([
-    createSelectionColumn(columnHelper),
     createIndexColumn(columnHelper),
-    columnHelper.accessor((row) => `${fullName(row)} ${row.email}`, {
+    columnHelper.accessor((row) => `${row.user.name} ${row.user.email}`, {
       id: "member",
       header: "Member",
-      cell: ({ row }) => (
-        <div className="flex items-center gap-2.5">
-          <Avatar size="sm">
-            <AvatarImage src={row.original.avatarUrl} alt="" />
-            <AvatarFallback className="bg-muted text-xs font-medium text-muted-foreground">
-              {initials(row.original)}
-            </AvatarFallback>
-          </Avatar>
-          <div className="min-w-0">
-            <p className="truncate text-sm font-medium text-foreground">
-              {fullName(row.original)}
-            </p>
-            <p className="truncate text-xs text-muted-foreground">
-              {row.original.email}
-            </p>
-          </div>
-        </div>
-      ),
-    }),
-    columnHelper.accessor((row) => row.memberships.length, {
-      id: "plan",
-      header: "Plan",
-      enableGlobalFilter: false,
       cell: ({ row }) => {
-        const memberships = row.original.memberships
-        if (memberships.length === 0) {
-          return (
-            <Badge variant="secondary" className="rounded-full font-normal">
-              No plan
-            </Badge>
-          )
-        }
+        const { name, email, image } = row.original.user
         return (
-          <Badge variant="outline" className="rounded-full font-normal">
-            {memberships[0]!.membershipName}
-            {memberships.length > 1 ? ` +${memberships.length - 1}` : ""}
-          </Badge>
+          <div className="flex items-center gap-2.5">
+            <Avatar size="sm">
+              <AvatarImage src={image ?? undefined} alt="" />
+              <AvatarFallback className="bg-muted text-xs font-medium text-muted-foreground">
+                {initials(name)}
+              </AvatarFallback>
+            </Avatar>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium text-foreground">{name}</p>
+              <p className="truncate text-xs text-muted-foreground">{email}</p>
+            </div>
+          </div>
         )
       },
     }),
-    columnHelper.accessor("joined", {
+    columnHelper.accessor("phone", {
+      header: "Phone",
+      enableGlobalFilter: false,
+      cell: ({ getValue }) => (
+        <span className="text-muted-foreground">{getValue() ?? "—"}</span>
+      ),
+    }),
+    columnHelper.accessor("joinedAt", {
       header: "Join Date",
       enableGlobalFilter: false,
       cell: ({ getValue }) => (
-        <span className="text-muted-foreground">{getValue()}</span>
+        <span className="text-muted-foreground">
+          {new Date(getValue()).toLocaleDateString(undefined, {
+            day: "numeric",
+            month: "short",
+            year: "2-digit",
+          })}
+        </span>
       ),
     }),
     columnHelper.accessor("status", {

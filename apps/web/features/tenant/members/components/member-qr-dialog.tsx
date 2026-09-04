@@ -1,6 +1,7 @@
 "use client"
 
 import QRCode from "react-qr-code"
+import type { MemberWithUser } from "@repo/types"
 
 import {
   Dialog,
@@ -10,11 +11,8 @@ import {
   DialogTitle,
 } from "@repo/ui/components/ui/dialog"
 
-import type { Member } from "../lib/schema"
-import { fullName } from "./columns"
-
 interface MemberQrDialogProps {
-  member: Member | null
+  member: MemberWithUser | null
   onOpenChange: (open: boolean) => void
 }
 
@@ -23,7 +21,7 @@ export function MemberQrDialog({ member, onOpenChange }: MemberQrDialogProps) {
     <Dialog open={Boolean(member)} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle>{member ? fullName(member) : ""}</DialogTitle>
+          <DialogTitle>{member?.user.name ?? ""}</DialogTitle>
           <DialogDescription>
             Scan this code at the front desk to check in or out.
           </DialogDescription>
