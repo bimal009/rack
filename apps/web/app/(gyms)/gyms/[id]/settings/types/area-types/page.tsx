@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   title: "Area Types",
 }
 
-export default function Page() {
-  return <AreaTypesList />
+export default async function Page({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  return <AreaTypesList id={id} />
 }

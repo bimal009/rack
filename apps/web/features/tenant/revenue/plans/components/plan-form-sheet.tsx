@@ -242,7 +242,7 @@ interface PlanFormBodyProps {
 }
 
 function PlanFormBody({ plan, pending, onSubmit, onCancel }: PlanFormBodyProps) {
-  const tenant = useParams<{ tenant: string }>().tenant
+  const tenant = useParams<{ id: string }>().id
   const categories = useMembershipCategoriesQuery(tenant, { limit: 100 })
   const sports = useGymSportsQuery(tenant, { limit: 100 })
   const features = useGymFeaturesQuery(tenant, { limit: 100 })

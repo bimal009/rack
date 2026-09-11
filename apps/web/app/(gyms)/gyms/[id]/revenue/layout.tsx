@@ -8,14 +8,14 @@ export default async function RevenueLayout({
   params,
 }: {
   children: ReactNode
-  params: Promise<{ tenant: string }>
+  params: Promise<{ id: string }>
 }) {
-  const { tenant } = await params
+  const { id } = await params
   return (
     <>
       <SiteHeader title="Revenue" />
       <div className="flex flex-1 flex-col gap-4 p-4 md:gap-6 md:p-6">
-        <RevenueNav tenant={tenant} />
+        <RevenueNav id={id} />
         {children}
       </div>
     </>

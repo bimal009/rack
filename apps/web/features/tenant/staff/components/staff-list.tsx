@@ -1,7 +1,6 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { useParams } from "next/navigation"
 import {
   ChevronLeft,
   ChevronRight,
@@ -46,18 +45,18 @@ const roleOptions = ["All", ...gymRoleEnumSchema.options.map(gymRoleLabel)] as c
 const statusOptions = ["All", "Active", "Inactive"] as const
 
 interface StaffListProps {
+  id: string
   lockedRole?: GymRole
   label?: string
 }
 
-export function StaffList({ lockedRole, label = "Staff" }: StaffListProps = {}) {
-  const tenant = useParams<{ tenant: string }>().tenant
+export function StaffList({ id, lockedRole, label = "Staff" }: StaffListProps) {
   const [filters, setFilters] = useStaffFilters()
   const [sheetOpen, setSheetOpen] = useState(false)
   const [editing, setEditing] = useState<StaffWithUser | null>(null)
   const [deleting, setDeleting] = useState<StaffWithUser | null>(null)
 
-  const deleteStaff = useDeleteStaffMutation(tenant)
+  const deleteStaff = useDeleteStaffMutation(id)
 
   const debouncedSearch = useDebounce(filters.search, 350)
 
@@ -69,10 +68,10 @@ export function StaffList({ lockedRole, label = "Staff" }: StaffListProps = {}) 
     sortOrder: filters.sort,
   }
 
-  const query = useStaffListQuery(tenant, params)
+  const query = useStaffListQuery(id, params)
 
   const isInstructorView = lockedRole === "instructor"
-  const instructorTypes = useInstructorTypesQuery(tenant, { limit: 100 })
+  const instructorTypes = useInstructorTypesQuery(id, { limit: 100 })
 
   const columns = useMemo(() => {
     const rowActions = {
@@ -260,7 +259,7 @@ export function StaffList({ lockedRole, label = "Staff" }: StaffListProps = {}) 
       )}
 
       <StaffFormSheet
-        tenant={tenant}
+        tenant={id}
         open={sheetOpen}
         onOpenChange={(open) => {
           setSheetOpen(open)

@@ -24,7 +24,7 @@ import { createAreaColumns } from "./columns"
 const filters = ["All", "Active", "Inactive"] as const
 
 export function AreasList() {
-  const tenant = useParams<{ tenant: string }>().tenant
+  const tenant = useParams<{ id: string }>().id
 
   const [filter, setFilter] = useState<(typeof filters)[number]>("All")
   const [sheetOpen, setSheetOpen] = useState(false)

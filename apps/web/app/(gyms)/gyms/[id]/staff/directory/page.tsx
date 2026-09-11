@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   title: "Staff",
 }
 
-export default function Page() {
-  return <StaffList />
+export default async function Page({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  return <StaffList id={id} />
 }

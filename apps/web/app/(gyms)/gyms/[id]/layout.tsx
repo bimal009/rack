@@ -20,7 +20,7 @@ export default async function TenantLayout({
         } as React.CSSProperties
       }
     >
-      <AppSidebar variant="inset" tenant={id} />
+      <AppSidebar variant="inset" id={id} />
       <SidebarInset>{children}</SidebarInset>
     </SidebarProvider>
   )

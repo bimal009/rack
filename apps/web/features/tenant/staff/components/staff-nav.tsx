@@ -14,12 +14,12 @@ const navItems = [
 ]
 
 interface StaffNavProps {
-  tenant: string
+  id: string
 }
 
-export function StaffNav({ tenant }: StaffNavProps) {
+export function StaffNav({ id }: StaffNavProps) {
   const pathname = usePathname()
-  const base = `/s/${tenant}/staff`
+  const base = `/gyms/${id}/staff`
   const activeRef = useRef<HTMLAnchorElement>(null)
 
   useEffect(() => {

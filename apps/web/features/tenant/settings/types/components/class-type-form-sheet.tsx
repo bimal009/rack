@@ -67,7 +67,7 @@ interface FormBodyProps {
 }
 
 function FormBody({ type, pending, onSubmit, onCancel }: FormBodyProps) {
-  const tenant = useParams<{ tenant: string }>().tenant
+  const tenant = useParams<{ id: string }>().id
   const sportsQuery = useGymSportsQuery(tenant)
   const [values, setValues] = useState<FormValues>(() => toFormValues(type))
   const [errors, setErrors] = useState<Record<string, string>>({})

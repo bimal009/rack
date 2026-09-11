@@ -9,8 +9,8 @@ export const metadata: Metadata = {
 export default async function Page({
   params,
 }: {
-  params: Promise<{ tenant: string }>
+  params: Promise<{ id: string }>
 }) {
-  const { tenant } = await params
-  return <AttendancePage tenant={tenant} />
+  const { id } = await params
+  return <AttendancePage id={id} />
 }

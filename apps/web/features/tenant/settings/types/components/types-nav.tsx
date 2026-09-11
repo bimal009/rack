@@ -18,12 +18,12 @@ const navItems = [
 ]
 
 interface TypesNavProps {
-  tenant: string
+  id: string
 }
 
-export function TypesNav({ tenant }: TypesNavProps) {
+export function TypesNav({ id }: TypesNavProps) {
   const pathname = usePathname()
-  const base = `/s/${tenant}/settings/types`
+  const base = `/gyms/${id}/settings/types`
   const activeRef = useRef<HTMLAnchorElement>(null)
 
   useEffect(() => {

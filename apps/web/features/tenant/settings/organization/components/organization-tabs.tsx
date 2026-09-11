@@ -17,12 +17,12 @@ const tabs = [
 ]
 
 interface OrganizationTabsProps {
-  tenant: string
+  id: string
 }
 
-export function OrganizationTabs({ tenant }: OrganizationTabsProps) {
+export function OrganizationTabs({ id }: OrganizationTabsProps) {
   const pathname = usePathname()
-  const base = `/s/${tenant}/settings/organization`
+  const base = `/gyms/${id}/settings/organization`
 
   return (
     <div className="no-scrollbar scroll-fade-x flex items-center gap-4 overflow-x-auto border-b border-border">

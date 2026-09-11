@@ -7,13 +7,13 @@ export default async function TypesLayout({
   params,
 }: {
   children: ReactNode
-  params: Promise<{ tenant: string }>
+  params: Promise<{ id: string }>
 }) {
-  const { tenant } = await params
+  const { id } = await params
   return (
     <>
       <h1 className="text-xl font-semibold text-foreground">Types</h1>
-      <TypesNav tenant={tenant} />
+      <TypesNav id={id} />
       {children}
     </>
   )

@@ -24,9 +24,10 @@ function buildColumns() {
   ])
 }
 
-export function TaxRatesList() {
+export function TaxRatesList({ id }: { id: string }) {
   return (
     <TypeList<TaxRate, NewTaxRate>
+      id={id}
       label="Tax Rate"
       buildColumns={buildColumns}
       useList={useTaxRatesQuery}

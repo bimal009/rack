@@ -105,7 +105,7 @@ interface PackageFormBodyProps {
 }
 
 function PackageFormBody({ pkg, onSubmit, onCancel }: PackageFormBodyProps) {
-  const tenant = useParams<{ tenant: string }>().tenant
+  const tenant = useParams<{ id: string }>().id
   const gymPlans = useGymPlansQuery(tenant, { limit: 100 })
   const products = useProductsQuery(tenant, { limit: 100 })
   const [values, setValues] = useState<PackageFormValues>(() =>

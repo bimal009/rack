@@ -18,9 +18,10 @@ function buildColumns() {
   return columnHelper.columns([columnHelper.accessor("name", { header: "Name" })])
 }
 
-export function ProductCategoriesList() {
+export function ProductCategoriesList({ id }: { id: string }) {
   return (
     <TypeList<ProductCategory, NewProductCategory>
+      id={id}
       label="Product category"
       buildColumns={buildColumns}
       useList={useProductCategoriesQuery}

@@ -68,7 +68,7 @@ interface OrderFormBodyProps {
 }
 
 function OrderFormBody({ onSubmit, onCancel }: OrderFormBodyProps) {
-  const tenant = useParams<{ tenant: string }>().tenant
+  const tenant = useParams<{ id: string }>().id
   const products = useProductsQuery(tenant, { limit: 100 })
   const members = useMembersQuery(tenant, { limit: 100 })
   const [memberId, setMemberId] = useState<string | null>(null)

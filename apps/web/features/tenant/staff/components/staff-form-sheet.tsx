@@ -592,7 +592,7 @@ function StaffForm({
                     className="w-full justify-start font-normal text-muted-foreground"
                     onClick={() =>
                       router.push(
-                        `/s/${tenant}/settings/types/instructor-types`
+                        `/gyms/${tenant}/settings/types/instructor-types`
                       )
                     }
                   >

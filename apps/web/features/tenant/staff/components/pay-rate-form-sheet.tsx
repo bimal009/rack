@@ -103,7 +103,7 @@ interface FormBodyProps {
 }
 
 function FormBody({ policy, pending, onSubmit, onCancel }: FormBodyProps) {
-  const tenant = useParams<{ tenant: string }>().tenant
+  const tenant = useParams<{ id: string }>().id
   const classTypes = useClassTypesQuery(tenant, { limit: 100 })
   const instructorTypes = useInstructorTypesQuery(tenant, { limit: 100 })
 

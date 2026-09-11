@@ -68,9 +68,10 @@ function buildColumns(): DataTableColumnDef<PayRate>[] {
   ])
 }
 
-export function PayRatesList() {
+export function PayRatesList({ id }: { id: string }) {
   return (
     <TypeList<PayRate, NewPayRate>
+      id={id}
       label="Pay rate"
       buildColumns={buildColumns}
       useList={usePayRatesQuery}

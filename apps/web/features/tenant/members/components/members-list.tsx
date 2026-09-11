@@ -1,7 +1,6 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { useParams } from "next/navigation"
 import { ChevronLeft, ChevronRight, ListFilter, Plus, SearchIcon } from "lucide-react"
 import { toast } from "sonner"
 import type { MemberListQuery, MemberWithUser } from "@repo/types"
@@ -30,14 +29,13 @@ import { MemberFormSheet } from "./member-form-sheet"
 
 const statusOptions = ["All", "Active", "Inactive"] as const
 
-export function MembersList() {
-  const tenant = useParams<{ tenant: string }>().tenant
+export function MembersList({ id }: { id: string }) {
   const [filters, setFilters] = useMemberFilters()
   const [sheetOpen, setSheetOpen] = useState(false)
   const [editing, setEditing] = useState<MemberWithUser | null>(null)
   const [deleting, setDeleting] = useState<MemberWithUser | null>(null)
 
-  const deleteMember = useDeleteMember(tenant)
+  const deleteMember = useDeleteMember(id)
   const debouncedSearch = useDebounce(filters.search, 200)
 
   const params: Partial<MemberListQuery> = {
@@ -47,7 +45,7 @@ export function MembersList() {
     sortOrder: filters.sort,
   }
 
-  const query = useMembersQuery(tenant, params)
+  const query = useMembersQuery(id, params)
 
   const columns = useMemo(
     () =>
@@ -171,7 +169,7 @@ export function MembersList() {
       )}
 
       <MemberFormSheet
-        tenant={tenant}
+        tenant={id}
         open={sheetOpen}
         onOpenChange={(open) => {
           setSheetOpen(open)

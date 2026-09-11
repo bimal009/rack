@@ -42,7 +42,7 @@ import { createProductColumns } from "./columns"
 import { ProductFormSheet } from "./product-form-sheet"
 
 export function ProductsList() {
-  const tenant = useParams<{ tenant: string }>().tenant
+  const tenant = useParams<{ id: string }>().id
   const [filters, setFilters] = useProductFilters()
   const [sheetOpen, setSheetOpen] = useState(false)
   const [editing, setEditing] = useState<Product | null>(null)

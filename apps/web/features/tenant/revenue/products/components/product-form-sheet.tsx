@@ -117,7 +117,7 @@ function ProductFormBody({
   onSubmit,
   onCancel,
 }: ProductFormBodyProps) {
-  const tenant = useParams<{ tenant: string }>().tenant
+  const tenant = useParams<{ id: string }>().id
   const categories = useProductCategoriesQuery(tenant, { limit: 100 })
   const brands = useBrandsQuery(tenant, { limit: 100 })
   const taxRates = useTaxRatesQuery(tenant, { limit: 100 })

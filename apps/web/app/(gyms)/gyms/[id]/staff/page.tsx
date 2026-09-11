@@ -3,8 +3,8 @@ import { redirect } from "next/navigation"
 export default async function Page({
   params,
 }: {
-  params: Promise<{ tenant: string }>
+  params: Promise<{ id: string }>
 }) {
-  const { tenant } = await params
-  redirect(`/s/${tenant}/staff/directory`)
+  const { id } = await params
+  redirect(`/gyms/${id}/staff/directory`)
 }

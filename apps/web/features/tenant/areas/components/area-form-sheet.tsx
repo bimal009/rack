@@ -100,7 +100,7 @@ interface AreaFormBodyProps {
 }
 
 function AreaFormBody({ area, pending, onSubmit, onCancel }: AreaFormBodyProps) {
-  const tenant = useParams<{ tenant: string }>().tenant
+  const tenant = useParams<{ id: string }>().id
   const areaTypesQuery = useAreaTypesQuery(tenant, { limit: 100 })
   const areaTypes = areaTypesQuery.data?.data ?? []
 

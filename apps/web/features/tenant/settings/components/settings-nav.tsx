@@ -22,12 +22,12 @@ const categories = [
 ]
 
 interface SettingsNavProps {
-  tenant: string
+  id: string
 }
 
-export function SettingsNav({ tenant }: SettingsNavProps) {
+export function SettingsNav({ id }: SettingsNavProps) {
   const pathname = usePathname()
-  const base = `/s/${tenant}/settings`
+  const base = `/gyms/${id}/settings`
 
   return (
     <nav className="no-scrollbar scroll-fade-x flex w-full shrink-0 gap-1 overflow-x-auto md:w-56 md:flex-col md:gap-0.5 md:overflow-visible">

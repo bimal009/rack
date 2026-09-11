@@ -47,10 +47,10 @@ const accountNav = [
 ]
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
-  tenant: string
+  id: string
 }
 
-export function AppSidebar({ tenant, ...props }: AppSidebarProps) {
+export function AppSidebar({ id, ...props }: AppSidebarProps) {
   const router = useRouter()
   const pathname = usePathname()
 
@@ -86,11 +86,11 @@ export function AppSidebar({ tenant, ...props }: AppSidebarProps) {
             <SidebarMenu className="gap-1">
               {mainNav.map((item) => {
                 const href = item.segment
-                  ? `/gyms/${tenant}/${item.segment}`
+                  ? `/gyms/${id}/${item.segment}`
                   : undefined
                 const matchSegment = item.match ?? item.segment
                 const matchHref = matchSegment
-                  ? `/gyms/${tenant}/${matchSegment}`
+                  ? `/gyms/${id}/${matchSegment}`
                   : undefined
                 const active = matchHref
                   ? pathname === matchHref ||
@@ -137,7 +137,7 @@ export function AppSidebar({ tenant, ...props }: AppSidebarProps) {
             <SidebarMenu className="gap-1">
               {accountNav.map((item) => {
                 const href = item.segment
-                  ? `/gyms/${tenant}/${item.segment}`
+                  ? `/gyms/${id}/${item.segment}`
                   : undefined
                 const active = href
                   ? pathname === href || pathname?.startsWith(`${href}/`)

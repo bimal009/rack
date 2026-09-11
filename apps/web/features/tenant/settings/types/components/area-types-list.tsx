@@ -43,9 +43,10 @@ function buildColumns() {
   ])
 }
 
-export function AreaTypesList() {
+export function AreaTypesList({ id }: { id: string }) {
   return (
     <TypeList<AreaType, NewAreaType>
+      id={id}
       label="Area Type"
       buildColumns={buildColumns}
       useList={useAreaTypesQuery}

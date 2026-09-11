@@ -23,9 +23,10 @@ function buildColumns() {
   ])
 }
 
-export function InstructorTypesList() {
+export function InstructorTypesList({ id }: { id: string }) {
   return (
     <TypeList<InstructorTypeRecord, NewInstructorType>
+      id={id}
       label="Instructor Type"
       buildColumns={buildColumns}
       useList={useInstructorTypesQuery}

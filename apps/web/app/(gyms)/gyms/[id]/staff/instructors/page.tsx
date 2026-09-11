@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   title: "Instructors",
 }
 
-export default function Page() {
-  return <StaffList lockedRole="instructor" label="Instructor" />
+export default async function Page({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  return <StaffList id={id} lockedRole="instructor" label="Instructor" />
 }

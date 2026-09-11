@@ -74,7 +74,7 @@ function OrganizationHoursFormBody({ tenant, hours }: OrganizationHoursFormBodyP
 }
 
 export function OrganizationHoursForm() {
-  const tenant = useParams<{ tenant: string }>().tenant
+  const tenant = useParams<{ id: string }>().id
   const { data: hours, isLoading, isError, error } = useOperatingHoursQuery(tenant)
 
   if (isLoading) {

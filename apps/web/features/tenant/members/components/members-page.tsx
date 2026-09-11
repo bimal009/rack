@@ -2,12 +2,12 @@ import { SiteHeader } from "@/features/tenant/dashboard/components/site-header"
 
 import { MembersList } from "./members-list"
 
-export function MembersPage() {
+export function MembersPage({ id }: { id: string }) {
   return (
     <>
       <SiteHeader title="Members" />
       <div className="flex flex-1 flex-col gap-4 p-4 md:gap-6 md:p-6">
-        <MembersList />
+        <MembersList id={id} />
       </div>
     </>
   )

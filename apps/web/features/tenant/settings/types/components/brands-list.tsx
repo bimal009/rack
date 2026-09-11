@@ -18,9 +18,10 @@ function buildColumns() {
   return columnHelper.columns([columnHelper.accessor("name", { header: "Name" })])
 }
 
-export function BrandsList() {
+export function BrandsList({ id }: { id: string }) {
   return (
     <TypeList<Brand, NewBrand>
+      id={id}
       label="Brand"
       buildColumns={buildColumns}
       useList={useBrandsQuery}

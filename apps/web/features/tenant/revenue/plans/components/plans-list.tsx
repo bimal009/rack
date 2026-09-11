@@ -41,7 +41,7 @@ import { createGymPlanColumns } from "./columns"
 import { PlanFormSheet } from "./plan-form-sheet"
 
 export function PlansList() {
-  const tenant = useParams<{ tenant: string }>().tenant
+  const tenant = useParams<{ id: string }>().id
   const [filters, setFilters] = usePlanFilters()
   const [sheetOpen, setSheetOpen] = useState(false)
   const [editing, setEditing] = useState<GymPlan | null>(null)

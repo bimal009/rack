@@ -1,7 +1,6 @@
 "use client"
 
 import { useMemo, useState, type ReactNode } from "react"
-import { useParams } from "next/navigation"
 import {
   ChevronLeft,
   ChevronRight,
@@ -85,6 +84,7 @@ export interface FormRenderProps<TRow, TInput> {
 }
 
 interface TypeListProps<TRow extends { id: string; name: string }, TInput> {
+  id: string
   label: string
   buildColumns: (actions: RowActions<TRow>) => DataTableColumnDef<TRow>[]
   useList: (tenant: string, query: ListQuery) => QueryLike<TRow>
@@ -97,6 +97,7 @@ interface TypeListProps<TRow extends { id: string; name: string }, TInput> {
 }
 
 export function TypeList<TRow extends { id: string; name: string }, TInput>({
+  id,
   label,
   buildColumns,
   useList,
@@ -105,20 +106,18 @@ export function TypeList<TRow extends { id: string; name: string }, TInput>({
   useDelete,
   renderForm,
 }: TypeListProps<TRow, TInput>) {
-  const tenant = useParams<{ tenant: string }>().tenant
-
   const [filters, setFilters] = useTypeFilters()
   const debouncedSearch = useDebounce(filters.search, 350)
 
-  const query = useList(tenant, {
+  const query = useList(id, {
     page: filters.page,
     limit: filters.limit,
     search: debouncedSearch || undefined,
     sortOrder: filters.sort,
   })
-  const create = useCreate(tenant)
-  const update = useUpdate(tenant)
-  const remove = useDelete(tenant)
+  const create = useCreate(id)
+  const update = useUpdate(id)
+  const remove = useDelete(id)
 
   const [sheetOpen, setSheetOpen] = useState(false)
   const [editing, setEditing] = useState<TRow | null>(null)

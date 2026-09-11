@@ -43,9 +43,10 @@ function buildColumns() {
   ])
 }
 
-export function ClassTypesList() {
+export function ClassTypesList({ id }: { id: string }) {
   return (
     <TypeList<ClassType, NewClassType>
+      id={id}
       label="Class Type"
       buildColumns={buildColumns}
       useList={useClassTypesQuery}

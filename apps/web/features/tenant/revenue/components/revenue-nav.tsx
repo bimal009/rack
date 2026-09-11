@@ -15,12 +15,12 @@ const navItems = [
 ]
 
 interface RevenueNavProps {
-  tenant: string
+  id: string
 }
 
-export function RevenueNav({ tenant }: RevenueNavProps) {
+export function RevenueNav({ id }: RevenueNavProps) {
   const pathname = usePathname()
-  const base = `/s/${tenant}/revenue`
+  const base = `/gyms/${id}/revenue`
   const activeRef = useRef<HTMLAnchorElement>(null)
 
   useEffect(() => {
