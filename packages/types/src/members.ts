@@ -38,6 +38,18 @@ const optionalText = z
     return trimmed.length > 0 ? trimmed : null;
   });
 
+const dateString = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Enter a valid date");
+
+export const memberMembershipAssignmentSchema = z.object({
+  planId: z.string().uuid("Select a plan"),
+  startDate: dateString,
+  endDate: dateString,
+  pricePaid: z.number().int("Enter a valid price").nonnegative("Enter a valid price"),
+});
+export type MemberMembershipAssignment = z.infer<
+  typeof memberMembershipAssignmentSchema
+>;
+
 const memberWithUserInsertObject = z.object({
   firstName: z.string().trim().min(1, "Enter a first name"),
   lastName: z.string().trim().min(1, "Enter a last name"),
@@ -55,6 +67,8 @@ const memberWithUserInsertObject = z.object({
     .optional()
     .transform((value) => (value ? value : null)),
   address: optionalText,
+
+  membership: memberMembershipAssignmentSchema.optional(),
 });
 
 export const memberWithUserInsertSchema = memberWithUserInsertObject;

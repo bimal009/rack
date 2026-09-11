@@ -131,9 +131,9 @@ export const updateGym = async (input: UpdateGymInput, userId: string) => {
 
   return gymRecord;
 };
-export const getGymBySlug = async (slug: string) => {
+export const getGymById = async (id: string) => {
   return db.query.gyms.findFirst({
-    where: { slug },
+    where: { id },
   });
 };
 

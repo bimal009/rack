@@ -59,34 +59,34 @@ app.all("/api/v1/auth/*splat", toNodeHandler(auth));
 app.use(express.json({ limit: "10kb" }));
 
 app.use("/api/v1/gyms", gymRoutes);
-app.use("/api/v1/gyms/:slug/staff", staffRoutes);
-app.use("/api/v1/gyms/:slug/members", memberRoutes);
+app.use("/api/v1/gyms/:gymId/staff", staffRoutes);
+app.use("/api/v1/gyms/:gymId/members", memberRoutes);
 app.use(
-  "/api/v1/gyms/:slug/members/:memberId/membership",
+  "/api/v1/gyms/:gymId/members/:memberId/membership",
   gymMembershipRoutes
 );
-app.use("/api/v1/gyms/:slug/sports", sportRoutes);
-app.use("/api/v1/gyms/:slug/features", featureRoutes);
-app.use("/api/v1/gyms/:slug/settings/area-types", areaTypeRoutes);
-app.use("/api/v1/gyms/:slug/settings/instructor-types", instructorTypeRoutes);
-app.use("/api/v1/gyms/:slug/settings/class-types", classTypeRoutes);
-app.use("/api/v1/gyms/:slug/settings/brands", brandRoutes);
-app.use("/api/v1/gyms/:slug/settings/product-categories", productCategoryRoutes);
-app.use("/api/v1/gyms/:slug/settings/tax-rates", taxRateRoutes);
+app.use("/api/v1/gyms/:gymId/sports", sportRoutes);
+app.use("/api/v1/gyms/:gymId/features", featureRoutes);
+app.use("/api/v1/gyms/:gymId/settings/area-types", areaTypeRoutes);
+app.use("/api/v1/gyms/:gymId/settings/instructor-types", instructorTypeRoutes);
+app.use("/api/v1/gyms/:gymId/settings/class-types", classTypeRoutes);
+app.use("/api/v1/gyms/:gymId/settings/brands", brandRoutes);
+app.use("/api/v1/gyms/:gymId/settings/product-categories", productCategoryRoutes);
+app.use("/api/v1/gyms/:gymId/settings/tax-rates", taxRateRoutes);
 app.use(
-  "/api/v1/gyms/:slug/settings/membership-categories",
+  "/api/v1/gyms/:gymId/settings/membership-categories",
   membershipCategoryRoutes
 );
-app.use("/api/v1/gyms/:slug/pay-rates", payRateRoutes);
-app.use("/api/v1/gyms/:slug/areas", areaRoutes);
-app.use("/api/v1/gyms/:slug/plans", gymPlanRoutes);
-app.use("/api/v1/gyms/:slug/products", productRoutes);
+app.use("/api/v1/gyms/:gymId/pay-rates", payRateRoutes);
+app.use("/api/v1/gyms/:gymId/areas", areaRoutes);
+app.use("/api/v1/gyms/:gymId/plans", gymPlanRoutes);
+app.use("/api/v1/gyms/:gymId/products", productRoutes);
 app.use(
-  "/api/v1/gyms/:slug/settings/product-features",
+  "/api/v1/gyms/:gymId/settings/product-features",
   productFeatureRoutes
 );
 app.use(
-  "/api/v1/gyms/:slug/settings/operating-hours",
+  "/api/v1/gyms/:gymId/settings/operating-hours",
   gymOperatingHoursRoutes
 );
 app.use("/api/v1/plans", plansRoutes);

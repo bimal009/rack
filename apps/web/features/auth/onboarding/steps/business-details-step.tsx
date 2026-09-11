@@ -4,7 +4,7 @@ import { Field, FieldGroup, FieldLabel, FieldError } from "@repo/ui/components/u
 
 type BusinessDetailsValue = Pick<
   OnboardingInput,
-  "businessName" | "slug" | "address" | "phone" | "email" | "website"
+  "businessName" | "address" | "phone" | "email" | "website"
 >
 
 interface BusinessDetailsStepProps {
@@ -40,21 +40,6 @@ export function BusinessDetailsStep({
             onChange={(e) => onChange({ businessName: e.target.value })}
           />
           <FieldError>{errors.businessName}</FieldError>
-        </Field>
-
-        <Field data-invalid={Boolean(errors.slug)}>
-          <FieldLabel htmlFor="slug">URL slug</FieldLabel>
-          <Input
-            id="slug"
-            placeholder="golds-gym"
-            value={value.slug}
-            aria-invalid={Boolean(errors.slug)}
-            onChange={(e) => onChange({ slug: e.target.value })}
-          />
-          <p className="text-xs text-muted-foreground">
-            rackrage.com/{value.slug || "your-slug"}
-          </p>
-          <FieldError>{errors.slug}</FieldError>
         </Field>
 
         <Field data-invalid={Boolean(errors.address)}>

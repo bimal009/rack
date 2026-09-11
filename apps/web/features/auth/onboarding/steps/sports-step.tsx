@@ -8,14 +8,12 @@ import { Input } from "@repo/ui/components/ui/input"
 import { cn } from "@repo/ui/lib/utils"
 
 interface SportsStepProps {
-  businessTypeLabel?: string
   value: string[]
   error?: string
   onChange: (sports: string[]) => void
 }
 
 export function SportsStep({
-  businessTypeLabel,
   value,
   error,
   onChange,
@@ -51,9 +49,7 @@ export function SportsStep({
     <div className="space-y-6">
       <div className="space-y-1.5">
         <h1 className="text-3xl font-semibold tracking-tight text-foreground">
-          {businessTypeLabel
-            ? `Great. Let's set up your ${businessTypeLabel}`
-            : "What sports do you offer?"}
+          What sports do you offer?
         </h1>
         <p className="text-sm text-muted-foreground">
           Type a sport and press Enter. Add your own or pick from common ones.

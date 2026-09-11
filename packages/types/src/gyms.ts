@@ -86,24 +86,12 @@ export const DEFAULT_OPENING_HOURS: OpeningHours = WEEKDAYS.map((day) => ({
 }));
 
 export const onboardingSchema = z.object({
-  businessType: z.enum([
-    "gym",
-    "fitness-studio",
-    "yoga-pilates",
-    "martial-arts",
-    "personal-training",
-    "something-else",
-  ]),
   specialties: z
     .array(z.string().trim().min(1).max(50))
     .min(1, "Add at least one sport"),
   features: z
     .array(z.string().trim().min(1).max(50))
     .min(1, "Add at least one feature"),
-  slug: z
-    .string()
-    .min(1, "Slug is required")
-    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Slug must be lowercase letters, numbers, and hyphens only"),
   businessName: z.string().min(1, "Business name is required"),
   address: z.string().min(1, "Address is required"),
   phone: z
@@ -131,8 +119,6 @@ export type UpdateGymInput = z.infer<typeof updateGymSchema>;
 
 export interface GymRecord {
   id: string;
-  slug: string;
-  businessType: string;
   businessName: string;
   address: string;
   phone: string;

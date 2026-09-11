@@ -1,51 +1,35 @@
 "use client"
 
-import { useRef, useState } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { DEFAULT_OPENING_HOURS, onboardingSchema, type OnboardingInput } from "@repo/types"
 
 import { AuthHeader } from "@/features/auth/components/auth-header"
 import { StepNav } from "@/features/auth/onboarding/step-nav"
-import { ClubTypeStep } from "@/features/auth/onboarding/steps/club-type-step"
 import { SportsStep } from "@/features/auth/onboarding/steps/sports-step"
 import { FeaturesStep } from "@/features/auth/onboarding/steps/features-step"
 import { BusinessDetailsStep } from "@/features/auth/onboarding/steps/business-details-step"
 import { OpeningHoursStep } from "@/features/auth/onboarding/steps/opening-hours-step"
 import { useOnboardingMutation } from "@/features/auth/onboarding/hooks/useOnboarding"
 import { fieldErrors } from "@/features/auth/lib/validation"
-import { BUSINESS_TYPES } from "@/features/auth/lib/constants"
 
-const STEP_COUNT = 5
+const STEP_COUNT = 4
 
-type WizardData = Omit<
-  OnboardingInput,
-  "businessType" | "specialties" | "features"
-> & {
-  businessType: OnboardingInput["businessType"] | null
+type WizardData = Omit<OnboardingInput, "specialties" | "features"> & {
   specialties: string[]
   features: string[]
 }
 
 const initialData: WizardData = {
-  businessType: null,
   specialties: [],
   features: [],
-  slug: "",
   businessName: "",
   address: "",
   phone: "",
   email: "",
   website: "",
   openingHours: DEFAULT_OPENING_HOURS,
-}
-
-function slugify(value: string) {
-  return value
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
 }
 
 export function OnboardingWizard() {
@@ -57,19 +41,8 @@ export function OnboardingWizard() {
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isRedirecting, setIsRedirecting] = useState(false)
 
-  const selectedType = BUSINESS_TYPES.find((t) => t.id === data.businessType)
-  const slugTouched = useRef(false)
-
   function updateData(patch: Partial<WizardData>) {
-    if ("slug" in patch) slugTouched.current = true
-
-    setData((prev) => {
-      const next = { ...prev, ...patch }
-      if ("businessName" in patch && !slugTouched.current) {
-        next.slug = slugify(next.businessName)
-      }
-      return next
-    })
+    setData((prev) => ({ ...prev, ...patch }))
   }
 
   function handleBack() {
@@ -79,24 +52,18 @@ export function OnboardingWizard() {
 
   function handleContinue() {
     if (step === 0) {
-      if (!data.businessType) {
-        setErrors({ businessType: "Choose a business type to continue" })
-        return
-      }
-    } else if (step === 1) {
       if (data.specialties.length === 0) {
         setErrors({ specialties: "Pick at least one specialty" })
         return
       }
-    } else if (step === 2) {
+    } else if (step === 1) {
       if (data.features.length === 0) {
         setErrors({ features: "Add at least one feature" })
         return
       }
-    } else if (step === 3) {
+    } else if (step === 2) {
       const result = onboardingSchema
         .pick({
-          slug: true,
           businessName: true,
           address: true,
           phone: true,
@@ -104,7 +71,6 @@ export function OnboardingWizard() {
           website: true,
         })
         .safeParse({
-          slug: data.slug,
           businessName: data.businessName,
           address: data.address,
           phone: data.phone,
@@ -115,7 +81,7 @@ export function OnboardingWizard() {
         setErrors(fieldErrors(result.error))
         return
       }
-    } else if (step === 4) {
+    } else if (step === 3) {
       const result = onboardingSchema.safeParse(data)
       if (!result.success) {
         setErrors(fieldErrors(result.error))
@@ -135,12 +101,11 @@ export function OnboardingWizard() {
     onboarding.mutate(
       {
         ...data,
-        businessType: data.businessType!,
         specialties: data.specialties as OnboardingInput["specialties"],
         features: data.features as OnboardingInput["features"],
       },
       {
-        onSuccess: (result) => router.push(`/s/${result.slug}/dashboard`),
+        onSuccess: (result) => router.push(`/s/${result.id}/dashboard`),
         onError: (error) => {
           setIsRedirecting(false)
           toast.error(error.message)
@@ -158,35 +123,27 @@ export function OnboardingWizard() {
       <div className="flex w-full flex-1 items-center justify-center">
         <div className="w-full max-w-lg">
           {step === 0 && (
-            <ClubTypeStep
-              value={data.businessType}
-              error={errors.businessType}
-              onChange={(id) => updateData({ businessType: id })}
-            />
-          )}
-          {step === 1 && (
             <SportsStep
-              businessTypeLabel={selectedType?.title}
               value={data.specialties}
               error={errors.specialties}
               onChange={(specialties) => updateData({ specialties })}
             />
           )}
-          {step === 2 && (
+          {step === 1 && (
             <FeaturesStep
               value={data.features}
               error={errors.features}
               onChange={(features) => updateData({ features })}
             />
           )}
-          {step === 3 && (
+          {step === 2 && (
             <BusinessDetailsStep
               value={data}
               errors={errors}
               onChange={updateData}
             />
           )}
-          {step === 4 && (
+          {step === 3 && (
             <OpeningHoursStep
               value={data.openingHours}
               onChange={(openingHours) => updateData({ openingHours })}

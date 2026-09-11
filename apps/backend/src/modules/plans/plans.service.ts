@@ -2,7 +2,7 @@ import { db } from "../../db";
 import { NotFoundError } from "../../lib/errors";
 import { CACHE_KEYS, CACHE_TTL, redis } from "../../lib/redis";
 
-const planKey = (slug: string): string => `${CACHE_KEYS.PLAN}:${slug}`;
+const planKey = (scope: string): string => `${CACHE_KEYS.PLAN}:${scope}`;
 
 export async function get() {
   const cacheKey = planKey("all");

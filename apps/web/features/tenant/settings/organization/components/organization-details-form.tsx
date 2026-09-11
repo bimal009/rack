@@ -10,13 +10,7 @@ import {
 } from "@repo/types"
 
 import { Button } from "@repo/ui/components/ui/button"
-import {
-  Field,
-  FieldDescription,
-  FieldError,
-  FieldGroup,
-  FieldLabel,
-} from "@repo/ui/components/ui/field"
+import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@repo/ui/components/ui/field"
 import { Input } from "@repo/ui/components/ui/input"
 import {
   Select,
@@ -103,13 +97,6 @@ function OrganizationForm({ gym }: OrganizationFormProps) {
             <FieldError>{errors.businessName}</FieldError>
           </Field>
 
-          <Field>
-            <FieldLabel htmlFor="org-slug">Slug</FieldLabel>
-            <Input id="org-slug" value={gym.slug} disabled />
-            <FieldDescription>
-              Your workspace URL. Contact support to change it.
-            </FieldDescription>
-          </Field>
         </div>
 
         <Field data-invalid={Boolean(errors.address)}>
