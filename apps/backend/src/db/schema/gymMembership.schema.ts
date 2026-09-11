@@ -26,11 +26,13 @@ export const gymMembership = pgTable("gym_memberships", {
 
   startDate: date("start_date", { mode: "string" }).notNull(),
   endDate: date("end_date", { mode: "string" }).notNull(),
-  pricePaid: integer("price_paid").notNull(),
+  price: integer("price").notNull(),
+  signupFee: integer("signup_fee"),
 
   extendedDays: integer("extended_days").notNull().default(0),
   extensionReason: text("extension_reason"),
 
   createdAt: timestamp("created_at").notNull().defaultNow(),
+  pausedAt: timestamp("paused_at"),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

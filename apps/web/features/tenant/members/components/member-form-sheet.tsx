@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, type FormEvent } from "react"
-import { CalendarIcon, IdCard, MapPin, UserRound } from "lucide-react"
+import { CalendarIcon, IdCard, MapPin, Minus, Plus, UserRound } from "lucide-react"
 import { toast } from "sonner"
 import { z } from "zod"
 import {
@@ -11,7 +11,7 @@ import {
   memberStatusEnumSchema,
   memberUpdateSchema,
   memberUserFieldsSchema,
-  memberWithUserInsertSchema,
+  memberWithUserAndMembershipInsertSchema,
   type MemberWithUser,
 } from "@repo/types"
 
@@ -53,6 +53,7 @@ import { ImageUpload } from "@/features/media"
 import { useCreateMember, useUpdateMember } from "../hooks/use-members"
 import { fieldErrors } from "../lib/validation"
 import { initials } from "./columns"
+import { MembershipSection, newMembership, type MembershipValues } from "./membership-section"
 
 type MemberUserValues = z.input<typeof memberUserFieldsSchema>
 type MemberFieldValues = z.input<typeof memberFieldsSchema>
@@ -60,6 +61,7 @@ type MemberFieldValues = z.input<typeof memberFieldsSchema>
 interface MemberFormValues {
   user: MemberUserValues
   member: MemberFieldValues
+  membership: MembershipValues | null
 }
 
 function toFormValues(member?: MemberWithUser | null): MemberFormValues {
@@ -73,6 +75,7 @@ function toFormValues(member?: MemberWithUser | null): MemberFormValues {
         gender: "",
         address: "",
       },
+      membership: null,
     }
   }
 
@@ -89,6 +92,7 @@ function toFormValues(member?: MemberWithUser | null): MemberFormValues {
       gender: member.gender ?? "",
       address: member.address ?? "",
     },
+    membership: null,
   }
 }
 
@@ -137,12 +141,24 @@ function MemberForm({
   const updateMember = useUpdateMember(tenant)
 
   const pending = isEdit ? updateMember.isPending : createMember.isPending
+  const hasMembership = values.membership !== null
+
+  function toggleMembership() {
+    // TEMP DEBUG: if this never logs, the click isn't reaching this
+    // function at all — the bug is in the Button component, not here.
+    console.log("toggleMembership fired, current membership:", values.membership)
+    setValues((v) => ({ ...v, membership: v.membership ? null : newMembership() }))
+  }
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault()
 
-    const schema = isEdit ? memberUpdateSchema : memberWithUserInsertSchema
-    const result = schema.safeParse(values)
+    const payload = isEdit
+      ? { user: values.user, member: values.member }
+      : { user: values.user, member: values.member, membership: values.membership ?? undefined }
+
+    const schema = isEdit ? memberUpdateSchema : memberWithUserAndMembershipInsertSchema
+    const result = schema.safeParse(payload)
 
     if (!result.success) {
       setErrors(fieldErrors(result.error))
@@ -164,7 +180,7 @@ function MemberForm({
       return
     }
 
-    createMember.mutate(result.data as z.infer<typeof memberWithUserInsertSchema>, {
+    createMember.mutate(result.data as z.infer<typeof memberWithUserAndMembershipInsertSchema>, {
       onSuccess: (created) => {
         toast.success(`${created.user.name} added`)
         onClose()
@@ -175,7 +191,7 @@ function MemberForm({
 
   return (
     <form onSubmit={handleSubmit} className="flex h-full flex-col">
-      <SheetHeader>
+      <SheetHeader className="flex-row items-center justify-between">
         <FormSheetHeader
           icon={UserRound}
           title={isEdit ? "Edit member" : "Add member"}
@@ -376,6 +392,37 @@ function MemberForm({
             />
           </Field>
         </FormSection>
+
+        {!isEdit && (
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={toggleMembership}
+              className="inline-flex items-center gap-1.5 rounded-full border border-primary px-4 py-2 text-sm font-medium text-primary hover:bg-primary/5"
+            >
+              {hasMembership ? (
+                <>
+                  <Minus className="size-4" />
+                  Remove Membership
+                </>
+              ) : (
+                <>
+                  <Plus className="size-4" />
+                  Add Membership
+                </>
+              )}
+            </button>
+          </div>
+        )}
+
+        {!isEdit && values.membership && (
+          <MembershipSection
+            tenant={tenant}
+            values={values.membership}
+            onChange={(membership) => setValues((v) => ({ ...v, membership }))}
+            errors={errors}
+          />
+        )}
       </SheetBody>
 
       <SheetFooter>

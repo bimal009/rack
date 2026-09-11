@@ -5,11 +5,11 @@ import {
   UpdateMember,
   generateMemberEmail,
   memberUpdateSchema,
-  memberWithUserInsertSchema,
+  memberWithUserAndMembershipInsertSchema,
 } from "@repo/types";
 import { and, eq, exists, ilike, or, sql } from "drizzle-orm";
 import { db } from "../../db";
-import { member, user } from "../../db/schema";
+import { gymMembership, member, user } from "../../db/schema";
 import { NotFoundError, ValidationError } from "../../lib/errors";
 import { CACHE_KEYS, CACHE_TTL, redis, deleteByPattern } from "../../lib/redis";
 
@@ -26,11 +26,11 @@ const invalidateMemberCache = async (gymId: string): Promise<void> => {
 };
 
 export async function createMemberWithUser(data: NewMemberWithUser, gymId: string) {
-  const result = memberWithUserInsertSchema.safeParse(data);
+  const result = memberWithUserAndMembershipInsertSchema.safeParse(data);
   if (!result.success) {
     throw new ValidationError("Invalid member data", result.error.flatten());
   }
-  const { user: userInput, member: memberInput } = result.data;
+  const { user: userInput, member: memberInput, membership: membershipInput } = result.data;
   const email = userInput.email ?? generateMemberEmail(userInput.name, memberInput.phone);
 
   const created = await db.transaction(async (tx) => {
@@ -62,7 +62,29 @@ export async function createMemberWithUser(data: NewMemberWithUser, gymId: strin
       })
       .returning();
 
-    return { user: newUser, member: newMember };
+    if (!newMember) {
+      throw new Error("Failed to create member");
+    }
+
+    let newMembership = null;
+    if (membershipInput) {
+      const [membershipRecord] = await tx
+        .insert(gymMembership)
+        .values({
+          gymId,
+          memberId: newMember.id,
+          planId: membershipInput.planId,
+          startDate: membershipInput.startDate,
+          endDate: membershipInput.endDate,
+          pricePaid: membershipInput.pricePaid,
+          extendedDays: membershipInput.extendedDays ?? 0,
+          extensionReason: membershipInput.extensionReason ?? null,
+        })
+        .returning();
+      newMembership = membershipRecord;
+    }
+
+    return { user: newUser, member: newMember, membership: newMembership };
   });
 
   await invalidateMemberCache(gymId);

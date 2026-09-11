@@ -20,10 +20,12 @@ export const gymMembershipSchema = z.object({
 
   startDate: z.string(),
   endDate: z.string(),
-  pricePaid: z.number(),
+  price: z.number(),
+  signupFee: z.number().nullable(),
 
   extendedDays: z.number().int(),
   extensionReason: z.string().nullable(),
+  pausedAt: z.date().nullable(),
 
   createdAt: z.date(),
   updatedAt: z.date(),
@@ -38,43 +40,27 @@ export type GymMembershipWithRefs = z.infer<typeof gymMembershipWithRefsSchema>;
 
 const dateString = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Enter a valid date");
 
-const gymMembershipFields = z
-  .object({
+export const gymMembershipAssignmentSchema = z.object({
+  planId: z.string().uuid("Select a plan"),
+  status: gymMembershipStatusEnumSchema.default("Active"),
+  startDate: dateString,
+  price: z.number().int("Enter a valid price").nonnegative("Enter a valid price"),
+  signupFee: z.number().int().nonnegative().nullable().optional(),
+  extendedDays: z.number().int().nonnegative().default(0),
+  extensionReason: z.string().trim().max(300).optional().or(z.literal("")),
+});
+export type GymMembershipAssignment = z.infer<typeof gymMembershipAssignmentSchema>;
+
+const gymMembershipFields = gymMembershipAssignmentSchema
+  .extend({
     memberId: z.string().uuid("Select a member"),
-    planId: z.string().uuid("Select a plan"),
-    status: gymMembershipStatusEnumSchema.default("Active"),
-
-    startDate: dateString,
-    endDate: dateString,
-    pricePaid: z.number().int("Enter a valid price").nonnegative("Enter a valid price"),
-
-    extendedDays: z.number().int().nonnegative().default(0),
-    extensionReason: z.string().trim().max(300).optional().or(z.literal("")),
   })
   .strict();
 
-const validateDateRange = (
-  val: { startDate?: string; endDate?: string },
-  ctx: z.RefinementCtx
-) => {
-  if (!val.startDate || !val.endDate) return;
-  if (val.endDate < val.startDate) {
-    ctx.addIssue({
-      code: "custom",
-      path: ["endDate"],
-      message: "End date must be on or after the start date",
-    });
-  }
-};
-
-export const gymMembershipInsertSchema =
-  gymMembershipFields.superRefine(validateDateRange);
+export const gymMembershipInsertSchema = gymMembershipFields;
 export type NewGymMembership = z.infer<typeof gymMembershipInsertSchema>;
 
-export const gymMembershipUpdateSchema = gymMembershipFields
-  .partial()
-  .strict()
-  .superRefine(validateDateRange);
+export const gymMembershipUpdateSchema = gymMembershipFields.partial().strict();
 export type UpdateGymMembership = z.infer<typeof gymMembershipUpdateSchema>;
 
 export const gymMembershipExtendSchema = z

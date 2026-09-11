@@ -21,9 +21,6 @@ import { db } from "../../db";
 const DEFAULT_MEMBERSHIP_CATEGORIES = [
   "Individual",
   "Couple",
-  "Family",
-  "Student",
-  "Corporate",
 ] as const;
 
 const DEFAULT_PRODUCT_FEATURES = [

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { paginationFields, type PaginatedResponse } from "./pagination";
+import { gymMembershipAssignmentSchema } from "./gymMemberships";
 
 export const memberGenderEnumSchema = z.enum([
   "Male",
@@ -37,21 +38,10 @@ const optionalText = z
     return trimmed.length > 0 ? trimmed : null;
   });
 
-const dateString = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Enter a valid date");
-
-export const memberMembershipAssignmentSchema = z.object({
-  planId: z.string().uuid("Select a plan"),
-  startDate: dateString,
-  endDate: dateString,
-  pricePaid: z.number().int("Enter a valid price").nonnegative("Enter a valid price"),
-});
-export type MemberMembershipAssignment = z.infer<typeof memberMembershipAssignmentSchema>;
-
 export const phoneSchema = z
   .string()
   .regex(/^(98|97)\d{8}$/, "Phone number must be 10 digits starting with 98 or 97");
 
-// --- user block ---
 export const memberUserFieldsSchema = z.object({
   name: z.string().trim().min(1, "Enter a name"),
   email: z
@@ -62,6 +52,7 @@ export const memberUserFieldsSchema = z.object({
 });
 export type MemberUserFields = z.infer<typeof memberUserFieldsSchema>;
 
+// --- member block (no membership here anymore) ---
 export const memberFieldsSchema = z.object({
   status: memberStatusEnumSchema.default("Active"),
   phone: phoneSchema,
@@ -71,15 +62,15 @@ export const memberFieldsSchema = z.object({
     .optional()
     .transform((value) => (value ? value : null)),
   address: optionalText,
-  membership: memberMembershipAssignmentSchema.optional(),
 });
 export type MemberFields = z.infer<typeof memberFieldsSchema>;
 
-export const memberWithUserInsertSchema = z.object({
+export const memberWithUserAndMembershipInsertSchema = z.object({
   user: memberUserFieldsSchema,
   member: memberFieldsSchema,
+  membership: gymMembershipAssignmentSchema.optional(),
 });
-export type NewMemberWithUser = z.infer<typeof memberWithUserInsertSchema>;
+export type NewMemberWithUser = z.infer<typeof memberWithUserAndMembershipInsertSchema>;
 
 export const memberUpdateSchema = z.object({
   user: memberUserFieldsSchema.partial().optional(),
@@ -123,5 +114,5 @@ export type CreateMemberResult = {
   member: Member;
 };
 
-const SYNTHETIC_EMAIL_SUFFIX = ".chautari.fit"
-export const isSyntheticEmail = (email: string) => email.endsWith(SYNTHETIC_EMAIL_SUFFIX)
+const SYNTHETIC_EMAIL_SUFFIX = ".chautari.fit";
+export const isSyntheticEmail = (email: string) => email.endsWith(SYNTHETIC_EMAIL_SUFFIX);

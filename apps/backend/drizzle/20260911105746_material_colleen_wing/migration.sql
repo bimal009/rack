@@ -1,0 +1,1 @@
+ALTER TABLE "gym_memberships" ADD COLUMN "paused_at" timestamp;

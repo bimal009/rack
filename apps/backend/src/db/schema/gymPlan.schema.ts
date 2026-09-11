@@ -40,7 +40,6 @@ export const gymPlanCoverageEnum = pgEnum("gym_plan_coverage", [
   "Restricted",
 ]);
 
-// Membership plan/product defined in revenue → plans. Gym-scoped.
 export const gymPlan = pgTable(
   "gym_plans",
   {
