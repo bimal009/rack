@@ -7,7 +7,7 @@ import {
   useQueryStates,
 } from "nuqs"
 
-export const MEMBER_STATUSES = ["Active", "On Hold", "Expired"] as const
+export const MEMBER_STATUSES = ["Active", "Inactive"] as const
 
 export function useMemberFilters() {
   return useQueryStates(

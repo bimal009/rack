@@ -3,6 +3,7 @@ import {
   MemberListQuery,
   NewMemberWithUser,
   UpdateMember,
+  generateMemberEmail,
   memberUpdateSchema,
   memberWithUserInsertSchema,
 } from "@repo/types";
@@ -29,17 +30,17 @@ export async function createMemberWithUser(data: NewMemberWithUser, gymId: strin
   if (!result.success) {
     throw new ValidationError("Invalid member data", result.error.flatten());
   }
-  const input = result.data;
-  const name = `${input.firstName} ${input.lastName}`.trim();
+  const { user: userInput, member: memberInput } = result.data;
+  const email = userInput.email ?? generateMemberEmail(userInput.name, memberInput.phone);
 
   const created = await db.transaction(async (tx) => {
     const [newUser] = await tx
       .insert(user)
       .values({
         id: randomUUID(),
-        email: input.email,
-        name,
-        image: input.image ?? null,
+        email,
+        name: userInput.name,
+        image: userInput.image ?? null,
         role: "user",
       })
       .returning();
@@ -53,11 +54,11 @@ export async function createMemberWithUser(data: NewMemberWithUser, gymId: strin
       .values({
         gymId,
         userId: newUser.id,
-        status: input.status,
-        phone: input.phone,
-        dateOfBirth: input.dateOfBirth,
-        gender: input.gender,
-        address: input.address,
+        status: memberInput.status,
+        phone: memberInput.phone,
+        dateOfBirth: memberInput.dateOfBirth,
+        gender: memberInput.gender,
+        address: memberInput.address,
       })
       .returning();
 
@@ -84,6 +85,7 @@ export const getAllMembers = async (gymId: string, query: MemberListQuery) => {
       where: {
         gymId,
         status,
+        deletedAt: { isNull: true },
         user: search
           ? { OR: [{ name: { ilike: `%${search}%` } }, { email: { ilike: `%${search}%` } }] }
           : undefined,
@@ -91,6 +93,7 @@ export const getAllMembers = async (gymId: string, query: MemberListQuery) => {
       orderBy: { createdAt: sortOrder },
       limit,
       offset: (page - 1) * limit,
+
       with: {
         user: { columns: { id: true, name: true, email: true, image: true } },
       },
@@ -136,7 +139,7 @@ export const getMemberById = async (gymId: string, id: string) => {
   }
 
   const record = await db.query.member.findFirst({
-    where: { gymId, id },
+    where: { gymId, id, deletedAt: { isNull: true } },
     with: {
       user: { columns: { id: true, name: true, email: true, image: true } },
     },
@@ -149,32 +152,55 @@ export const getMemberById = async (gymId: string, id: string) => {
   return record;
 };
 
-export const updateMember = async (
-  gymId: string,
-  id: string,
-  input: UpdateMember
-) => {
+export const updateMember = async (gymId: string, id: string, input: UpdateMember) => {
   const result = memberUpdateSchema.safeParse(input);
   if (!result.success) {
     throw new ValidationError("Invalid member data", result.error.flatten());
   }
+  const { user: userInput, member: memberInput } = result.data;
 
-  const [record] = await db
-    .update(member)
-    .set({ ...result.data, updatedAt: new Date() })
-    .where(and(eq(member.gymId, gymId), eq(member.id, id)))
-    .returning();
+const existing = await db.query.member.findFirst({
+  where: { gymId, id, deletedAt: { isNull: true } },
+  with: { user: { columns: { id: true, name: true, email: true, image: true } } },
+  });
+  if (!existing || !existing.user) throw new NotFoundError("Member not found");
+  const existingUser = existing.user;
 
-  if (!record) throw new NotFoundError("Member not found");
+  const updated = await db.transaction(async (tx) => {
+    if (userInput) {
+      await tx
+        .update(user)
+        .set({
+          name: userInput.name ?? existingUser.name,
+          email: userInput.email ?? existingUser.email,
+          image: userInput.image !== undefined ? (userInput.image ?? null) : undefined,
+          updatedAt: new Date(),
+        })
+        .where(eq(user.id, existing.userId));
+    }
+
+    const [record] = memberInput
+      ? await tx
+          .update(member)
+          .set({ ...memberInput, updatedAt: new Date() })
+          .where(and(eq(member.gymId, gymId), eq(member.id, id)))
+          .returning()
+      : [existing];
+
+    if (!record) throw new NotFoundError("Member not found");
+
+    return record;
+  });
 
   await invalidateMemberCache(gymId);
 
-  return record;
+  return updated;
 };
 
 export const deleteMember = async (gymId: string, id: string) => {
   const [record] = await db
-    .delete(member)
+    .update(member)
+    .set({ deletedAt: new Date() })
     .where(and(eq(member.gymId, gymId), eq(member.id, id)))
     .returning();
 

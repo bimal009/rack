@@ -20,8 +20,7 @@ export const memberGenderEnum = pgEnum("member_gender", [
 
 export const memberStatusEnum = pgEnum("member_status", [
   "Active",
-  "On Hold",
-  "Expired",
+  "Inactive",
 ]);
 
 export const member = pgTable(
@@ -45,6 +44,7 @@ export const member = pgTable(
     joinedAt: timestamp("joined_at").notNull().defaultNow(),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
+    deletedAt: timestamp("deleted_at"),
   },
   (table) => [
     unique("members_gym_id_user_id_unique").on(table.gymId, table.userId),

@@ -1,6 +1,6 @@
 "use client"
 
-import { MoreHorizontal, PenSquare, QrCode, Trash2 } from "lucide-react"
+import { MoreHorizontal, PenSquare, Trash2 } from "lucide-react"
 import type { MemberStatus, MemberWithUser } from "@repo/types"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/components/ui/avatar"
@@ -19,11 +19,10 @@ import { cn } from "@repo/ui/lib/utils"
 
 export const statusVariant: Record<
   MemberStatus,
-  "default" | "secondary" | "destructive"
+  "default" | "secondary" 
 > = {
   Active: "default",
-  "On Hold": "secondary",
-  Expired: "destructive",
+  Inactive: "secondary",
 }
 
 export function initials(name: string) {
@@ -40,13 +39,11 @@ export function initials(name: string) {
 interface MemberColumnActions {
   onEdit: (member: MemberWithUser) => void
   onDelete: (member: MemberWithUser) => void
-  onShowQr: (member: MemberWithUser) => void
 }
 
 export function createMemberColumns({
   onEdit,
   onDelete,
-  onShowQr,
 }: MemberColumnActions) {
   const columnHelper = createDataTableColumnHelper<MemberWithUser>()
 
@@ -103,7 +100,7 @@ export function createMemberColumns({
             variant={statusVariant[status]}
             className={cn(
               "rounded-full",
-              status === "On Hold" && "bg-muted text-foreground"
+              status === "Inactive" && "bg-muted text-foreground"
             )}
           >
             {status}
@@ -121,18 +118,15 @@ export function createMemberColumns({
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={() => onEdit(row.original)}>
               <PenSquare />
-              Edit Member
+              Edit
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onShowQr(row.original)}>
-              <QrCode />
-              Show QR Code
-            </DropdownMenuItem>
+
             <DropdownMenuItem
               variant="destructive"
               onClick={() => onDelete(row.original)}
             >
               <Trash2 />
-              Remove Member
+              Remove
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

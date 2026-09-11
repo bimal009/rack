@@ -13,6 +13,7 @@ export const user = pgTable("user", {
   isClaimed: boolean("is_claimed").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  
 });
 
 export const session = pgTable("session", {

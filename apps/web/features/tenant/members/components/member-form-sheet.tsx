@@ -195,7 +195,7 @@ function MemberForm({
     setErrors({})
     createMember.mutate(result.data, {
       onSuccess: () => {
-        toast.success(`${result.data.firstName} ${result.data.lastName} added`)
+        toast.success(`${result.data.user.name} added`)
         onClose()
       },
       onError: (error) => toast.error(error.message),

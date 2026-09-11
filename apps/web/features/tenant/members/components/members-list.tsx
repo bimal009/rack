@@ -27,9 +27,8 @@ import { useDeleteMember, useMembersQuery } from "../hooks/use-members"
 import { useMemberFilters } from "../hooks/use-member-filters"
 import { createMemberColumns } from "./columns"
 import { MemberFormSheet } from "./member-form-sheet"
-import { MemberQrDialog } from "./member-qr-dialog"
 
-const statusOptions = ["All", "Active", "On Hold", "Expired"] as const
+const statusOptions = ["All", "Active", "Inactive"] as const
 
 export function MembersList() {
   const tenant = useParams<{ tenant: string }>().tenant
@@ -37,7 +36,6 @@ export function MembersList() {
   const [sheetOpen, setSheetOpen] = useState(false)
   const [editing, setEditing] = useState<MemberWithUser | null>(null)
   const [deleting, setDeleting] = useState<MemberWithUser | null>(null)
-  const [qrMember, setQrMember] = useState<MemberWithUser | null>(null)
 
   const deleteMember = useDeleteMember(tenant)
   const debouncedSearch = useDebounce(filters.search, 350)
@@ -59,7 +57,6 @@ export function MembersList() {
           setSheetOpen(true)
         },
         onDelete: setDeleting,
-        onShowQr: setQrMember,
       }),
     []
   )
@@ -200,10 +197,7 @@ export function MembersList() {
         }}
       />
 
-      <MemberQrDialog
-        member={qrMember}
-        onOpenChange={(open) => !open && setQrMember(null)}
-      />
+
     </div>
   )
 }
