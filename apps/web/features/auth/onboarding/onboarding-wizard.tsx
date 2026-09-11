@@ -105,7 +105,7 @@ export function OnboardingWizard() {
         features: data.features as OnboardingInput["features"],
       },
       {
-        onSuccess: (result) => router.push(`/s/${result.id}/dashboard`),
+        onSuccess: (result) => router.push(`/${result.id}`),
         onError: (error) => {
           setIsRedirecting(false)
           toast.error(error.message)

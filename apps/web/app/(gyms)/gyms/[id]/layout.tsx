@@ -7,9 +7,9 @@ export default async function TenantLayout({
   params,
 }: {
   children: React.ReactNode
-  params: Promise<{ tenant: string }>
+  params: Promise<{ id: string }>
 }) {
-  const { tenant } = await params
+  const { id } = await params
 
   return (
     <SidebarProvider
@@ -20,7 +20,7 @@ export default async function TenantLayout({
         } as React.CSSProperties
       }
     >
-      <AppSidebar variant="inset" tenant={tenant} />
+      <AppSidebar variant="inset" tenant={id} />
       <SidebarInset>{children}</SidebarInset>
     </SidebarProvider>
   )

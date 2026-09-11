@@ -33,7 +33,7 @@ import {
 import { authClient } from "@/auth-client"
 
 const mainNav = [
-  { title: "Dashboard", icon: LayoutGrid, segment: "dashboard" },
+  { title: "Dashboard", icon: LayoutGrid, segment: "/" },
   { title: "Members", icon: Users, segment: "members" },
   { title: "Revenue", icon: Wallet, segment: "revenue/plans", match: "revenue" },
   { title: "Attendance", icon: ClipboardCheck, segment: "attendance" },
@@ -86,11 +86,11 @@ export function AppSidebar({ tenant, ...props }: AppSidebarProps) {
             <SidebarMenu className="gap-1">
               {mainNav.map((item) => {
                 const href = item.segment
-                  ? `/s/${tenant}/${item.segment}`
+                  ? `/gyms/${tenant}/${item.segment}`
                   : undefined
                 const matchSegment = item.match ?? item.segment
                 const matchHref = matchSegment
-                  ? `/s/${tenant}/${matchSegment}`
+                  ? `/gyms/${tenant}/${matchSegment}`
                   : undefined
                 const active = matchHref
                   ? pathname === matchHref ||
@@ -137,7 +137,7 @@ export function AppSidebar({ tenant, ...props }: AppSidebarProps) {
             <SidebarMenu className="gap-1">
               {accountNav.map((item) => {
                 const href = item.segment
-                  ? `/s/${tenant}/${item.segment}`
+                  ? `/gyms/${tenant}/${item.segment}`
                   : undefined
                 const active = href
                   ? pathname === href || pathname?.startsWith(`${href}/`)
