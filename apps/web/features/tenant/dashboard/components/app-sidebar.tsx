@@ -43,7 +43,11 @@ const mainNav = [
 ]
 
 const accountNav = [
-  { title: "Settings", icon: Settings, segment: "settings" },
+  {
+    title: "Settings",
+    icon: Settings,
+    segment: "settings/types/area-types",
+  },
 ]
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {

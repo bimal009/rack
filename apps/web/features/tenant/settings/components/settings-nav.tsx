@@ -14,8 +14,12 @@ import { cn } from "@repo/ui/lib/utils"
 
 const categories = [
   { label: "Personal", icon: CircleUserRound },
-  { label: "Organization", icon: Building2, segment: "organization" },
-  { label: "Types", icon: Tags, segment: "types" },
+  {
+    label: "Organization",
+    icon: Building2,
+    segment: "organization/details",
+  },
+  { label: "Types", icon: Tags, segment: "types/area-types" },
   { label: "Member Apps", icon: Smartphone,badge:"Soon" },
   { label: "AI", icon: Bot ,badge:"Soon"},
 
