@@ -1,7 +1,7 @@
 "use client"
 
 import { MoreHorizontal, PenSquare, Trash2 } from "lucide-react"
-import type { MemberStatus, MemberWithUser } from "@repo/types"
+import { isSyntheticEmail, type MemberStatus, type MemberWithUser } from "@repo/types"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/components/ui/avatar"
 import { Badge } from "@repo/ui/components/ui/badge"
@@ -64,7 +64,7 @@ export function createMemberColumns({
             </Avatar>
             <div className="min-w-0">
               <p className="truncate text-sm font-medium text-foreground">{name}</p>
-              <p className="truncate text-xs text-muted-foreground">{email}</p>
+              <p className="truncate text-xs text-muted-foreground">{isSyntheticEmail(email)?"":email}</p>
             </div>
           </div>
         )

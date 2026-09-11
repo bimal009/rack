@@ -38,7 +38,7 @@ export function MembersList() {
   const [deleting, setDeleting] = useState<MemberWithUser | null>(null)
 
   const deleteMember = useDeleteMember(tenant)
-  const debouncedSearch = useDebounce(filters.search, 350)
+  const debouncedSearch = useDebounce(filters.search, 200)
 
   const params: Partial<MemberListQuery> = {
     page: filters.page,

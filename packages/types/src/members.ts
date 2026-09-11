@@ -122,3 +122,6 @@ export type CreateMemberResult = {
   user: MemberProfileUser;
   member: Member;
 };
+
+const SYNTHETIC_EMAIL_SUFFIX = ".chautari.fit"
+export const isSyntheticEmail = (email: string) => email.endsWith(SYNTHETIC_EMAIL_SUFFIX)
