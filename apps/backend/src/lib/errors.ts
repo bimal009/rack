@@ -36,6 +36,7 @@ function findPgError(error: unknown): PostgresError | undefined {
 }
 
 const UNIQUE_CONSTRAINT_MESSAGES: Record<string, string> = {
+  user_email_key: "This email is already in use.",
   gyms_email_unique: "This email is already in use.",
   gyms_phone_unique: "This phone number is already in use.",
   gyms_owner_user_id_key: "You already have a gym registered.",

@@ -144,18 +144,16 @@ function MemberForm({
   const hasMembership = values.membership !== null
 
   function toggleMembership() {
-    // TEMP DEBUG: if this never logs, the click isn't reaching this
-    // function at all — the bug is in the Button component, not here.
-    console.log("toggleMembership fired, current membership:", values.membership)
     setValues((v) => ({ ...v, membership: v.membership ? null : newMembership() }))
   }
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault()
 
+    const user = { ...values.user, image: values.user.image || undefined }
     const payload = isEdit
-      ? { user: values.user, member: values.member }
-      : { user: values.user, member: values.member, membership: values.membership ?? undefined }
+      ? { user, member: values.member }
+      : { user, member: values.member, membership: values.membership ?? undefined }
 
     const schema = isEdit ? memberUpdateSchema : memberWithUserAndMembershipInsertSchema
     const result = schema.safeParse(payload)

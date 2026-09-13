@@ -1,7 +1,7 @@
 "use client"
 
 import { useRef, useState, type DragEvent } from "react"
-import { Loader2, Upload, X } from "lucide-react"
+import { ImageUp, Loader2, X } from "lucide-react"
 import { toast } from "sonner"
 import type { UploadedImage } from "@repo/types"
 
@@ -53,7 +53,14 @@ export function ImageUpload({
 
   function pick(files: FileList | null) {
     const file = files?.[0]
-    if (file) void upload(file)
+    if (!file) return
+    // The `accept` attribute only filters the file picker, not drag-and-drop,
+    // so a non-image dropped file needs its own check here.
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please choose an image file")
+      return
+    }
+    void upload(file)
   }
 
   function onDrop(event: DragEvent) {
@@ -74,12 +81,13 @@ export function ImageUpload({
       <div
         role="button"
         tabIndex={busy ? -1 : 0}
-        aria-label="Upload image"
+        aria-label={value ? "Change image" : "Upload image"}
+        aria-busy={isUploading}
         className={cn(
-          "group relative flex items-center justify-center overflow-hidden border border-dashed border-border bg-muted/40 text-muted-foreground transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+          "group relative flex items-center justify-center overflow-hidden border border-dashed border-border bg-muted/40 text-muted-foreground outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring/50",
           frame,
           dragging && "border-primary bg-primary/5",
-          !busy && "cursor-pointer hover:border-primary/60"
+          !busy && "cursor-pointer hover:border-primary/60 active:scale-[0.98]"
         )}
         onClick={() => !busy && inputRef.current?.click()}
         onKeyDown={(event) => {
@@ -97,7 +105,7 @@ export function ImageUpload({
       >
         {isUploading ? (
           <div className="flex flex-col items-center gap-2 p-3 text-center">
-            <Loader2 className="size-5 animate-spin" />
+            <Loader2 className="size-5 animate-spin" aria-hidden="true" />
             <span className="text-xs tabular-nums">{progress}%</span>
           </div>
         ) : value ? (
@@ -105,7 +113,7 @@ export function ImageUpload({
           <img src={value} alt="" className="size-full object-cover" />
         ) : (
           <div className="flex flex-col items-center gap-1.5 p-3 text-center">
-            <Upload className="size-5" />
+            <ImageUp className="size-5" aria-hidden="true" />
             <span className="text-xs">Click or drop an image</span>
           </div>
         )}
@@ -136,9 +144,7 @@ export function ImageUpload({
         </div>
       )}
 
-      {error && !isUploading && (
-        <p className="text-xs text-destructive">{error}</p>
-      )}
+      {error && !isUploading && <p className="text-xs text-destructive">{error}</p>}
 
       <input
         ref={inputRef}

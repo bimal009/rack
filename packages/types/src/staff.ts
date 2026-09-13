@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { paginationFields, type PaginatedResponse } from "./pagination";
+import { profileImageSchema } from "./user";
 
 export const gymRoleEnumSchema = z.enum(["admin", "manager", "instructor", "frontdesk"]);
 
@@ -71,7 +72,7 @@ const staffWithUserInsertObject = z.object({
   firstName: z.string().trim().min(1, "Enter a first name"),
   lastName: z.string().trim().min(1, "Enter a last name"),
   email: z.string().trim().email("Enter a valid email address"),
-  image: z.string().url().nullish(),
+  image: profileImageSchema,
 
   role: gymRoleEnumSchema,
   isActive: z.boolean().default(true),
@@ -142,7 +143,7 @@ export type StaffMemberUser = {
   id: string;
   name: string;
   email: string;
-  image: string | null;
+  image?: string | null;
 };
 
 export type StaffWithUser = Omit<Staff, "createdAt" | "updatedAt"> & {

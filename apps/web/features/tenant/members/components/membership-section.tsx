@@ -58,7 +58,9 @@ interface MembershipSectionProps {
 }
 
 export function MembershipSection({ tenant, values, onChange, errors }: MembershipSectionProps) {
-  const { data: plansResponse } = useGymPlansQuery(tenant)
+  // NOTE: was previously called with no query object, so it silently used
+  // whatever the API's default page size is instead of every plan.
+  const { data: plansResponse } = useGymPlansQuery(tenant, { limit: 100 })
   const plans = plansResponse?.data ?? []
 
   function set<K extends keyof MembershipValues>(key: K, value: MembershipValues[K]) {
@@ -70,38 +72,38 @@ export function MembershipSection({ tenant, values, onChange, errors }: Membersh
       <div className="flex flex-col gap-4">
         <p className="text-sm font-medium text-foreground">General</p>
         <div className="grid grid-cols-2 gap-4">
-    <Field data-invalid={Boolean(errors["membership.planId"])}>
-  <FieldLabel htmlFor="membership-plan">
-    Plan <span className="text-destructive">*</span>
-  </FieldLabel>
-<Select
-  value={values.planId}
-  onValueChange={(value) => {
-    if (!value) return
-    const plan = plans.find((p) => p.id === value)
-    onChange({
-      ...values,
-      planId: value,
-      price: plan?.pricePerPeriod ?? values.price,
-      signupFee: plan?.signupFee ?? null,
-    })
-  }}
->
-  <SelectTrigger id="membership-plan" className="w-full">
-    <SelectValue placeholder="Select a plan">
-      {plans.find((plan) => plan.id === values.planId)?.name}
-    </SelectValue>
-  </SelectTrigger>
-  <SelectContent>
-    {plans.map((plan) => (
-      <SelectItem key={plan.id} value={plan.id}>
-        {plan.name}
-      </SelectItem>
-    ))}
-  </SelectContent>
-</Select>
-  <FieldError>{errors["membership.planId"]}</FieldError>
-</Field>
+          <Field data-invalid={Boolean(errors["membership.planId"])}>
+            <FieldLabel htmlFor="membership-plan">
+              Plan <span className="text-destructive">*</span>
+            </FieldLabel>
+            <Select
+              value={values.planId}
+              onValueChange={(value) => {
+                if (!value) return
+                const plan = plans.find((p) => p.id === value)
+                onChange({
+                  ...values,
+                  planId: value,
+                  price: plan?.pricePerPeriod ?? values.price,
+                  signupFee: plan?.signupFee ?? null,
+                })
+              }}
+            >
+              <SelectTrigger id="membership-plan" className="w-full">
+                <SelectValue placeholder="Select a plan">
+                  {plans.find((plan) => plan.id === values.planId)?.name}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {plans.map((plan) => (
+                  <SelectItem key={plan.id} value={plan.id}>
+                    {plan.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <FieldError>{errors["membership.planId"]}</FieldError>
+          </Field>
 
           <Field>
             <FieldLabel htmlFor="membership-status">Status</FieldLabel>

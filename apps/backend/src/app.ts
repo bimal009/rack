@@ -39,7 +39,15 @@ app.set("trust proxy", 1);
 
 app.use(helmet());
 
-app.use(pinoHttp({ logger}));
+app.use(
+  pinoHttp({
+    logger,
+    serializers: {
+      req: (req) => ({ method: req.method, url: req.url }),
+      res: (res) => ({ statusCode: res.statusCode }),
+    },
+  })
+);
 
 app.use(
   cors({

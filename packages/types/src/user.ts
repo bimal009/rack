@@ -1,13 +1,14 @@
 import { z } from "zod";
 
 export const roleEnumSchema = z.enum(["user", "admin"]);
+export const profileImageSchema = z.string().url().nullish();
 
 export const userSchema = z.object({
   id: z.string(),
   name: z.string(),
   email: z.string().email(),
   emailVerified: z.boolean().default(false),
-  image: z.string().nullable().optional(),
+  image: profileImageSchema,
   role: roleEnumSchema.default("user"),
   onboarded: z.boolean().default(false),
   isClaimed: z.boolean().default(false),

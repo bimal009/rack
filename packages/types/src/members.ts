@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { paginationFields, type PaginatedResponse } from "./pagination";
 import { gymMembershipAssignmentSchema } from "./gymMembershipAssignment";
+import { profileImageSchema } from "./user";
 
 export const memberGenderEnumSchema = z.enum([
   "Male",
@@ -48,11 +49,10 @@ export const memberUserFieldsSchema = z.object({
     .union([z.string().trim().email("Enter a valid email address"), z.literal("")])
     .optional()
     .transform((value) => (value ? value : undefined)),
-  image: z.string().url().nullish(),
+  image: profileImageSchema,
 });
 export type MemberUserFields = z.infer<typeof memberUserFieldsSchema>;
 
-// --- member block (no membership here anymore) ---
 export const memberFieldsSchema = z.object({
   status: memberStatusEnumSchema.default("Active"),
   phone: phoneSchema,
@@ -91,7 +91,7 @@ export type MemberProfileUser = {
   id: string;
   name: string;
   email: string;
-  image: string | null;
+  image?: string | null;
 };
 
 export type MemberWithUser = Omit<Member, "joinedAt" | "createdAt" | "updatedAt"> & {
