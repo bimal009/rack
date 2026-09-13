@@ -134,3 +134,5 @@ export const getGymById = async (id: string) => {
   });
 };
 
+
+

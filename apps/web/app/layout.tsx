@@ -5,6 +5,7 @@ import { NuqsAdapter } from "nuqs/adapters/next/app";
 import "@repo/ui/globals.css";
 
 import { QueryProvider } from "@/components/providers/query-provider";
+import { TooltipProvider } from "@repo/ui/components/ui/tooltip";
 
 const poppins = Poppins({
   variable: "--font-poppins",
@@ -33,7 +34,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-dvh flex flex-col">
         <NuqsAdapter>
-          <QueryProvider>{children}</QueryProvider>
+          <TooltipProvider>
+            <QueryProvider>{children}</QueryProvider>
+          </TooltipProvider>
         </NuqsAdapter>
         <Toaster richColors />
       </body>

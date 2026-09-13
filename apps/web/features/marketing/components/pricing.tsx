@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import Link from "next/link"
 import { Check, Mail, MessageCircle, MessageSquare, ScanLine } from "lucide-react"
 import type { Plan } from "@repo/types"
@@ -46,14 +46,24 @@ function planFeatures(plan: Plan): string[] {
   return items
 }
 
-function priceFor(plan: Plan, period: BillingPeriod): number {
-  if (period === "monthly") return plan.monthlyPrice
+function yearlyTotal(plan: Plan): number {
   return plan.yearlyPrice ?? plan.monthlyPrice * 12
+}
+
+/** The number shown as the headline price, always expressed per month. */
+function displayPrice(plan: Plan, period: BillingPeriod): number {
+  if (period === "monthly") return plan.monthlyPrice
+  return Math.round(yearlyTotal(plan) / 12)
 }
 
 export function Pricing() {
   const [period, setPeriod] = useState<BillingPeriod>("monthly")
   const { data: plans, isLoading, isError } = usePublicPlansQuery()
+
+  const maxDiscount = useMemo(
+    () => Math.max(0, ...(plans ?? []).map((plan) => plan.discountPercent)),
+    [plans]
+  )
 
   return (
     <section id="pricing" className="border-b border-border bg-muted/30">
@@ -83,13 +93,25 @@ export function Pricing() {
                 aria-pressed={period === value}
                 onClick={() => setPeriod(value)}
                 className={cn(
-                  "cursor-pointer rounded-lg px-4 py-2 text-sm font-medium capitalize transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+                  "flex cursor-pointer items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium capitalize transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
                   period === value
                     ? "bg-primary text-primary-foreground"
                     : "text-muted-foreground hover:text-foreground"
                 )}
               >
                 {value}
+                {value === "yearly" && maxDiscount > 0 && (
+                  <span
+                    className={cn(
+                      "rounded-full px-1.5 py-0.5 text-[10px] font-semibold",
+                      period === "yearly"
+                        ? "bg-primary-foreground/20 text-primary-foreground"
+                        : "bg-primary/10 text-primary"
+                    )}
+                  >
+                    Save {maxDiscount}%
+                  </span>
+                )}
               </button>
             ))}
           </div>
@@ -123,7 +145,7 @@ export function Pricing() {
               <Button
                 className="mt-5 h-10 px-5"
                 nativeButton={false}
-                render={<Link href="/signup">Get started</Link>}
+                render={<Link href="/signup">Get started free</Link>}
               />
             </div>
           ) : (
@@ -138,17 +160,17 @@ export function Pricing() {
               {plans.map((plan, index) => {
                 const recommended =
                   plans.length >= 3 ? index === 1 : index === 0
-                const price = priceFor(plan, period)
+                const price = displayPrice(plan, period)
                 const showSaving = period === "yearly" && plan.discountPercent > 0
 
                 return (
                   <div
                     key={plan.id}
                     className={cn(
-                      "flex flex-col rounded-2xl border bg-background p-6 transition-colors",
+                      "flex flex-col rounded-2xl border p-6 transition-colors",
                       recommended
-                        ? "border-primary ring-1 ring-primary/25"
-                        : "border-border hover:border-foreground/20"
+                        ? "border-primary bg-primary/5 ring-1 ring-primary/25"
+                        : "border-border bg-background hover:border-foreground/20"
                     )}
                   >
                     <div className="flex items-center justify-between gap-3">
@@ -162,22 +184,27 @@ export function Pricing() {
                       <span className="text-3xl font-semibold tracking-tight text-foreground">
                         {currency.format(price)}
                       </span>
-                      <span className="text-sm text-muted-foreground">
-                        /{period === "monthly" ? "month" : "year"}
-                      </span>
+                      <span className="text-sm text-muted-foreground">/month</span>
                     </div>
 
-                    <div className="mt-2 flex min-h-5 flex-wrap items-center gap-2">
-                      {showSaving && (
-                        <span className="text-xs font-medium text-primary">
-                          Save {plan.discountPercent}% paying yearly
-                        </span>
-                      )}
-                      {plan.trialDays > 0 && (
+                    <div className="mt-2 flex min-h-9 flex-col gap-1">
+                      {period === "yearly" && plan.monthlyPrice > 0 && (
                         <span className="text-xs text-muted-foreground">
-                          {plan.trialDays}-day free trial
+                          Billed {currency.format(yearlyTotal(plan))} per year
                         </span>
                       )}
+                      <div className="flex flex-wrap items-center gap-2">
+                        {showSaving && (
+                          <span className="text-xs font-medium text-primary">
+                            Save {plan.discountPercent}% paying yearly
+                          </span>
+                        )}
+                        {plan.trialDays > 0 && (
+                          <span className="text-xs text-muted-foreground">
+                            {plan.trialDays}-day free trial
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     <Button

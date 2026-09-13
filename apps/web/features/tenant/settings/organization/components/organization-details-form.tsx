@@ -22,7 +22,7 @@ import {
 import { Skeleton } from "@repo/ui/components/ui/skeleton"
 
 import { fieldErrors } from "../../lib/validation"
-import { useGymQuery, useUpdateGymMutation } from "../../hooks/useOrganization"
+import { useGymQuery, useUpdateGymMutation } from "@/features/tenant/gyms/hook/useGyms"
 
 interface OrganizationFormValues {
   businessName: string

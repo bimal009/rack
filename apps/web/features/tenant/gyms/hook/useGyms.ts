@@ -1,8 +1,8 @@
 "use client"
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { fetchMyGym, updateMyGym } from "../api/gyms"
 
-import { fetchMyGym, updateMyGym } from "@/features/tenant/settings/api/organization"
 
 export function useGymQuery() {
   return useQuery({

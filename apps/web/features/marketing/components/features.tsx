@@ -1,112 +1,103 @@
-import {
-  BarChart3,
-  CalendarCheck,
-  CreditCard,
-  Dumbbell,
-  MapPin,
-  MessageSquare,
-  Package,
-  ScanLine,
-  UserCog,
-  Users,
-} from "lucide-react"
+"use client"
 
-import { Badge } from "@repo/ui/components/ui/badge"
+import { CalendarCheck, CreditCard, Users } from "lucide-react"
 
-const features = [
-  {
-    icon: Users,
-    title: "Members",
-    description:
-      "One profile per member with contact details, plan history and current status.",
-  },
-  {
-    icon: CalendarCheck,
-    title: "Attendance",
-    description:
-      "Check members in at the desk, or let them scan themselves on the way in.",
-  },
-  {
-    icon: CreditCard,
-    title: "Plans and billing",
-    description:
-      "Membership plans with your own billing cycle, signup fee and session limits.",
-  },
-  {
-    icon: Dumbbell,
-    title: "Classes",
-    description:
-      "Schedule classes, cap the roster, and keep instructors and rooms from clashing.",
-  },
-  {
-    icon: MapPin,
-    title: "Areas and bookings",
-    description:
-      "Courts, studios and floors with their own hourly pricing and booking limits.",
-  },
-  {
-    icon: UserCog,
-    title: "Staff and roles",
-    description:
-      "Add trainers and front desk staff with pay rates and controlled access.",
-  },
-  {
-    icon: Package,
-    title: "Retail and inventory",
-    description:
-      "Sell supplements, apparel and packages at the counter with stock kept in sync.",
-  },
-  {
-    icon: BarChart3,
-    title: "Reports",
-    description:
-      "Revenue, attendance and renewals reported without exporting to a spreadsheet.",
-  },
-  {
-    icon: MessageSquare,
-    title: "Notifications",
-    description:
-      "Email, SMS and WhatsApp messages about renewals, classes and offers.",
-  },
-  {
-    icon: ScanLine,
-    title: "Door access",
-    description:
-      "Entry tied to an active membership, so the door matches who has paid.",
-  },
+const upcomingRenewals = [
+  { name: "Bikash Thapa", due: "Tomorrow" },
+  { name: "Priya Gurung", due: "In 3 days" },
+  { name: "Anjali Rai", due: "In 5 days" },
+]
+
+const attendanceBars = [
+  { label: "Mon", value: 62 },
+  { label: "Tue", value: 74 },
+  { label: "Wed", value: 58 },
+  { label: "Thu", value: 81 },
+  { label: "Fri", value: 90 },
 ]
 
 export function Features() {
   return (
-    <section id="features" className="border-b border-border">
+    <section className="border-b border-border">
       <div className="mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
-        <div className="mx-auto max-w-2xl text-center">
-          <Badge variant="outline" className="h-7 px-3 text-xs">
-            Features
-          </Badge>
-          <h2 className="mt-5 text-3xl font-semibold tracking-tight text-balance text-foreground sm:text-4xl">
-            What Rackrage covers
+        <div className="max-w-2xl">
+          <h2 className="text-3xl font-semibold tracking-tight text-balance text-foreground sm:text-4xl">
+            Built for how gyms actually run
           </h2>
           <p className="mt-4 text-base text-pretty text-muted-foreground">
-            Members, payments, classes and staff all run in the same system, so
-            your records stay consistent across the gym.
+            Three things eat up a front desk&apos;s day. Chautari Fit handles all
+            three from one screen.
           </p>
         </div>
 
-        <div className="mt-12 grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
-          {features.map((feature) => (
-            <div key={feature.title}>
-              <span className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                <feature.icon className="size-5" />
-              </span>
-              <h3 className="mt-4 text-sm font-semibold text-foreground">
-                {feature.title}
-              </h3>
-              <p className="mt-1.5 text-sm text-pretty text-muted-foreground">
-                {feature.description}
+        <div className="mt-10 grid gap-4 md:grid-cols-3 md:grid-rows-2">
+          <div className="rounded-2xl border border-border bg-primary/5 p-6 md:col-span-2 md:row-span-2">
+            <span className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <Users className="size-5" />
+            </span>
+            <h3 className="mt-4 text-lg font-semibold text-foreground">
+              Member portal
+            </h3>
+            <p className="mt-2 max-w-md text-sm text-pretty text-muted-foreground">
+              Members check their plan, payment history, and check-in streak
+              without calling the front desk.
+            </p>
+
+            <div className="mt-6 rounded-xl border border-border bg-background p-4">
+              <p className="text-xs text-muted-foreground">Bikash Thapa</p>
+              <p className="mt-1 text-sm font-medium text-foreground">
+                Annual plan, active
+              </p>
+              <div className="mt-3 flex h-1.5 overflow-hidden rounded-full bg-muted">
+                <span className="h-full w-[72%] rounded-full bg-primary" />
+              </div>
+              <p className="mt-2 text-xs text-muted-foreground">
+                262 of 365 days used
               </p>
             </div>
-          ))}
+          </div>
+
+          <div className="rounded-2xl border border-border bg-muted/40 p-6">
+            <span className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <CalendarCheck className="size-5" />
+            </span>
+            <h3 className="mt-4 text-lg font-semibold text-foreground">
+              Attendance tracking
+            </h3>
+            <p className="mt-2 text-sm text-pretty text-muted-foreground">
+              See who showed up, and when your gym actually gets busy.
+            </p>
+
+            <div className="mt-5 flex h-16 items-end gap-2">
+              {attendanceBars.map((bar) => (
+                <div key={bar.label} className="flex flex-1 flex-col items-center gap-1.5">
+                  <div className="w-full rounded-t-sm bg-primary/60" style={{ height: `${bar.value}%` }} />
+                  <span className="text-[10px] text-muted-foreground">{bar.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-border bg-primary/10 p-6">
+            <span className="flex size-10 items-center justify-center rounded-xl bg-background text-primary">
+              <CreditCard className="size-5" />
+            </span>
+            <h3 className="mt-4 text-lg font-semibold text-foreground">
+              Billing and renewals
+            </h3>
+            <p className="mt-2 text-sm text-pretty text-muted-foreground">
+              Know who is due before they walk out the door.
+            </p>
+
+            <div className="mt-5 space-y-2.5">
+              {upcomingRenewals.map((row) => (
+                <div key={row.name} className="flex items-center justify-between text-sm">
+                  <span className="text-foreground">{row.name}</span>
+                  <span className="text-muted-foreground">{row.due}</span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </section>

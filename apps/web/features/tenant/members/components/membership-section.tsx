@@ -210,12 +210,16 @@ export function MembershipSection({ tenant, values, onChange, errors }: Membersh
             <FieldLabel htmlFor="membership-end" className="flex items-center gap-1">
               End Date
               <Tooltip>
-                <TooltipTrigger>
+                <TooltipTrigger
+                  type="button"
+                  aria-label="About the membership end date"
+                  className="inline-flex items-center"
+                >
                   <InfoIcon className="size-3.5 text-muted-foreground" />
                 </TooltipTrigger>
                 <TooltipContent>
-                  The end date is set by the plan when you save. Use Extend to add days on top of
-                  it.
+                  The end date is calculated automatically in the background from the selected
+                  plan when you save. Use Extend to add days on top of it.
                 </TooltipContent>
               </Tooltip>
             </FieldLabel>
