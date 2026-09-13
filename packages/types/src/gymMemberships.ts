@@ -1,6 +1,8 @@
+import { MemberWithUser, memberWithUserSchema } from './members';
 import { z } from "zod";
 import { paginationFields, type PaginatedResponse } from "./pagination";
 import { relatedRefSchema } from "./gymPlanRefs";
+import { planSchema } from './plans';
 
 export const gymMembershipStatusEnumSchema = z.enum([
   "Active",
@@ -77,7 +79,14 @@ export const gymMembershipListQuerySchema = z
     status: gymMembershipStatusEnumSchema.optional(),
     memberId: z.string().uuid().optional(),
     planId: z.string().uuid().optional(),
+    planCategoryId: z.string().uuid().optional(),
   })
   .strict();
 export type GymMembershipListQuery = z.infer<typeof gymMembershipListQuerySchema>;
 export type GymMembershipListResponse = PaginatedResponse<GymMembershipWithRefs>;
+
+export const gymMembershipWithMemberAndPlanSchema = gymMembershipSchema.extend({
+  member: memberWithUserSchema,
+  plan: planSchema,
+})
+export type GymMembershipWithMemberAndPlan = z.infer<typeof gymMembershipWithMemberAndPlanSchema>

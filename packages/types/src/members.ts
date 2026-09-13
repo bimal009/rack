@@ -116,3 +116,7 @@ export type CreateMemberResult = {
 
 const SYNTHETIC_EMAIL_SUFFIX = ".chautari.fit";
 export const isSyntheticEmail = (email: string) => email.endsWith(SYNTHETIC_EMAIL_SUFFIX);
+
+export const memberWithUserSchema = memberSchema.extend({
+  user: memberUserFieldsSchema,
+})

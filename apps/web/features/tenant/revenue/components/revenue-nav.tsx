@@ -9,6 +9,7 @@ import { cn } from "@repo/ui/lib/utils"
 
 const navItems = [
   { label: "Plans", segment: "plans", icon: CreditCard },
+  { label: "Membership", segment: "membership", icon: CreditCard },
   { label: "Products", segment: "products", icon: ShoppingBag },
   { label: "Packages", segment: "packages", icon: Layers },
   { label: "Orders", segment: "orders", icon: Receipt },

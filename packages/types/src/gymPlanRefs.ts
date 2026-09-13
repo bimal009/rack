@@ -6,8 +6,6 @@ export const relatedRefSchema = z.object({
 });
 export type RelatedRef = z.infer<typeof relatedRefSchema>;
 
-// Shape returned by the gym plan's relational query `with`: the junction row
-// plus its resolved sport/feature ref.
 export const gymPlanSportRefSchema = z.object({
   id: z.string().uuid(),
   gymId: z.string().uuid(),
