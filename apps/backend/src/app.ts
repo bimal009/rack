@@ -27,7 +27,9 @@ import gymPlanRoutes from "./modules/gymPlan/gymPlan.routes";
 import productRoutes from "./modules/product/product.routes";
 import productFeatureRoutes from "./modules/productFeature/productFeature.routes";
 import gymOperatingHoursRoutes from "./modules/gymOperatingHours/gymOperatingHours.routes";
-import gymMembershipRoutes from "./modules/gymMembership/gymMembership.routes";
+import gymMembershipRoutes, {
+  gymMembershipListRouter,
+} from "./modules/gymMembership/gymMembership.routes";
 
 const isDev = process.env.NODE_ENV === "development";
 
@@ -65,6 +67,7 @@ app.use(
   "/api/v1/gyms/:gymId/members/:memberId/membership",
   gymMembershipRoutes
 );
+app.use("/api/v1/gyms/:gymId/memberships", gymMembershipListRouter);
 app.use("/api/v1/gyms/:gymId/sports", sportRoutes);
 app.use("/api/v1/gyms/:gymId/features", featureRoutes);
 app.use("/api/v1/gyms/:gymId/settings/area-types", areaTypeRoutes);

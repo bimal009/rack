@@ -2,7 +2,12 @@ import { MemberWithUser, memberWithUserSchema } from './members';
 import { z } from "zod";
 import { paginationFields, type PaginatedResponse } from "./pagination";
 import { relatedRefSchema } from "./gymPlanRefs";
-import { planSchema } from './plans';
+import {
+  gymMembershipAssignmentSchema,
+  type GymMembershipAssignment,
+} from "./gymMembershipAssignment";
+
+export { gymMembershipAssignmentSchema } from "./gymMembershipAssignment";
 
 export const gymMembershipStatusEnumSchema = z.enum([
   "Active",
@@ -40,18 +45,7 @@ export const gymMembershipWithRefsSchema = gymMembershipSchema.extend({
 });
 export type GymMembershipWithRefs = z.infer<typeof gymMembershipWithRefsSchema>;
 
-const dateString = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Enter a valid date");
-
-export const gymMembershipAssignmentSchema = z.object({
-  planId: z.string().uuid("Select a plan"),
-  status: gymMembershipStatusEnumSchema.default("Active"),
-  startDate: dateString,
-  price: z.number().int("Enter a valid price").nonnegative("Enter a valid price"),
-  signupFee: z.number().int().nonnegative().nullable().optional(),
-  extendedDays: z.number().int().nonnegative().default(0),
-  extensionReason: z.string().trim().max(300).optional().or(z.literal("")),
-});
-export type GymMembershipAssignment = z.infer<typeof gymMembershipAssignmentSchema>;
+export type { GymMembershipAssignment } from "./gymMembershipAssignment";
 
 const gymMembershipFields = gymMembershipAssignmentSchema
   .extend({
@@ -84,9 +78,10 @@ export const gymMembershipListQuerySchema = z
   .strict();
 export type GymMembershipListQuery = z.infer<typeof gymMembershipListQuerySchema>;
 export type GymMembershipListResponse = PaginatedResponse<GymMembershipWithRefs>;
+import { planWithCategorySchema } from "./plans";
 
 export const gymMembershipWithMemberAndPlanSchema = gymMembershipSchema.extend({
   member: memberWithUserSchema,
-  plan: planSchema,
+  plan: planWithCategorySchema,
 })
 export type GymMembershipWithMemberAndPlan = z.infer<typeof gymMembershipWithMemberAndPlanSchema>

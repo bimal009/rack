@@ -12,6 +12,7 @@ import { db } from "../../db";
 import { gymMembership, member, user } from "../../db/schema";
 import { NotFoundError, ValidationError } from "../../lib/errors";
 import { CACHE_KEYS, CACHE_TTL, redis, deleteByPattern } from "../../lib/redis";
+import { calculateEndDate } from "../../lib/helper";
 
 const memberListKey = (gymId: string, query: MemberListQuery): string => {
   const { page, limit, search, sortOrder, status } = query;
@@ -68,15 +69,31 @@ export async function createMemberWithUser(data: NewMemberWithUser, gymId: strin
 
     let newMembership = null;
     if (membershipInput) {
+      const plan = await tx.query.gymPlan.findFirst({
+        where: { id: membershipInput.planId, gymId },
+        columns: {
+          id: true,
+          billingType: true,
+          billingIntervalUnit: true,
+          billingIntervalCount: true,
+        },
+      });
+
+      if (!plan) {
+        throw new ValidationError("Plan does not belong to this gym");
+      }
+
       const [membershipRecord] = await tx
         .insert(gymMembership)
         .values({
           gymId,
           memberId: newMember.id,
           planId: membershipInput.planId,
+          status: membershipInput.status,
           startDate: membershipInput.startDate,
-          endDate: membershipInput.endDate,
-          pricePaid: membershipInput.pricePaid,
+          endDate: calculateEndDate(membershipInput.startDate, plan),
+          price: membershipInput.price,
+          signupFee: membershipInput.signupFee ?? null,
           extendedDays: membershipInput.extendedDays ?? 0,
           extensionReason: membershipInput.extensionReason ?? null,
         })

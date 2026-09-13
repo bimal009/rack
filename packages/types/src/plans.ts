@@ -28,3 +28,19 @@ export const planSchema = z.object({
   updatedAt: z.date(),
 });
 export type Plan = z.infer<typeof planSchema>;
+
+export const categorySchema = z.object({
+  id: z.string().uuid(),
+  gymId: z.string().uuid(),
+  name: z.string(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+});
+export type PlanCategory = z.infer<typeof categorySchema>;
+
+export const planWithCategorySchema = planSchema.extend({
+  category: categorySchema,
+});
+export type PlanWithCategory = z.infer<typeof planWithCategorySchema>;
+
+export const planWithCategoery = planWithCategorySchema;

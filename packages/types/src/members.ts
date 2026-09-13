@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { paginationFields, type PaginatedResponse } from "./pagination";
-import { gymMembershipAssignmentSchema } from "./gymMemberships";
+import { gymMembershipAssignmentSchema } from "./gymMembershipAssignment";
 
 export const memberGenderEnumSchema = z.enum([
   "Male",

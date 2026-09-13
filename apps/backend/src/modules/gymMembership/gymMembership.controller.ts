@@ -1,13 +1,32 @@
 import { Request, Response } from "express";
-import { handleError } from "../../lib/errors";
+import { gymMembershipListQuerySchema } from "@repo/types";
+import { handleError, ValidationError } from "../../lib/errors";
 import { AppResponse, RESPONSE_STATUS } from "../../lib/response";
 import { gymId, pathId } from "../../lib/helper";
 import {
   createMemberMembership,
   extendMemberMembership,
   getMemberMembership,
+  listMembership,
   updateMemberMembership,
 } from "./gymMembership.service";
+
+export const getMemberships = async (req: Request, res: Response) => {
+  try {
+    const query = gymMembershipListQuerySchema.safeParse(req.query);
+    if (!query.success) {
+      throw new ValidationError("Invalid query params", query.error.flatten());
+    }
+
+    const { data, meta } = await listMembership(gymId(req), query.data);
+    return res
+      .status(RESPONSE_STATUS.ok)
+      .json(AppResponse.paginated(data, meta, "Memberships fetched successfully"));
+  } catch (error) {
+    const { status, body } = handleError("getMemberships", error);
+    return res.status(status).json(body);
+  }
+};
 
 export const getMembership = async (req: Request, res: Response) => {
   try {

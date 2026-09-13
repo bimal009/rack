@@ -7,15 +7,21 @@ import {
   editMembership,
   extendMembership,
   getMembership,
+  getMemberships,
 } from "./gymMembership.controller";
 
-const router: Router = Router({ mergeParams: true });
+export const gymMembershipRouter: Router = Router({ mergeParams: true });
 
-router.use(requireAuth, validateGym, validateGymMember);
+gymMembershipRouter.use(requireAuth, validateGym, validateGymMember);
 
-router.get("/", getMembership);
-router.post("/", addMembership);
-router.patch("/:id", editMembership);
-router.post("/:id/extend", extendMembership);
+gymMembershipRouter.get("/", getMembership);
+gymMembershipRouter.post("/", addMembership);
+gymMembershipRouter.patch("/:id", editMembership);
+gymMembershipRouter.post("/:id/extend", extendMembership);
 
-export default router;
+export const gymMembershipListRouter: Router = Router({ mergeParams: true });
+
+gymMembershipListRouter.use(requireAuth, validateGym, validateGymMember);
+gymMembershipListRouter.get("/", getMemberships);
+
+export default gymMembershipRouter;
