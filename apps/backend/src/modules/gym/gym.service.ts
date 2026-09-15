@@ -7,30 +7,32 @@ import {
 import { eq } from "drizzle-orm";
 import { InternalServerError, NotFoundError, ValidationError } from "../../lib/errors";
 import {
+  areaType,
+  brand,
+  classType,
   gymFeature,
   gymOperatingHour,
   gymSport,
   gyms,
+  instructorType,
   membershipCategory,
+  productCategory,
   productFeature,
   staff,
+  taxRate,
   user,
 } from "../../db/schema";
 import { db } from "../../db";
-
-const DEFAULT_MEMBERSHIP_CATEGORIES = [
-  "Individual",
-  "Couple",
-] as const;
-
-const DEFAULT_PRODUCT_FEATURES = [
-  "Vegan",
-  "Gluten-Free",
-  "Best Seller",
-  "New Arrival",
-  "Limited Edition",
-  "Eco-Friendly",
-] as const;
+import {
+  DEFAULT_AREA_TYPES,
+  DEFAULT_BRANDS,
+  DEFAULT_CLASS_TYPES,
+  DEFAULT_INSTRUCTOR_TYPES,
+  DEFAULT_MEMBERSHIP_CATEGORIES,
+  DEFAULT_PRODUCT_CATEGORIES,
+  DEFAULT_PRODUCT_FEATURES,
+  DEFAULT_TAX_RATES,
+} from "./gym.constants";
 
 export const onboardGym = async (gym: OnboardingInput, userId: string) => {
   const result = onboardingSchema.safeParse(gym);
@@ -72,6 +74,30 @@ export const onboardGym = async (gym: OnboardingInput, userId: string) => {
 
     await tx.insert(gymFeature).values(
       features.map((name) => ({ gymId: gymRecord.id, name }))
+    );
+
+    await tx.insert(areaType).values(
+      DEFAULT_AREA_TYPES.map((area) => ({ ...area, gymId: gymRecord.id }))
+    );
+
+    await tx.insert(instructorType).values(
+      DEFAULT_INSTRUCTOR_TYPES.map((name) => ({ gymId: gymRecord.id, name }))
+    );
+
+    await tx.insert(classType).values(
+      DEFAULT_CLASS_TYPES.map((name) => ({ gymId: gymRecord.id, name }))
+    );
+
+    await tx.insert(brand).values(
+      DEFAULT_BRANDS.map((name) => ({ gymId: gymRecord.id, name }))
+    );
+
+    await tx.insert(taxRate).values(
+      DEFAULT_TAX_RATES.map((tax) => ({ ...tax, gymId: gymRecord.id }))
+    );
+
+    await tx.insert(productCategory).values(
+      DEFAULT_PRODUCT_CATEGORIES.map((name) => ({ gymId: gymRecord.id, name }))
     );
 
     await tx.insert(membershipCategory).values(

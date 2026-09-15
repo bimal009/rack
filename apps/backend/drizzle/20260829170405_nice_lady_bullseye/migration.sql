@@ -1,1 +1,0 @@
-ALTER TABLE "gyms" DROP COLUMN "specialties";

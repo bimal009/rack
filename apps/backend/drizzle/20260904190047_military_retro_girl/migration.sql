@@ -1,1 +1,0 @@
-ALTER TABLE "gym_operating_hours" ADD CONSTRAINT "gym_operating_hours_gym_id_day_unique" UNIQUE("gym_id","day");

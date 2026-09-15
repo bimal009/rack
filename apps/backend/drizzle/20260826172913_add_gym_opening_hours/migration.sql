@@ -1,1 +1,0 @@
-ALTER TABLE "gyms" ADD COLUMN "opening_hours" jsonb DEFAULT '{}' NOT NULL;
