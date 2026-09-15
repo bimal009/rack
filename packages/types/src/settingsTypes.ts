@@ -42,6 +42,13 @@ export type NewAreaType = z.infer<typeof areaTypeInsertSchema>;
 export const areaTypeUpdateSchema = areaTypeInsertSchema.partial();
 export type UpdateAreaType = z.infer<typeof areaTypeUpdateSchema>;
 
+export const simpleTypeSchema = z.object({
+  name: z.string().trim().min(1, "Enter a name").max(120),
+  rate: z.number().min(0).max(100).optional(),
+});
+
+export type SimpleTypeInput = z.infer<typeof simpleTypeSchema>;
+
 export const instructorTypeSchema = z.object({
   ...rowBase,
   name: z.string(),

@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, type FormEvent } from "react"
+import { Controller, useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
 import { Banknote, Check, LayoutGrid, Save } from "lucide-react"
 import { areaTypeInsertSchema } from "@repo/types"
 import type { AreaType, NewAreaType } from "@repo/types"
@@ -34,27 +35,15 @@ import { cn } from "@repo/ui/lib/utils"
 import { FormSection, FormSheetHeader } from "@/features/tenant/components/form-section"
 
 import { useGymSportsQuery } from "../hooks/use-gym-sports"
-import { fieldErrors } from "../lib/validation"
-
-interface FormValues {
-  name: string
-  description: string
-  sports: string[]
-  availableForBooking: boolean
-  pricePerHour: string
-  maxPlayers: string
-  maxConcurrentBookings: string
-}
-
-function toFormValues(area?: AreaType | null): FormValues {
+function toFormValues(area?: AreaType | null): NewAreaType {
   return {
     name: area?.name ?? "",
-    description: area?.description ?? "",
+    description: area?.description ?? undefined,
     sports: area?.sports ?? [],
     availableForBooking: area?.availableForBooking ?? true,
-    pricePerHour: String(area?.pricePerHour ?? 0),
-    maxPlayers: String(area?.maxPlayers ?? 1),
-    maxConcurrentBookings: String(area?.maxConcurrentBookings ?? 1),
+    pricePerHour: area?.pricePerHour ?? 0,
+    maxPlayers: area?.maxPlayers ?? 1,
+    maxConcurrentBookings: area?.maxConcurrentBookings ?? 1,
   }
 }
 
@@ -68,43 +57,26 @@ interface FormBodyProps {
 
 function FormBody({ tenant, area, pending, onSubmit, onCancel }: FormBodyProps) {
   const sportsQuery = useGymSportsQuery(tenant)
-  const [values, setValues] = useState<FormValues>(() => toFormValues(area))
-  const [errors, setErrors] = useState<Record<string, string>>({})
+  const form = useForm<NewAreaType>({
+    resolver: zodResolver(areaTypeInsertSchema),
+    defaultValues: toFormValues(area),
+  })
+  const selectedSports = form.watch("sports") ?? []
   const isEdit = Boolean(area)
 
   function toggleSport(name: string) {
-    setValues((v) => ({
-      ...v,
-      sports: v.sports.includes(name)
-        ? v.sports.filter((s) => s !== name)
-        : [...v.sports, name],
-    }))
-  }
-
-  function handleSubmit(event: FormEvent) {
-    event.preventDefault()
-
-    const result = areaTypeInsertSchema.safeParse({
-      name: values.name,
-      description: values.description || undefined,
-      sports: values.sports,
-      availableForBooking: values.availableForBooking,
-      pricePerHour: Number(values.pricePerHour),
-      maxPlayers: Number(values.maxPlayers),
-      maxConcurrentBookings: Number(values.maxConcurrentBookings),
-    })
-
-    if (!result.success) {
-      setErrors(fieldErrors(result.error))
-      return
-    }
-
-    setErrors({})
-    onSubmit(result.data)
+    const sports = form.getValues("sports") ?? []
+    form.setValue(
+      "sports",
+      sports.includes(name)
+        ? sports.filter((sport) => sport !== name)
+        : [...sports, name],
+      { shouldDirty: true }
+    )
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex h-full flex-col">
+    <form onSubmit={form.handleSubmit(onSubmit)} className="flex h-full flex-col" noValidate>
       <SheetHeader>
         <FormSheetHeader
           icon={LayoutGrid}
@@ -115,20 +87,17 @@ function FormBody({ tenant, area, pending, onSubmit, onCancel }: FormBodyProps) 
 
       <SheetBody className="flex flex-col gap-7">
         <FormSection icon={LayoutGrid} title="Details">
-          <Field data-invalid={Boolean(errors.name)}>
+          <Field data-invalid={Boolean(form.formState.errors.name)}>
             <FieldLabel htmlFor="area-name">
               Name <span className="text-destructive">*</span>
             </FieldLabel>
             <Input
               id="area-name"
               placeholder="Cycling Studio"
-              value={values.name}
-              aria-invalid={Boolean(errors.name)}
-              onChange={(e) =>
-                setValues((v) => ({ ...v, name: e.target.value }))
-              }
+              aria-invalid={Boolean(form.formState.errors.name)}
+              {...form.register("name")}
             />
-            <FieldError>{errors.name}</FieldError>
+            <FieldError>{form.formState.errors.name?.message}</FieldError>
           </Field>
 
           <Field>
@@ -136,10 +105,7 @@ function FormBody({ tenant, area, pending, onSubmit, onCancel }: FormBodyProps) 
             <Textarea
               id="area-description"
               placeholder="A bookable space like a cycling studio or strength floor"
-              value={values.description}
-              onChange={(e) =>
-                setValues((v) => ({ ...v, description: e.target.value }))
-              }
+              {...form.register("description", { setValueAs: (value: string) => value || undefined })}
             />
           </Field>
 
@@ -147,7 +113,7 @@ function FormBody({ tenant, area, pending, onSubmit, onCancel }: FormBodyProps) 
             <FieldLabel>Sports</FieldLabel>
             <div className="flex flex-wrap gap-1.5">
               {(sportsQuery.data?.data ?? []).map((sport) => {
-                const selected = values.sports.includes(sport.name)
+                const selected = selectedSports.includes(sport.name)
                 return (
                   <button
                     key={sport.id}
@@ -175,13 +141,9 @@ function FormBody({ tenant, area, pending, onSubmit, onCancel }: FormBodyProps) 
 
         <FormSection icon={Banknote} title="Booking & pricing">
           <Field orientation="horizontal">
-            <Switch
-              id="area-available"
-              checked={values.availableForBooking}
-              onCheckedChange={(checked) =>
-                setValues((v) => ({ ...v, availableForBooking: checked }))
-              }
-            />
+            <Controller control={form.control} name="availableForBooking" render={({ field }) => (
+              <Switch id="area-available" checked={field.value} onCheckedChange={field.onChange} />
+            )} />
             <div>
               <FieldLabel htmlFor="area-available">
                 Available for booking
@@ -193,7 +155,7 @@ function FormBody({ tenant, area, pending, onSubmit, onCancel }: FormBodyProps) 
           </Field>
 
           <div className="grid grid-cols-2 gap-4">
-            <Field data-invalid={Boolean(errors.pricePerHour)}>
+            <Field data-invalid={Boolean(form.formState.errors.pricePerHour)}>
               <FieldLabel htmlFor="area-price">Default Price per Hour</FieldLabel>
               <InputGroup>
                 <InputGroupAddon>
@@ -206,16 +168,13 @@ function FormBody({ tenant, area, pending, onSubmit, onCancel }: FormBodyProps) 
                   min="0"
                   step="1"
                   placeholder="500"
-                  value={values.pricePerHour}
-                  onChange={(e) =>
-                    setValues((v) => ({ ...v, pricePerHour: e.target.value }))
-                  }
+                  {...form.register("pricePerHour", { valueAsNumber: true })}
                 />
               </InputGroup>
-              <FieldError>{errors.pricePerHour}</FieldError>
+              <FieldError>{form.formState.errors.pricePerHour?.message}</FieldError>
             </Field>
 
-            <Field data-invalid={Boolean(errors.maxPlayers)}>
+            <Field data-invalid={Boolean(form.formState.errors.maxPlayers)}>
               <FieldLabel htmlFor="area-max-players">Max Players</FieldLabel>
               <Input
                 id="area-max-players"
@@ -224,16 +183,13 @@ function FormBody({ tenant, area, pending, onSubmit, onCancel }: FormBodyProps) 
                 min="1"
                 step="1"
                 placeholder="20"
-                value={values.maxPlayers}
-                onChange={(e) =>
-                  setValues((v) => ({ ...v, maxPlayers: e.target.value }))
-                }
+                {...form.register("maxPlayers", { valueAsNumber: true })}
               />
-              <FieldError>{errors.maxPlayers}</FieldError>
+              <FieldError>{form.formState.errors.maxPlayers?.message}</FieldError>
             </Field>
           </div>
 
-          <Field data-invalid={Boolean(errors.maxConcurrentBookings)}>
+          <Field data-invalid={Boolean(form.formState.errors.maxConcurrentBookings)}>
             <FieldLabel htmlFor="area-max-bookings">
               Max Concurrent Bookings
             </FieldLabel>
@@ -244,15 +200,9 @@ function FormBody({ tenant, area, pending, onSubmit, onCancel }: FormBodyProps) 
               min="1"
               step="1"
               placeholder="1"
-              value={values.maxConcurrentBookings}
-              onChange={(e) =>
-                setValues((v) => ({
-                  ...v,
-                  maxConcurrentBookings: e.target.value,
-                }))
-              }
+              {...form.register("maxConcurrentBookings", { valueAsNumber: true })}
             />
-            <FieldError>{errors.maxConcurrentBookings}</FieldError>
+            <FieldError>{form.formState.errors.maxConcurrentBookings?.message}</FieldError>
           </Field>
         </FormSection>
       </SheetBody>

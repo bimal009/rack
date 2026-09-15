@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, type FormEvent } from "react"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
 import { IdCard, Save } from "lucide-react"
 import type { InstructorTypeRecord, NewInstructorType } from "@repo/types"
 import { instructorTypeInsertSchema } from "@repo/types"
@@ -25,19 +26,11 @@ import { Textarea } from "@repo/ui/components/ui/textarea"
 
 import { FormSection, FormSheetHeader } from "@/features/tenant/components/form-section"
 
-import { fieldErrors } from "../lib/validation"
-
-interface FormValues {
-  name: string
-  description: string
-  maxConcurrentBookings: string
-}
-
-function toFormValues(type?: InstructorTypeRecord | null): FormValues {
+function toFormValues(type?: InstructorTypeRecord | null): NewInstructorType {
   return {
     name: type?.name ?? "",
-    description: type?.description ?? "",
-    maxConcurrentBookings: String(type?.maxConcurrentBookings ?? 1),
+    description: type?.description ?? undefined,
+    maxConcurrentBookings: type?.maxConcurrentBookings ?? 1,
   }
 }
 
@@ -49,30 +42,14 @@ interface FormBodyProps {
 }
 
 function FormBody({ type, pending, onSubmit, onCancel }: FormBodyProps) {
-  const [values, setValues] = useState<FormValues>(() => toFormValues(type))
-  const [errors, setErrors] = useState<Record<string, string>>({})
+  const form = useForm<NewInstructorType>({
+    resolver: zodResolver(instructorTypeInsertSchema),
+    defaultValues: toFormValues(type),
+  })
   const isEdit = Boolean(type)
 
-  function handleSubmit(event: FormEvent) {
-    event.preventDefault()
-
-    const result = instructorTypeInsertSchema.safeParse({
-      name: values.name,
-      description: values.description || undefined,
-      maxConcurrentBookings: Number(values.maxConcurrentBookings),
-    })
-
-    if (!result.success) {
-      setErrors(fieldErrors(result.error))
-      return
-    }
-
-    setErrors({})
-    onSubmit(result.data)
-  }
-
   return (
-    <form onSubmit={handleSubmit} className="flex h-full flex-col">
+    <form onSubmit={form.handleSubmit(onSubmit)} className="flex h-full flex-col" noValidate>
       <SheetHeader>
         <FormSheetHeader
           icon={IdCard}
@@ -83,20 +60,17 @@ function FormBody({ type, pending, onSubmit, onCancel }: FormBodyProps) {
 
       <SheetBody className="flex flex-col gap-7">
         <FormSection icon={IdCard} title="Details">
-          <Field data-invalid={Boolean(errors.name)}>
+          <Field data-invalid={Boolean(form.formState.errors.name)}>
             <FieldLabel htmlFor="inst-type-name">
               Name <span className="text-destructive">*</span>
             </FieldLabel>
             <Input
               id="inst-type-name"
               placeholder="Personal Trainer"
-              value={values.name}
-              aria-invalid={Boolean(errors.name)}
-              onChange={(e) =>
-                setValues((v) => ({ ...v, name: e.target.value }))
-              }
+              aria-invalid={Boolean(form.formState.errors.name)}
+              {...form.register("name")}
             />
-            <FieldError>{errors.name}</FieldError>
+            <FieldError>{form.formState.errors.name?.message}</FieldError>
           </Field>
 
           <Field>
@@ -104,14 +78,11 @@ function FormBody({ type, pending, onSubmit, onCancel }: FormBodyProps) {
             <Textarea
               id="inst-type-description"
               placeholder="What this instructor type covers"
-              value={values.description}
-              onChange={(e) =>
-                setValues((v) => ({ ...v, description: e.target.value }))
-              }
+              {...form.register("description", { setValueAs: (value: string) => value || undefined })}
             />
           </Field>
 
-          <Field data-invalid={Boolean(errors.maxConcurrentBookings)}>
+          <Field data-invalid={Boolean(form.formState.errors.maxConcurrentBookings)}>
             <FieldLabel htmlFor="inst-type-max-bookings">
               Max Concurrent Bookings
             </FieldLabel>
@@ -122,20 +93,14 @@ function FormBody({ type, pending, onSubmit, onCancel }: FormBodyProps) {
               min="1"
               step="1"
               placeholder="1"
-              value={values.maxConcurrentBookings}
-              aria-invalid={Boolean(errors.maxConcurrentBookings)}
-              onChange={(e) =>
-                setValues((v) => ({
-                  ...v,
-                  maxConcurrentBookings: e.target.value,
-                }))
-              }
+              aria-invalid={Boolean(form.formState.errors.maxConcurrentBookings)}
+              {...form.register("maxConcurrentBookings", { valueAsNumber: true })}
             />
             <FieldDescription>
               How many bookings an instructor of this type can hold in the same
               time slot. Defaults to 1.
             </FieldDescription>
-            <FieldError>{errors.maxConcurrentBookings}</FieldError>
+            <FieldError>{form.formState.errors.maxConcurrentBookings?.message}</FieldError>
           </Field>
         </FormSection>
       </SheetBody>

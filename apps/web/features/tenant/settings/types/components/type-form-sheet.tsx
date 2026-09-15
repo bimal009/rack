@@ -1,8 +1,9 @@
 "use client"
 
-import { useState, type FormEvent } from "react"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
 import { Save, Tag } from "lucide-react"
-import { z } from "zod"
+import { simpleTypeSchema, type SimpleTypeInput } from "@repo/types"
 
 import { Button } from "@repo/ui/components/ui/button"
 import { Field, FieldError, FieldLabel } from "@repo/ui/components/ui/field"
@@ -24,15 +25,8 @@ import { Spinner } from "@repo/ui/components/ui/spinner"
 
 import { FormSection, FormSheetHeader } from "@/features/tenant/components/form-section"
 
-import { fieldErrors } from "../lib/validation"
-
-const schema = z.object({
-  name: z.string().trim().min(1, "Enter a name").max(120),
-  rate: z.number().min(0).max(100).optional(),
-})
-
 export type SimpleItem = { id: string; name: string; rate?: number }
-export type SimpleValues = { name: string; rate?: number }
+export type SimpleValues = SimpleTypeInput
 
 interface Props {
   open: boolean
@@ -54,29 +48,20 @@ function Body({
   onSubmit,
   onCancel,
 }: Omit<Props, "open" | "onOpenChange"> & { onCancel: () => void }) {
-  const [name, setName] = useState(item?.name ?? "")
-  const [rate, setRate] = useState(
-    item?.rate !== undefined ? String(item.rate) : ""
-  )
-  const [errors, setErrors] = useState<Record<string, string>>({})
+  const form = useForm<SimpleTypeInput>({
+    resolver: zodResolver(simpleTypeSchema),
+    defaultValues: { name: item?.name ?? "", rate: item?.rate },
+  })
   const isEdit = Boolean(item)
 
-  function handleSubmit(event: FormEvent) {
-    event.preventDefault()
-    const result = schema.safeParse({
-      name,
-      rate: hasRate ? Number(rate) : undefined,
-    })
-    if (!result.success) {
-      setErrors(fieldErrors(result.error))
-      return
-    }
-    setErrors({})
-    onSubmit(result.data)
-  }
-
   return (
-    <form onSubmit={handleSubmit} className="flex h-full flex-col">
+    <form
+      onSubmit={form.handleSubmit((values) =>
+        onSubmit({ ...values, rate: hasRate ? values.rate : undefined })
+      )}
+      className="flex h-full flex-col"
+      noValidate
+    >
       <SheetHeader>
         <FormSheetHeader
           icon={Tag}
@@ -91,22 +76,21 @@ function Body({
 
       <SheetBody className="flex flex-col gap-7">
         <FormSection icon={Tag} title="Details">
-          <Field data-invalid={Boolean(errors.name)}>
+          <Field data-invalid={Boolean(form.formState.errors.name)}>
             <FieldLabel htmlFor="type-name">
               Name <span className="text-destructive">*</span>
             </FieldLabel>
             <Input
               id="type-name"
               placeholder={namePlaceholder ?? `e.g. ${label}`}
-              value={name}
-              aria-invalid={Boolean(errors.name)}
-              onChange={(e) => setName(e.target.value)}
+              aria-invalid={Boolean(form.formState.errors.name)}
+              {...form.register("name")}
             />
-            <FieldError>{errors.name}</FieldError>
+            <FieldError>{form.formState.errors.name?.message}</FieldError>
           </Field>
 
           {hasRate && (
-            <Field data-invalid={Boolean(errors.rate)}>
+            <Field data-invalid={Boolean(form.formState.errors.rate)}>
               <FieldLabel htmlFor="type-rate">Rate</FieldLabel>
               <InputGroup>
                 <InputGroupInput
@@ -117,15 +101,14 @@ function Body({
                   max="100"
                   step="0.1"
                   placeholder="13"
-                  value={rate}
-                  aria-invalid={Boolean(errors.rate)}
-                  onChange={(e) => setRate(e.target.value)}
+                  aria-invalid={Boolean(form.formState.errors.rate)}
+                  {...form.register("rate", { valueAsNumber: true })}
                 />
                 <InputGroupAddon align="inline-end">
                   <InputGroupText>%</InputGroupText>
                 </InputGroupAddon>
               </InputGroup>
-              <FieldError>{errors.rate}</FieldError>
+              <FieldError>{form.formState.errors.rate?.message}</FieldError>
             </Field>
           )}
         </FormSection>
