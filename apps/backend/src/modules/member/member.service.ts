@@ -13,6 +13,7 @@ import { gymMembership, member, user } from "../../db/schema";
 import { NotFoundError, ValidationError } from "../../lib/errors";
 import { CACHE_KEYS, CACHE_TTL, redis, deleteByPattern } from "../../lib/redis";
 import { calculateEndDate } from "../../lib/helper";
+import { invalidateMembership } from "../gymMembership/gymMembership.service";
 
 const memberListKey = (gymId: string, query: MemberListQuery): string => {
   const { page, limit, search, sortOrder, status } = query;
@@ -104,7 +105,10 @@ export async function createMemberWithUser(data: NewMemberWithUser, gymId: strin
     return { user: newUser, member: newMember, membership: newMembership };
   });
 
-  await invalidateMemberCache(gymId);
+  await Promise.all([
+    invalidateMemberCache(gymId),
+    invalidateMembership(gymId, created.member.id),
+  ]);
 
   return created;
 }
@@ -124,7 +128,6 @@ export const getAllMembers = async (gymId: string, query: MemberListQuery) => {
       where: {
         gymId,
         status,
-        deletedAt: { isNull: true },
         user: search
           ? { OR: [{ name: { ilike: `%${search}%` } }, { email: { ilike: `%${search}%` } }] }
           : undefined,
@@ -178,7 +181,7 @@ export const getMemberById = async (gymId: string, id: string) => {
   }
 
   const record = await db.query.member.findFirst({
-    where: { gymId, id, deletedAt: { isNull: true } },
+    where: { gymId, id },
     with: {
       user: { columns: { id: true, name: true, email: true, image: true } },
     },
@@ -198,9 +201,9 @@ export const updateMember = async (gymId: string, id: string, input: UpdateMembe
   }
   const { user: userInput, member: memberInput } = result.data;
 
-const existing = await db.query.member.findFirst({
-  where: { gymId, id, deletedAt: { isNull: true } },
-  with: { user: { columns: { id: true, name: true, email: true, image: true } } },
+  const existing = await db.query.member.findFirst({
+    where: { gymId, id },
+    with: { user: { columns: { id: true, name: true, email: true, image: true } } },
   });
   if (!existing || !existing.user) throw new NotFoundError("Member not found");
   const existingUser = existing.user;
@@ -237,15 +240,23 @@ const existing = await db.query.member.findFirst({
 };
 
 export const deleteMember = async (gymId: string, id: string) => {
-  const [record] = await db
-    .update(member)
-    .set({ deletedAt: new Date() })
-    .where(and(eq(member.gymId, gymId), eq(member.id, id)))
-    .returning();
+  const record = await db.transaction(async (tx) => {
+    const [deletedMember] = await tx
+      .delete(member)
+      .where(and(eq(member.gymId, gymId), eq(member.id, id)))
+      .returning();
 
-  if (!record) throw new NotFoundError("Member not found");
+    if (!deletedMember) throw new NotFoundError("Member not found");
 
-  await invalidateMemberCache(gymId);
+    await tx.delete(user).where(eq(user.id, deletedMember.userId));
+
+    return deletedMember;
+  });
+
+  await Promise.all([
+    invalidateMemberCache(gymId),
+    invalidateMembership(gymId, id),
+  ]);
 
   return record;
 };

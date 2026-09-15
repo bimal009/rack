@@ -15,7 +15,6 @@ import {
   type MemberWithUser,
 } from "@repo/types"
 
-import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/components/ui/avatar"
 import { Button } from "@repo/ui/components/ui/button"
 import { Calendar } from "@repo/ui/components/ui/calendar"
 import { Field, FieldError, FieldLabel } from "@repo/ui/components/ui/field"
@@ -48,11 +47,9 @@ import {
 import { Spinner } from "@repo/ui/components/ui/spinner"
 
 import { FormSection, FormSheetHeader } from "@/features/tenant/components/form-section"
-import { ImageUpload } from "@/features/media"
 
 import { useCreateMember, useUpdateMember } from "../hooks/use-members"
 import { fieldErrors } from "../lib/validation"
-import { initials } from "./columns"
 import { MembershipSection, newMembership, type MembershipValues } from "./membership-section"
 
 type MemberUserValues = z.input<typeof memberUserFieldsSchema>
@@ -67,7 +64,7 @@ interface MemberFormValues {
 function toFormValues(member?: MemberWithUser | null): MemberFormValues {
   if (!member) {
     return {
-      user: { name: "", email: "", image: "" },
+      user: { name: "", email: "" },
       member: {
         status: "Active",
         phone: "",
@@ -83,7 +80,6 @@ function toFormValues(member?: MemberWithUser | null): MemberFormValues {
     user: {
       name: member.user.name,
       email: isSyntheticEmail(member.user.email) ? "" : member.user.email,
-      image: member.user.image ?? "",
     },
     member: {
       status: member.status,
@@ -150,7 +146,7 @@ function MemberForm({
   function handleSubmit(event: FormEvent) {
     event.preventDefault()
 
-    const user = { ...values.user, image: values.user.image || undefined }
+    const user = values.user
     const payload = isEdit
       ? { user, member: values.member }
       : { user, member: values.member, membership: values.membership ?? undefined }
@@ -203,26 +199,6 @@ function MemberForm({
 
       <SheetBody className="flex flex-col gap-7">
         <FormSection icon={UserRound} title="Basic information">
-          <div className="flex items-center gap-4">
-            <Avatar size="lg">
-              <AvatarImage src={values.user.image || undefined} alt="" />
-              <AvatarFallback className="bg-muted text-sm font-medium text-muted-foreground">
-                {values.user.name ? initials(values.user.name) : <UserRound className="size-5" />}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1">
-              <ImageUpload
-                shape="circle"
-                folder="members/avatars"
-                value={values.user.image || null}
-                onChange={(url) =>
-                  setValues((v) => ({ ...v, user: { ...v.user, image: url ?? "" } }))
-                }
-                disabled={pending}
-              />
-            </div>
-          </div>
-
           <Field data-invalid={Boolean(errors["user.name"])}>
             <FieldLabel htmlFor="member-name">
               Name <span className="text-destructive">*</span>

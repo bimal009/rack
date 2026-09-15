@@ -43,12 +43,6 @@ export const DEFAULT_CLASS_TYPES = [
   "Indoor Cycling",
 ] as const;
 
-export const DEFAULT_BRANDS = [
-  "Myprotein",
-  "Optimum Nutrition",
-  "Quest Nutrition",
-] as const;
-
 export const DEFAULT_TAX_RATES = [{ name: "VAT (13%)", rate: 13 }] as const;
 
 export const DEFAULT_PRODUCT_CATEGORIES = [

@@ -8,7 +8,6 @@ import { eq } from "drizzle-orm";
 import { InternalServerError, NotFoundError, ValidationError } from "../../lib/errors";
 import {
   areaType,
-  brand,
   classType,
   gymFeature,
   gymOperatingHour,
@@ -25,7 +24,6 @@ import {
 import { db } from "../../db";
 import {
   DEFAULT_AREA_TYPES,
-  DEFAULT_BRANDS,
   DEFAULT_CLASS_TYPES,
   DEFAULT_INSTRUCTOR_TYPES,
   DEFAULT_MEMBERSHIP_CATEGORIES,
@@ -86,10 +84,6 @@ export const onboardGym = async (gym: OnboardingInput, userId: string) => {
 
     await tx.insert(classType).values(
       DEFAULT_CLASS_TYPES.map((name) => ({ gymId: gymRecord.id, name }))
-    );
-
-    await tx.insert(brand).values(
-      DEFAULT_BRANDS.map((name) => ({ gymId: gymRecord.id, name }))
     );
 
     await tx.insert(taxRate).values(

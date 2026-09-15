@@ -23,7 +23,7 @@ const listKey = (gymId: string, query: GymMembershipListQuery): string => {
   return `${CACHE_KEYS.GYM_MEMBERSHIP}:${gymId}:list:${page}:${limit}:${search ?? ""}:${sortOrder}:${planCategoryId ?? ""}:${planId ?? ""}:${status ?? ""}`;
 };
 
-const invalidate = async (gymId: string, memberId: string): Promise<void> => {
+export const invalidateMembership = async (gymId: string, memberId: string): Promise<void> => {
   await Promise.all([
     deleteByPattern(`${CACHE_KEYS.GYM_MEMBERSHIP}:${gymId}:member:${memberId}*`),
     deleteByPattern(`${CACHE_KEYS.GYM_MEMBERSHIP}:${gymId}:list:*`),
@@ -100,7 +100,7 @@ export const createMemberMembership = async (
     });
   });
 
-  await invalidate(gymId, memberId);
+  await invalidateMembership(gymId, memberId);
 
   return getMemberMembership(gymId, memberId);
 };
@@ -130,7 +130,7 @@ export const updateMemberMembership = async (
 
   if (!record) throw new NotFoundError("Membership not found");
 
-  await invalidate(gymId, memberId);
+  await invalidateMembership(gymId, memberId);
 
   return getMemberMembership(gymId, memberId);
 };
@@ -173,7 +173,7 @@ export const extendMemberMembership = async (
 
   if (!record) throw new NotFoundError("Membership not found");
 
-  await invalidate(gymId, memberId);
+  await invalidateMembership(gymId, memberId);
 
   return getMemberMembership(gymId, memberId);
 };
