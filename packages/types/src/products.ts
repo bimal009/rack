@@ -75,6 +75,7 @@ const productFields = z
   .strict();
 
 export const productInsertSchema = productFields;
+export type ProductInsertInput = z.input<typeof productInsertSchema>;
 export type NewProduct = z.infer<typeof productInsertSchema>;
 
 export const productUpdateSchema = productFields.partial().strict();

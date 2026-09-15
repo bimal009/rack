@@ -3,6 +3,8 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
+import { useForm, useWatch } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
 import { DEFAULT_OPENING_HOURS, onboardingSchema, type OnboardingInput } from "@repo/types"
 
 import { AuthHeader } from "@/features/auth/components/auth-header"
@@ -12,16 +14,10 @@ import { FeaturesStep } from "@/features/auth/onboarding/steps/features-step"
 import { BusinessDetailsStep } from "@/features/auth/onboarding/steps/business-details-step"
 import { OpeningHoursStep } from "@/features/auth/onboarding/steps/opening-hours-step"
 import { useOnboardingMutation } from "@/features/auth/onboarding/hooks/useOnboarding"
-import { fieldErrors } from "@/features/auth/lib/validation"
 
 const STEP_COUNT = 4
 
-type WizardData = Omit<OnboardingInput, "specialties" | "features"> & {
-  specialties: string[]
-  features: string[]
-}
-
-const initialData: WizardData = {
+const initialData: OnboardingInput = {
   specialties: [],
   features: [],
   businessName: "",
@@ -37,81 +33,45 @@ export function OnboardingWizard() {
   const onboarding = useOnboardingMutation()
 
   const [step, setStep] = useState(0)
-  const [data, setData] = useState<WizardData>(initialData)
-  const [errors, setErrors] = useState<Record<string, string>>({})
   const [isRedirecting, setIsRedirecting] = useState(false)
-
-  function updateData(patch: Partial<WizardData>) {
-    setData((prev) => ({ ...prev, ...patch }))
-  }
+  const form = useForm<OnboardingInput>({
+    defaultValues: initialData,
+    resolver: zodResolver(onboardingSchema),
+  })
+  const { control, formState: { errors }, handleSubmit, setValue, trigger } = form
+  const specialties = useWatch({ control, name: "specialties" }) ?? []
+  const features = useWatch({ control, name: "features" }) ?? []
+  const businessDetails = useWatch({ control }) ?? initialData
+  const openingHours = useWatch({ control, name: "openingHours" }) ?? DEFAULT_OPENING_HOURS
 
   function handleBack() {
-    setErrors({})
     setStep((s) => Math.max(0, s - 1))
   }
 
-  function handleContinue() {
-    if (step === 0) {
-      if (data.specialties.length === 0) {
-        setErrors({ specialties: "Pick at least one specialty" })
-        return
-      }
-    } else if (step === 1) {
-      if (data.features.length === 0) {
-        setErrors({ features: "Add at least one feature" })
-        return
-      }
-    } else if (step === 2) {
-      const result = onboardingSchema
-        .pick({
-          businessName: true,
-          address: true,
-          phone: true,
-          email: true,
-          website: true,
-        })
-        .safeParse({
-          businessName: data.businessName,
-          address: data.address,
-          phone: data.phone,
-          email: data.email,
-          website: data.website,
-        })
-      if (!result.success) {
-        setErrors(fieldErrors(result.error))
-        return
-      }
-    } else if (step === 3) {
-      const result = onboardingSchema.safeParse(data)
-      if (!result.success) {
-        setErrors(fieldErrors(result.error))
-        return
-      }
-    }
-
-    setErrors({})
-
+  async function handleContinue() {
+    const valid = step === 0
+      ? await trigger("specialties")
+      : step === 1
+        ? await trigger("features")
+        : step === 2
+          ? await trigger(["businessName", "address", "phone", "email", "website"])
+          : await trigger("openingHours")
+    if (!valid) return
     if (step < STEP_COUNT - 1) {
       setStep((s) => s + 1)
       return
     }
-
-    setIsRedirecting(true)
-
-    onboarding.mutate(
-      {
-        ...data,
-        specialties: data.specialties as OnboardingInput["specialties"],
-        features: data.features as OnboardingInput["features"],
-      },
-      {
+    const submit = handleSubmit((data) => {
+      setIsRedirecting(true)
+      onboarding.mutate(data, {
         onSuccess: (result) => router.push(`/${result.id}`),
         onError: (error) => {
           setIsRedirecting(false)
           toast.error(error.message)
         },
-      }
-    )
+      })
+    })
+    void submit()
   }
 
   return (
@@ -124,29 +84,41 @@ export function OnboardingWizard() {
         <div className="w-full max-w-lg">
           {step === 0 && (
             <SportsStep
-              value={data.specialties}
-              error={errors.specialties}
-              onChange={(specialties) => updateData({ specialties })}
+              value={specialties}
+              error={errors.specialties?.message}
+              onChange={(value) => setValue("specialties", value, { shouldValidate: true })}
             />
           )}
           {step === 1 && (
             <FeaturesStep
-              value={data.features}
-              error={errors.features}
-              onChange={(features) => updateData({ features })}
+              value={features}
+              error={errors.features?.message}
+              onChange={(value) => setValue("features", value, { shouldValidate: true })}
             />
           )}
           {step === 2 && (
             <BusinessDetailsStep
-              value={data}
-              errors={errors}
-              onChange={updateData}
+              value={businessDetails}
+              errors={{
+                businessName: errors.businessName?.message ?? "",
+                address: errors.address?.message ?? "",
+                phone: errors.phone?.message ?? "",
+                email: errors.email?.message ?? "",
+                website: errors.website?.message ?? "",
+              }}
+              onChange={(patch) => {
+                if (patch.businessName !== undefined) setValue("businessName", patch.businessName, { shouldValidate: true })
+                if (patch.address !== undefined) setValue("address", patch.address, { shouldValidate: true })
+                if (patch.phone !== undefined) setValue("phone", patch.phone, { shouldValidate: true })
+                if (patch.email !== undefined) setValue("email", patch.email, { shouldValidate: true })
+                if (patch.website !== undefined) setValue("website", patch.website, { shouldValidate: true })
+              }}
             />
           )}
           {step === 3 && (
             <OpeningHoursStep
-              value={data.openingHours}
-              onChange={(openingHours) => updateData({ openingHours })}
+              value={openingHours}
+              onChange={(value) => setValue("openingHours", value, { shouldValidate: true })}
               isSubmitting={isRedirecting}
             />
           )}

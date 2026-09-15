@@ -5,9 +5,19 @@ import {
   useRef,
   useState,
   type ChangeEvent,
-  type FormEvent,
 } from "react"
+import { useForm, useWatch } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
 import { CalendarCheck, Info, Layers, ListChecks, Plus, Sliders, Trash2, X } from "lucide-react"
+import {
+  packageSchema,
+  packageVisibilities,
+  type Package,
+  type PackageInput,
+  type PackageItem,
+  type PackageItemType,
+  type PackageVisibility,
+} from "@repo/types"
 
 import { Button } from "@repo/ui/components/ui/button"
 import {
@@ -45,16 +55,6 @@ import { FormSection, FormSheetHeader } from "@/features/tenant/components/form-
 
 import { useGymPlansQuery } from "../../plans/hooks/use-plans"
 import { useProductsQuery } from "../../products/hooks/use-products"
-import { fieldErrors } from "../../lib/validation"
-import {
-  packageSchema,
-  packageVisibilities,
-  type Package,
-  type PackageInput,
-  type PackageItem,
-  type PackageItemType,
-  type PackageVisibility,
-} from "../lib/schema"
 
 interface PackageFormValues {
   name: string
@@ -107,10 +107,15 @@ interface PackageFormBodyProps {
 function PackageFormBody({ tenant, pkg, onSubmit, onCancel }: PackageFormBodyProps) {
   const gymPlans = useGymPlansQuery(tenant, { limit: 100 })
   const products = useProductsQuery(tenant, { limit: 100 })
-  const [values, setValues] = useState<PackageFormValues>(() =>
-    toFormValues(pkg)
-  )
-  const [errors, setErrors] = useState<Record<string, string>>({})
+  const form = useForm<PackageFormValues, unknown, PackageInput>({
+    resolver: zodResolver(packageSchema),
+    defaultValues: toFormValues(pkg),
+  })
+  const values = useWatch<PackageFormValues>({
+    control: form.control,
+    defaultValue: toFormValues(pkg),
+  })
+  const { errors } = form.formState
   const [image, setImage] = useState<ImagePreview | null>(null)
   const createdUrls = useRef<string[]>([])
   const isEdit = Boolean(pkg)
@@ -138,49 +143,21 @@ function PackageFormBody({ tenant, pkg, onSubmit, onCancel }: PackageFormBodyPro
   }
 
   function addItem(type: PackageItemType) {
-    setValues((v) => ({
-      ...v,
-      items: [...v.items, { type, refId: "", name: "", quantity: 1 }],
-    }))
+    form.setValue("items", [...(form.getValues("items") ?? []), { type, refId: "", name: "", quantity: 1 }], { shouldDirty: true })
   }
 
   function updateItem(index: number, patch: Partial<PackageItem>) {
-    setValues((v) => ({
-      ...v,
-      items: v.items.map((item, i) =>
+    form.setValue("items", (form.getValues("items") ?? []).map((item, i) =>
         i === index ? { ...item, ...patch } : item
-      ),
-    }))
+      ), { shouldDirty: true })
   }
 
   function removeItem(index: number) {
-    setValues((v) => ({
-      ...v,
-      items: v.items.filter((_, i) => i !== index),
-    }))
-  }
-
-  function handleSubmit(event: FormEvent) {
-    event.preventDefault()
-
-    const result = packageSchema.safeParse({
-      ...values,
-      items: values.items.map((item) => ({
-        ...item,
-        quantity: values.useSingleQuantity ? 1 : item.quantity,
-      })),
-    })
-
-    if (!result.success) {
-      setErrors(fieldErrors(result.error))
-      return
-    }
-
-    onSubmit(result.data)
+    form.setValue("items", (form.getValues("items") ?? []).filter((_, i) => i !== index), { shouldDirty: true })
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex h-full flex-col">
+    <form onSubmit={form.handleSubmit((submitted) => onSubmit({ ...submitted, items: submitted.items.map((item) => ({ ...item, quantity: submitted.useSingleQuantity ? 1 : item.quantity })) }))} className="flex h-full flex-col">
       <SheetHeader>
         <FormSheetHeader
           icon={Layers}
@@ -201,13 +178,11 @@ function PackageFormBody({ tenant, pkg, onSubmit, onCancel }: PackageFormBodyPro
               <Input
                 id="package-name"
                 placeholder="10 Session Pack"
-                value={values.name}
+                defaultValue={values.name}
                 aria-invalid={Boolean(errors.name)}
-                onChange={(e) =>
-                  setValues((v) => ({ ...v, name: e.target.value }))
-                }
+                {...form.register("name")}
               />
-              <FieldError>{errors.name}</FieldError>
+              <FieldError>{errors.name?.message}</FieldError>
             </Field>
 
             <Field data-invalid={Boolean(errors.price)}>
@@ -223,17 +198,15 @@ function PackageFormBody({ tenant, pkg, onSubmit, onCancel }: PackageFormBodyPro
                   min="0"
                   step="0.01"
                   placeholder="0.00"
-                  value={values.price}
-                  aria-invalid={Boolean(errors.price)}
-                  onChange={(e) =>
-                    setValues((v) => ({ ...v, price: e.target.value }))
-                  }
+                defaultValue={values.price}
+                aria-invalid={Boolean(errors.price)}
+                {...form.register("price")}
                 />
               </InputGroup>
               <FieldDescription>
                 The single fixed price charged for the whole package.
               </FieldDescription>
-              <FieldError>{errors.price}</FieldError>
+              <FieldError>{errors.price?.message}</FieldError>
             </Field>
           </div>
 
@@ -242,12 +215,7 @@ function PackageFormBody({ tenant, pkg, onSubmit, onCancel }: PackageFormBodyPro
               <FieldLabel htmlFor="package-visibility">Visibility</FieldLabel>
               <Select
                 value={values.visibility}
-                onValueChange={(value) =>
-                  setValues((v) => ({
-                    ...v,
-                    visibility: value as PackageVisibility,
-                  }))
-                }
+                onValueChange={(value) => form.setValue("visibility", value as PackageVisibility, { shouldDirty: true })}
               >
                 <SelectTrigger id="package-visibility" className="w-full">
                   <SelectValue />
@@ -266,9 +234,7 @@ function PackageFormBody({ tenant, pkg, onSubmit, onCancel }: PackageFormBodyPro
               <Switch
                 id="package-active"
                 checked={values.active}
-                onCheckedChange={(checked) =>
-                  setValues((v) => ({ ...v, active: checked }))
-                }
+                onCheckedChange={(checked) => form.setValue("active", checked, { shouldDirty: true })}
               />
               <Label htmlFor="package-active">Active</Label>
             </div>
@@ -282,13 +248,11 @@ function PackageFormBody({ tenant, pkg, onSubmit, onCancel }: PackageFormBodyPro
             <Textarea
               id="package-description"
               placeholder="Describe what's included"
-              value={values.description}
+              defaultValue={values.description}
               aria-invalid={Boolean(errors.description)}
-              onChange={(e) =>
-                setValues((v) => ({ ...v, description: e.target.value }))
-              }
+              {...form.register("description")}
             />
-            <FieldError>{errors.description}</FieldError>
+            <FieldError>{errors.description?.message}</FieldError>
           </Field>
 
           <Field>
@@ -336,9 +300,7 @@ function PackageFormBody({ tenant, pkg, onSubmit, onCancel }: PackageFormBodyPro
             <Switch
               id="package-single-quantity"
               checked={values.useSingleQuantity}
-              onCheckedChange={(checked) =>
-                setValues((v) => ({ ...v, useSingleQuantity: checked }))
-              }
+              onCheckedChange={(checked) => form.setValue("useSingleQuantity", checked, { shouldDirty: true })}
             />
             <Label htmlFor="package-single-quantity">
               Use a single quantity for the whole package
@@ -420,7 +382,7 @@ function PackageFormBody({ tenant, pkg, onSubmit, onCancel }: PackageFormBodyPro
             </div>
           )}
 
-          <FieldError>{errors.items}</FieldError>
+          <FieldError>{errors.items?.message}</FieldError>
 
           <div className="flex items-center gap-2">
             <button
@@ -451,9 +413,7 @@ function PackageFormBody({ tenant, pkg, onSubmit, onCancel }: PackageFormBodyPro
             <Switch
               id="package-bookable"
               checked={values.bookable}
-              onCheckedChange={(checked) =>
-                setValues((v) => ({ ...v, bookable: checked }))
-              }
+              onCheckedChange={(checked) => form.setValue("bookable", checked, { shouldDirty: true })}
             />
             <Label htmlFor="package-bookable">Bookable</Label>
           </div>

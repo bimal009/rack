@@ -1,6 +1,8 @@
 "use client"
 
-import { useState, type FormEvent } from "react"
+import { useState } from "react"
+import { useForm, useWatch, type DefaultValues } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
 import { Banknote, Check, Clock, CreditCard, Info, Save, SquareCheck, Tags } from "lucide-react"
 import {
   gymPlanBillingTypeEnumSchema,
@@ -14,7 +16,6 @@ import {
   type GymPlanCoverage,
   type GymPlanVisibility,
   type NewGymPlan,
-  type OpeningHours,
 } from "@repo/types"
 
 import { Button } from "@repo/ui/components/ui/button"
@@ -63,7 +64,6 @@ import { useGymSportsQuery } from "@/features/tenant/settings/types/hooks/use-gy
 import { useInstructorTypesQuery } from "@/features/tenant/settings/types/hooks/use-instructor-types"
 import { useMembershipCategoriesQuery } from "@/features/tenant/settings/types/hooks/use-membership-categories"
 
-import { fieldErrors } from "../../lib/validation"
 
 const billingTypeLabels: Record<GymPlanBillingType, string> = {
   one_time: "One-time",
@@ -80,36 +80,7 @@ const billingUnitLabels: Record<GymPlanBillingUnit, string> = {
   month: "month(s)",
 }
 
-interface PlanFormValues {
-  name: string
-  categoryId: string
-  visibility: GymPlanVisibility
-  description: string
-  isActive: boolean
-
-  pricePerPeriod: string
-  billingType: GymPlanBillingType | ""
-  billingIntervalUnit: GymPlanBillingUnit | ""
-  billingIntervalCount: string
-  signupFee: string
-  requirePaymentUpfront: boolean
-
-  coverage: GymPlanCoverage
-  coverageClasses: string[]
-  coverageAreas: string[]
-  coverageInstructors: string[]
-  noClasses: boolean
-  noAreas: boolean
-  noInstructors: boolean
-  sessions: string
-
-  sportIds: string[]
-  featureIds: string[]
-
-  operatingHourOverrides: OpeningHours
-}
-
-function toFormValues(plan?: GymPlan | null): PlanFormValues {
+function toFormValues(plan?: GymPlan | null): DefaultValues<NewGymPlan> {
   if (!plan) {
     return {
       name: "",
@@ -117,11 +88,11 @@ function toFormValues(plan?: GymPlan | null): PlanFormValues {
       visibility: "Public",
       description: "",
       isActive: true,
-      pricePerPeriod: "",
-      billingType: "",
-      billingIntervalUnit: "",
-      billingIntervalCount: "",
-      signupFee: "",
+      pricePerPeriod: undefined,
+      billingType: undefined,
+      billingIntervalUnit: undefined,
+      billingIntervalCount: undefined,
+      signupFee: undefined,
       requirePaymentUpfront: true,
       coverage: "Full access",
       coverageClasses: [],
@@ -142,12 +113,11 @@ function toFormValues(plan?: GymPlan | null): PlanFormValues {
     visibility: plan.visibility,
     description: plan.description ?? "",
     isActive: plan.isActive,
-    pricePerPeriod: String(plan.pricePerPeriod),
+    pricePerPeriod: plan.pricePerPeriod,
     billingType: plan.billingType,
-    billingIntervalUnit: plan.billingIntervalUnit ?? "",
-    billingIntervalCount:
-      plan.billingIntervalCount != null ? String(plan.billingIntervalCount) : "",
-    signupFee: plan.signupFee != null ? String(plan.signupFee) : "",
+    billingIntervalUnit: plan.billingIntervalUnit ?? undefined,
+    billingIntervalCount: plan.billingIntervalCount ?? undefined,
+    signupFee: plan.signupFee ?? undefined,
     requirePaymentUpfront: plan.requirePaymentUpfront,
     coverage: plan.coverage,
     coverageClasses: plan.coverageClasses ?? [],
@@ -250,8 +220,18 @@ function PlanFormBody({ tenant, plan, pending, onSubmit, onCancel }: PlanFormBod
   const instructorTypes = useInstructorTypesQuery(tenant, { limit: 100 })
   const gymHours = useOperatingHoursQuery(tenant)
 
-  const [values, setValues] = useState<PlanFormValues>(() => toFormValues(plan))
-  const [errors, setErrors] = useState<Record<string, string>>({})
+  const form = useForm<NewGymPlan>({
+    resolver: zodResolver(gymPlanInsertSchema),
+    defaultValues: toFormValues(plan),
+  })
+  const values = useWatch<NewGymPlan>({
+    control: form.control,
+    defaultValue: toFormValues(plan),
+  })
+  const { errors } = form.formState
+  const setValues = (updater: (current: NewGymPlan) => NewGymPlan) => {
+    form.reset(updater(form.getValues()), { keepDirty: true, keepErrors: true })
+  }
   const [overridingHours, setOverridingHours] = useState(
     values.operatingHourOverrides.length > 0
   )
@@ -266,62 +246,24 @@ function PlanFormBody({ tenant, plan, pending, onSubmit, onCancel }: PlanFormBod
   ) {
     setValues((v) => ({
       ...v,
-      [key]: v[key].includes(id)
-        ? v[key].filter((x) => x !== id)
-        : [...v[key], id],
+      [key]: (v[key] ?? []).includes(id)
+        ? (v[key] ?? []).filter((x) => x !== id)
+        : [...(v[key] ?? []), id],
     }))
   }
 
-  function handleSubmit(event: FormEvent) {
-    event.preventDefault()
-
-    const result = gymPlanInsertSchema.safeParse({
-      name: values.name,
-      categoryId: values.categoryId,
-      visibility: values.visibility,
-      description: values.description || undefined,
-      isActive: values.isActive,
-      pricePerPeriod: Number(values.pricePerPeriod || 0),
-      billingType: values.billingType || undefined,
-      billingIntervalUnit: isCustomBilling
-        ? values.billingIntervalUnit || undefined
-        : undefined,
-      billingIntervalCount: isCustomBilling
-        ? values.billingIntervalCount === ""
-          ? undefined
-          : Number(values.billingIntervalCount)
-        : undefined,
-      signupFee: values.signupFee === "" ? undefined : Number(values.signupFee),
-      requirePaymentUpfront: values.requirePaymentUpfront,
-      coverage: values.coverage,
-      coverageClasses: isRestricted
-        ? listOrNull(values.noClasses, values.coverageClasses)
-        : null,
-      coverageAreas: isRestricted
-        ? listOrNull(values.noAreas, values.coverageAreas)
-        : null,
-      coverageInstructors: isRestricted
-        ? listOrNull(values.noInstructors, values.coverageInstructors)
-        : null,
-      noClasses: isRestricted && values.noClasses,
-      noAreas: isRestricted && values.noAreas,
-      noInstructors: isRestricted && values.noInstructors,
-      sessions: values.sessions || undefined,
-      sportIds: values.sportIds,
-      featureIds: values.featureIds,
-      operatingHourOverrides: values.operatingHourOverrides,
-    })
-
-    if (!result.success) {
-      setErrors(fieldErrors(result.error))
-      return
-    }
-
-    onSubmit(result.data)
-  }
-
   return (
-    <form onSubmit={handleSubmit} className="flex h-full flex-col">
+    <form onSubmit={form.handleSubmit((submitted) => onSubmit({
+      ...submitted,
+      billingIntervalUnit: submitted.billingType === "custom" ? submitted.billingIntervalUnit : undefined,
+      billingIntervalCount: submitted.billingType === "custom" ? submitted.billingIntervalCount : undefined,
+      coverageClasses: submitted.coverage === "Restricted" ? listOrNull(submitted.noClasses, submitted.coverageClasses ?? []) : null,
+      coverageAreas: submitted.coverage === "Restricted" ? listOrNull(submitted.noAreas, submitted.coverageAreas ?? []) : null,
+      coverageInstructors: submitted.coverage === "Restricted" ? listOrNull(submitted.noInstructors, submitted.coverageInstructors ?? []) : null,
+      noClasses: submitted.coverage === "Restricted" && submitted.noClasses,
+      noAreas: submitted.coverage === "Restricted" && submitted.noAreas,
+      noInstructors: submitted.coverage === "Restricted" && submitted.noInstructors,
+    }))} className="flex h-full flex-col">
       <SheetHeader>
         <FormSheetHeader
           icon={CreditCard}
@@ -348,7 +290,7 @@ function PlanFormBody({ tenant, plan, pending, onSubmit, onCancel }: PlanFormBod
                   setValues((v) => ({ ...v, name: e.target.value }))
                 }
               />
-              <FieldError>{errors.name}</FieldError>
+              <FieldError>{errors.name?.message}</FieldError>
             </Field>
 
             <Field data-invalid={Boolean(errors.categoryId)}>
@@ -380,7 +322,7 @@ function PlanFormBody({ tenant, plan, pending, onSubmit, onCancel }: PlanFormBod
                   ))}
                 </SelectContent>
               </Select>
-              <FieldError>{errors.categoryId}</FieldError>
+              <FieldError>{errors.categoryId?.message}</FieldError>
             </Field>
           </div>
 
@@ -435,7 +377,7 @@ function PlanFormBody({ tenant, plan, pending, onSubmit, onCancel }: PlanFormBod
                 setValues((v) => ({ ...v, description: e.target.value }))
               }
             />
-            <FieldError>{errors.description}</FieldError>
+            <FieldError>{errors.description?.message}</FieldError>
           </Field>
         </FormSection>
 
@@ -454,17 +396,17 @@ function PlanFormBody({ tenant, plan, pending, onSubmit, onCancel }: PlanFormBod
                   min="0"
                   step="1"
                   placeholder="4900"
-                  value={values.pricePerPeriod}
+                  value={values.pricePerPeriod ?? ""}
                   aria-invalid={Boolean(errors.pricePerPeriod)}
                   onChange={(e) =>
                     setValues((v) => ({
                       ...v,
-                      pricePerPeriod: e.target.value,
+                      pricePerPeriod: e.target.valueAsNumber,
                     }))
                   }
                 />
               </InputGroup>
-              <FieldError>{errors.pricePerPeriod}</FieldError>
+              <FieldError>{errors.pricePerPeriod?.message}</FieldError>
             </Field>
 
             <Field data-invalid={Boolean(errors.billingType)}>
@@ -493,7 +435,7 @@ function PlanFormBody({ tenant, plan, pending, onSubmit, onCancel }: PlanFormBod
                   ))}
                 </SelectContent>
               </Select>
-              <FieldError>{errors.billingType}</FieldError>
+              <FieldError>{errors.billingType?.message}</FieldError>
             </Field>
           </div>
 
@@ -508,16 +450,16 @@ function PlanFormBody({ tenant, plan, pending, onSubmit, onCancel }: PlanFormBod
                   min="1"
                   step="1"
                   placeholder="2"
-                  value={values.billingIntervalCount}
+                  value={values.billingIntervalCount ?? ""}
                   aria-invalid={Boolean(errors.billingIntervalCount)}
                   onChange={(e) =>
                     setValues((v) => ({
                       ...v,
-                      billingIntervalCount: e.target.value,
+                      billingIntervalCount: e.target.valueAsNumber,
                     }))
                   }
                 />
-                <FieldError>{errors.billingIntervalCount}</FieldError>
+                <FieldError>{errors.billingIntervalCount?.message}</FieldError>
               </Field>
 
               <Field data-invalid={Boolean(errors.billingIntervalUnit)}>
@@ -546,7 +488,7 @@ function PlanFormBody({ tenant, plan, pending, onSubmit, onCancel }: PlanFormBod
                     ))}
                   </SelectContent>
                 </Select>
-                <FieldError>{errors.billingIntervalUnit}</FieldError>
+                <FieldError>{errors.billingIntervalUnit?.message}</FieldError>
               </Field>
             </div>
           )}
@@ -564,17 +506,17 @@ function PlanFormBody({ tenant, plan, pending, onSubmit, onCancel }: PlanFormBod
                 min="0"
                 step="1"
                 placeholder="1000"
-                value={values.signupFee}
+                value={values.signupFee ?? ""}
                 aria-invalid={Boolean(errors.signupFee)}
                 onChange={(e) =>
-                  setValues((v) => ({ ...v, signupFee: e.target.value }))
+                  setValues((v) => ({ ...v, signupFee: e.target.value === "" ? undefined : e.target.valueAsNumber }))
                 }
               />
             </InputGroup>
             <FieldDescription>
               One-time fee charged when joining.
             </FieldDescription>
-            <FieldError>{errors.signupFee}</FieldError>
+            <FieldError>{errors.signupFee?.message}</FieldError>
           </Field>
 
           <div className="flex flex-col gap-1.5">
@@ -656,7 +598,7 @@ function PlanFormBody({ tenant, plan, pending, onSubmit, onCancel }: PlanFormBod
                 label="Classes"
                 noneLabel="No classes"
                 options={classTypes.data?.data ?? []}
-                selected={values.coverageClasses}
+                selected={values.coverageClasses ?? []}
                 onToggle={(id) => toggle("coverageClasses", id)}
                 none={values.noClasses}
                 onNoneChange={(none) =>
@@ -667,7 +609,7 @@ function PlanFormBody({ tenant, plan, pending, onSubmit, onCancel }: PlanFormBod
                 label="Areas"
                 noneLabel="No areas"
                 options={areaTypes.data?.data ?? []}
-                selected={values.coverageAreas}
+                selected={values.coverageAreas ?? []}
                 onToggle={(id) => toggle("coverageAreas", id)}
                 none={values.noAreas}
                 onNoneChange={(none) =>
@@ -678,7 +620,7 @@ function PlanFormBody({ tenant, plan, pending, onSubmit, onCancel }: PlanFormBod
                 label="Instructors"
                 noneLabel="No instructors"
                 options={instructorTypes.data?.data ?? []}
-                selected={values.coverageInstructors}
+                selected={values.coverageInstructors ?? []}
                 onToggle={(id) => toggle("coverageInstructors", id)}
                 none={values.noInstructors}
                 onNoneChange={(none) =>

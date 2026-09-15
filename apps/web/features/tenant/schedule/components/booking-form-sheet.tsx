@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, type FormEvent } from "react"
+import { Controller, useForm, useWatch } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
 import { CalendarClock, Check, Ticket } from "lucide-react"
 
 import { Button } from "@repo/ui/components/ui/button"
@@ -43,7 +44,6 @@ import { fullName } from "@/features/tenant/members/lib/data"
 import { initialMembers } from "@/features/tenant/members/lib/data"
 import { initialAreaTypes } from "@/features/tenant/settings/types/lib/data"
 
-import { fieldErrors } from "../lib/validation"
 import {
   bookingSchema,
   repeatEndModes,
@@ -51,28 +51,10 @@ import {
   weekdays,
   type Booking,
   type BookingInput,
-  type RepeatEndMode,
-  type RepeatFrequency,
   type Weekday,
 } from "../lib/booking-schema"
 
-interface BookingFormValues {
-  memberId: string
-  areaId: string
-  date: string
-  startTime: string
-  endTime: string
-  notes: string
-  repeat: boolean
-  repeatEvery: string
-  repeatFrequency: RepeatFrequency
-  repeatWeekdays: Weekday[]
-  repeatEndMode: RepeatEndMode
-  repeatEndDate: string
-  repeatEndOccurrences: string
-}
-
-function toFormValues(booking?: Booking | null): BookingFormValues {
+function toFormValues(booking?: Booking | null): BookingInput {
   return {
     memberId: booking?.memberId ?? "",
     areaId: booking?.areaId ?? "",
@@ -81,14 +63,12 @@ function toFormValues(booking?: Booking | null): BookingFormValues {
     endTime: booking?.endTime ?? "10:00",
     notes: booking?.notes ?? "",
     repeat: booking?.repeat ?? false,
-    repeatEvery: booking?.repeatEvery ? String(booking.repeatEvery) : "1",
+    repeatEvery: booking?.repeatEvery ?? 1,
     repeatFrequency: booking?.repeatFrequency ?? "Week",
     repeatWeekdays: booking?.repeatWeekdays ?? [],
     repeatEndMode: booking?.repeatEndMode ?? "Never",
-    repeatEndDate: booking?.repeatEndDate ?? "",
-    repeatEndOccurrences: booking?.repeatEndOccurrences
-      ? String(booking.repeatEndOccurrences)
-      : "",
+    repeatEndDate: booking?.repeatEndDate,
+    repeatEndOccurrences: booking?.repeatEndOccurrences,
   }
 }
 
@@ -99,54 +79,29 @@ interface BookingFormBodyProps {
 }
 
 function BookingFormBody({ booking, onSubmit, onCancel }: BookingFormBodyProps) {
-  const [values, setValues] = useState<BookingFormValues>(() =>
-    toFormValues(booking)
-  )
-  const [errors, setErrors] = useState<Record<string, string>>({})
+  const form = useForm<BookingInput>({ resolver: zodResolver(bookingSchema), defaultValues: toFormValues(booking) })
+  const values = useWatch({ control: form.control })
   const isEdit = Boolean(booking)
 
   function toggleWeekday(day: Weekday) {
-    setValues((v) => ({
-      ...v,
-      repeatWeekdays: v.repeatWeekdays.includes(day)
-        ? v.repeatWeekdays.filter((d) => d !== day)
-        : [...v.repeatWeekdays, day],
-    }))
+    const selected = form.getValues("repeatWeekdays") ?? []
+    form.setValue("repeatWeekdays", selected.includes(day) ? selected.filter((value) => value !== day) : [...selected, day], { shouldDirty: true })
   }
 
-  function handleSubmit(event: FormEvent) {
-    event.preventDefault()
-
-    const result = bookingSchema.safeParse({
+  function handleSubmit(values: BookingInput) {
+    onSubmit({
       ...values,
-      repeatEvery: values.repeat ? Number(values.repeatEvery) : undefined,
+      repeatEvery: values.repeat ? values.repeatEvery : undefined,
       repeatFrequency: values.repeat ? values.repeatFrequency : undefined,
-      repeatWeekdays:
-        values.repeat && values.repeatFrequency === "Week"
-          ? values.repeatWeekdays
-          : undefined,
+      repeatWeekdays: values.repeat && values.repeatFrequency === "Week" ? values.repeatWeekdays : undefined,
       repeatEndMode: values.repeat ? values.repeatEndMode : undefined,
-      repeatEndDate:
-        values.repeat && values.repeatEndMode === "Until date"
-          ? values.repeatEndDate
-          : undefined,
-      repeatEndOccurrences:
-        values.repeat && values.repeatEndMode === "After occurrences"
-          ? Number(values.repeatEndOccurrences)
-          : undefined,
+      repeatEndDate: values.repeat && values.repeatEndMode === "Until date" ? values.repeatEndDate : undefined,
+      repeatEndOccurrences: values.repeat && values.repeatEndMode === "After occurrences" ? values.repeatEndOccurrences : undefined,
     })
-
-    if (!result.success) {
-      setErrors(fieldErrors(result.error))
-      return
-    }
-
-    setErrors({})
-    onSubmit(result.data)
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex h-full flex-col">
+    <form onSubmit={form.handleSubmit(handleSubmit)} className="flex h-full flex-col" noValidate>
       <SheetHeader>
         <FormSheetHeader
           icon={Ticket}
@@ -157,7 +112,7 @@ function BookingFormBody({ booking, onSubmit, onCancel }: BookingFormBodyProps) 
 
       <SheetBody className="flex flex-col gap-7">
         <FormSection icon={Ticket} title="Booking details">
-          <Field data-invalid={Boolean(errors.memberId)}>
+          <Field data-invalid={Boolean(form.formState.errors.memberId)}>
             <FieldLabel htmlFor="booking-member">
               Member <span className="text-destructive">*</span>
             </FieldLabel>
@@ -168,9 +123,7 @@ function BookingFormBody({ booking, onSubmit, onCancel }: BookingFormBodyProps) 
                 return found ? `${fullName(found)} — ${found.email}` : id
               }}
               value={values.memberId || null}
-              onValueChange={(value) =>
-                setValues((v) => ({ ...v, memberId: value ?? "" }))
-              }
+              onValueChange={(value) => form.setValue("memberId", value ?? "", { shouldDirty: true })}
             >
               <ComboboxInput id="booking-member" placeholder="Search member..." />
               <ComboboxContent>
@@ -187,23 +140,21 @@ function BookingFormBody({ booking, onSubmit, onCancel }: BookingFormBodyProps) 
                 </ComboboxList>
               </ComboboxContent>
             </Combobox>
-            <FieldError>{errors.memberId}</FieldError>
+            <FieldError>{form.formState.errors.memberId?.message}</FieldError>
           </Field>
 
-          <Field data-invalid={Boolean(errors.areaId)}>
+          <Field data-invalid={Boolean(form.formState.errors.areaId)}>
             <FieldLabel htmlFor="booking-area">
               Area <span className="text-destructive">*</span>
             </FieldLabel>
             <Select
               value={values.areaId}
-              onValueChange={(value) =>
-                setValues((v) => ({ ...v, areaId: value ?? "" }))
-              }
+              onValueChange={(value) => form.setValue("areaId", value ?? "", { shouldDirty: true })}
             >
               <SelectTrigger
                 id="booking-area"
                 className="w-full"
-                aria-invalid={Boolean(errors.areaId)}
+                aria-invalid={Boolean(form.formState.errors.areaId)}
               >
                 <SelectValue placeholder="Select Area">
                   {(value: string | null) =>
@@ -220,7 +171,7 @@ function BookingFormBody({ booking, onSubmit, onCancel }: BookingFormBodyProps) 
                 ))}
               </SelectContent>
             </Select>
-            <FieldError>{errors.areaId}</FieldError>
+            <FieldError>{form.formState.errors.areaId?.message}</FieldError>
           </Field>
 
           <Field>
@@ -228,62 +179,40 @@ function BookingFormBody({ booking, onSubmit, onCancel }: BookingFormBodyProps) 
             <Textarea
               id="booking-notes"
               placeholder="Anything staff should know about this booking"
-              value={values.notes}
-              onChange={(e) =>
-                setValues((v) => ({ ...v, notes: e.target.value }))
-              }
+              {...form.register("notes")}
             />
           </Field>
         </FormSection>
 
         <FormSection icon={CalendarClock} title="Date & time">
-          <Field data-invalid={Boolean(errors.date)}>
+          <Field data-invalid={Boolean(form.formState.errors.date)}>
             <FieldLabel htmlFor="booking-date">
               Date <span className="text-destructive">*</span>
             </FieldLabel>
             <Input
               id="booking-date"
               type="date"
-              value={values.date}
-              aria-invalid={Boolean(errors.date)}
-              onChange={(e) =>
-                setValues((v) => ({ ...v, date: e.target.value }))
-              }
+              aria-invalid={Boolean(form.formState.errors.date)}
+              {...form.register("date")}
             />
-            <FieldError>{errors.date}</FieldError>
+            <FieldError>{form.formState.errors.date?.message}</FieldError>
           </Field>
 
           <div className="grid grid-cols-2 gap-4">
             <Field>
               <FieldLabel htmlFor="booking-start">Start Time</FieldLabel>
-              <TimeSelect
-                id="booking-start"
-                value={values.startTime}
-                onChange={(startTime) =>
-                  setValues((v) => ({ ...v, startTime }))
-                }
-              />
+              <Controller name="startTime" control={form.control} render={({ field }) => <TimeSelect id="booking-start" value={field.value} onChange={field.onChange} />} />
             </Field>
 
-            <Field data-invalid={Boolean(errors.endTime)}>
+            <Field data-invalid={Boolean(form.formState.errors.endTime)}>
               <FieldLabel htmlFor="booking-end">End Time</FieldLabel>
-              <TimeSelect
-                id="booking-end"
-                value={values.endTime}
-                onChange={(endTime) => setValues((v) => ({ ...v, endTime }))}
-              />
-              <FieldError>{errors.endTime}</FieldError>
+              <Controller name="endTime" control={form.control} render={({ field }) => <TimeSelect id="booking-end" value={field.value} onChange={field.onChange} />} />
+              <FieldError>{form.formState.errors.endTime?.message}</FieldError>
             </Field>
           </div>
 
           <Field orientation="horizontal">
-            <Switch
-              id="booking-repeat"
-              checked={values.repeat}
-              onCheckedChange={(checked) =>
-                setValues((v) => ({ ...v, repeat: checked }))
-              }
-            />
+            <Controller name="repeat" control={form.control} render={({ field }) => <Switch id="booking-repeat" checked={field.value} onCheckedChange={field.onChange} />} />
             <FieldLabel htmlFor="booking-repeat">Repeat</FieldLabel>
           </Field>
 
@@ -301,10 +230,8 @@ function BookingFormBody({ booking, onSubmit, onCancel }: BookingFormBodyProps) 
                     min="1"
                     step="1"
                     placeholder="1"
-                    value={values.repeatEvery}
-                    onChange={(e) =>
-                      setValues((v) => ({ ...v, repeatEvery: e.target.value }))
-                    }
+                    value={values.repeatEvery ?? ""}
+                    onChange={(event) => form.setValue("repeatEvery", event.target.valueAsNumber || 1, { shouldDirty: true })}
                   />
                 </Field>
 
@@ -314,12 +241,10 @@ function BookingFormBody({ booking, onSubmit, onCancel }: BookingFormBodyProps) 
                   </FieldLabel>
                   <Select
                     value={values.repeatFrequency}
-                    onValueChange={(value) =>
-                      setValues((v) => ({
-                        ...v,
-                        repeatFrequency: value as RepeatFrequency,
-                      }))
-                    }
+                    onValueChange={(value) => {
+                      const frequency = repeatFrequencies.find((option) => option === value)
+                      if (frequency) form.setValue("repeatFrequency", frequency, { shouldDirty: true })
+                    }}
                   >
                     <SelectTrigger
                       id="booking-repeat-frequency"
@@ -343,7 +268,7 @@ function BookingFormBody({ booking, onSubmit, onCancel }: BookingFormBodyProps) 
                   <FieldLabel>Repeat on</FieldLabel>
                   <div className="flex flex-wrap gap-1.5">
                     {weekdays.map((day) => {
-                      const selected = values.repeatWeekdays.includes(day)
+                      const selected = (values.repeatWeekdays ?? []).includes(day)
                       return (
                         <button
                           key={day}
@@ -370,12 +295,10 @@ function BookingFormBody({ booking, onSubmit, onCancel }: BookingFormBodyProps) 
                 <FieldLabel htmlFor="booking-repeat-ends">Ends</FieldLabel>
                 <Select
                   value={values.repeatEndMode}
-                  onValueChange={(value) =>
-                    setValues((v) => ({
-                      ...v,
-                      repeatEndMode: value as RepeatEndMode,
-                    }))
-                  }
+                  onValueChange={(value) => {
+                    const endMode = repeatEndModes.find((option) => option === value)
+                    if (endMode) form.setValue("repeatEndMode", endMode, { shouldDirty: true })
+                  }}
                 >
                   <SelectTrigger id="booking-repeat-ends" className="w-full">
                     <SelectValue />
@@ -403,13 +326,7 @@ function BookingFormBody({ booking, onSubmit, onCancel }: BookingFormBodyProps) 
                   <Input
                     id="booking-repeat-end-date"
                     type="date"
-                    value={values.repeatEndDate}
-                    onChange={(e) =>
-                      setValues((v) => ({
-                        ...v,
-                        repeatEndDate: e.target.value,
-                      }))
-                    }
+                    {...form.register("repeatEndDate")}
                   />
                 </Field>
               )}
@@ -426,13 +343,8 @@ function BookingFormBody({ booking, onSubmit, onCancel }: BookingFormBodyProps) 
                     min="1"
                     step="1"
                     placeholder="10"
-                    value={values.repeatEndOccurrences}
-                    onChange={(e) =>
-                      setValues((v) => ({
-                        ...v,
-                        repeatEndOccurrences: e.target.value,
-                      }))
-                    }
+                    value={values.repeatEndOccurrences ?? ""}
+                    onChange={(event) => form.setValue("repeatEndOccurrences", event.target.valueAsNumber || undefined, { shouldDirty: true })}
                   />
                 </Field>
               )}

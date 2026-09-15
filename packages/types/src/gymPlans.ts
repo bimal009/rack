@@ -143,6 +143,7 @@ const validateBilling = (val: BillingShape, ctx: z.RefinementCtx) => {
 };
 
 export const gymPlanInsertSchema = gymPlanFields.superRefine(validateBilling);
+export type GymPlanInsertInput = z.input<typeof gymPlanInsertSchema>;
 export type NewGymPlan = z.infer<typeof gymPlanInsertSchema>;
 
 export const gymPlanUpdateSchema = gymPlanFields

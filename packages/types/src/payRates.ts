@@ -83,6 +83,7 @@ export const payRateInsertSchema = payRateInsertObject.superRefine((data, ctx) =
   }
 });
 export type NewPayRate = z.infer<typeof payRateInsertSchema>;
+export type PayRateInsertInput = z.input<typeof payRateInsertSchema>;
 
 export const payRateUpdateSchema = payRateInsertObject.partial();
 export type UpdatePayRate = z.infer<typeof payRateUpdateSchema>;

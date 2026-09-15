@@ -1,13 +1,14 @@
 "use client"
 
-import { useState, type FormEvent } from "react"
+import { useForm, useWatch, type DefaultValues } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
 import { Banknote, Check, ImageIcon, Info, ShoppingBag } from "lucide-react"
 import {
   productInsertSchema,
   productVisibilityEnumSchema,
   type NewProduct,
   type Product,
-  type ProductVisibility,
+  type ProductInsertInput,
 } from "@repo/types"
 
 import { MultiImageUpload } from "@/features/media"
@@ -51,26 +52,7 @@ import { useProductCategoriesQuery } from "@/features/tenant/settings/types/hook
 import { useProductFeaturesQuery } from "@/features/tenant/settings/types/hooks/use-product-features"
 import { useTaxRatesQuery } from "@/features/tenant/settings/types/hooks/use-tax-rates"
 
-import { fieldErrors } from "../../lib/validation"
-
-interface ProductFormValues {
-  name: string
-  categoryId: string
-  brandId: string
-  sku: string
-  visibility: ProductVisibility
-  isActive: boolean
-
-  price: string
-  costPrice: string
-  taxRateId: string
-
-  description: string
-  featureIds: string[]
-  images: string[]
-}
-
-function toFormValues(product?: Product | null): ProductFormValues {
+function toFormValues(product?: Product | null): DefaultValues<ProductInsertInput> {
   if (!product) {
     return {
       name: "",
@@ -79,9 +61,9 @@ function toFormValues(product?: Product | null): ProductFormValues {
       sku: "",
       visibility: "Public",
       isActive: true,
-      price: "",
-      costPrice: "",
-      taxRateId: "",
+      price: undefined,
+      costPrice: undefined,
+      taxRateId: undefined,
       description: "",
       featureIds: [],
       images: [],
@@ -90,13 +72,13 @@ function toFormValues(product?: Product | null): ProductFormValues {
   return {
     name: product.name,
     categoryId: product.categoryId,
-    brandId: product.brandId ?? "",
+    brandId: product.brandId ?? undefined,
     sku: product.sku ?? "",
     visibility: product.visibility,
     isActive: product.isActive,
-    price: String(product.price),
-    costPrice: product.costPrice != null ? String(product.costPrice) : "",
-    taxRateId: product.taxRateId ?? "",
+    price: product.price,
+    costPrice: product.costPrice ?? undefined,
+    taxRateId: product.taxRateId ?? undefined,
     description: product.description ?? "",
     featureIds: product.features.map((f) => f.featureId),
     images: product.images,
@@ -123,40 +105,19 @@ function ProductFormBody({
   const taxRates = useTaxRatesQuery(tenant, { limit: 100 })
   const productFeatures = useProductFeaturesQuery(tenant, { limit: 100 })
 
-  const [values, setValues] = useState<ProductFormValues>(() =>
-    toFormValues(product)
-  )
-  const [errors, setErrors] = useState<Record<string, string>>({})
+  const form = useForm<ProductInsertInput, unknown, NewProduct>({
+    resolver: zodResolver(productInsertSchema),
+    defaultValues: toFormValues(product),
+  })
+  const { errors } = form.formState
+  const values = useWatch<ProductInsertInput>({
+    control: form.control,
+    defaultValue: toFormValues(product),
+  })
   const isEdit = Boolean(product)
 
-  function handleSubmit(event: FormEvent) {
-    event.preventDefault()
-
-    const result = productInsertSchema.safeParse({
-      name: values.name,
-      categoryId: values.categoryId,
-      brandId: values.brandId || undefined,
-      sku: values.sku || undefined,
-      visibility: values.visibility,
-      isActive: values.isActive,
-      price: values.price === "" ? undefined : Number(values.price),
-      costPrice: values.costPrice === "" ? undefined : Number(values.costPrice),
-      taxRateId: values.taxRateId || undefined,
-      description: values.description || undefined,
-      featureIds: values.featureIds,
-      images: values.images,
-    })
-
-    if (!result.success) {
-      setErrors(fieldErrors(result.error))
-      return
-    }
-
-    onSubmit(result.data)
-  }
-
   return (
-    <form onSubmit={handleSubmit} className="flex h-full flex-col">
+    <form onSubmit={form.handleSubmit(onSubmit)} className="flex h-full flex-col">
       <SheetHeader>
         <FormSheetHeader
           icon={ShoppingBag}
@@ -176,23 +137,19 @@ function ProductFormBody({
             <Input
               id="product-name"
               placeholder="Whey Protein 1kg"
-              value={values.name}
+              defaultValue={values.name ?? ""}
               aria-invalid={Boolean(errors.name)}
-              onChange={(e) =>
-                setValues((v) => ({ ...v, name: e.target.value }))
-              }
+              {...form.register("name")}
             />
-            <FieldError>{errors.name}</FieldError>
+              <FieldError>{errors.name?.message}</FieldError>
           </Field>
 
           <div className="grid grid-cols-2 gap-4">
             <Field data-invalid={Boolean(errors.categoryId)}>
               <FieldLabel htmlFor="product-category">Category</FieldLabel>
               <Select
-                value={values.categoryId}
-                onValueChange={(value) =>
-                  setValues((v) => ({ ...v, categoryId: value ?? "" }))
-                }
+                value={values.categoryId ?? ""}
+                onValueChange={(value) => form.setValue("categoryId", value ?? "", { shouldDirty: true, shouldValidate: true })}
               >
                 <SelectTrigger
                   id="product-category"
@@ -215,16 +172,14 @@ function ProductFormBody({
                   ))}
                 </SelectContent>
               </Select>
-              <FieldError>{errors.categoryId}</FieldError>
+              <FieldError>{errors.categoryId?.message}</FieldError>
             </Field>
 
             <Field>
               <FieldLabel htmlFor="product-brand">Brand</FieldLabel>
               <Select
-                value={values.brandId}
-                onValueChange={(value) =>
-                  setValues((v) => ({ ...v, brandId: value ?? "" }))
-                }
+                value={values.brandId ?? ""}
+                onValueChange={(value) => form.setValue("brandId", value || undefined, { shouldDirty: true })}
               >
                 <SelectTrigger id="product-brand" className="w-full">
                   <SelectValue placeholder="Select brand">
@@ -250,23 +205,16 @@ function ProductFormBody({
             <Input
               id="product-sku"
               placeholder="e.g. WP-1KG"
-              value={values.sku}
-              onChange={(e) =>
-                setValues((v) => ({ ...v, sku: e.target.value }))
-              }
+              defaultValue={values.sku ?? ""}
+              {...form.register("sku")}
             />
           </Field>
 
           <Field>
             <FieldLabel htmlFor="product-visibility">Visibility</FieldLabel>
             <Select
-              value={values.visibility}
-              onValueChange={(value) =>
-                setValues((v) => ({
-                  ...v,
-                  visibility: value as ProductVisibility,
-                }))
-              }
+                value={values.visibility ?? "Public"}
+                onValueChange={(value) => form.setValue("visibility", value as NewProduct["visibility"], { shouldDirty: true })}
             >
               <SelectTrigger id="product-visibility" className="w-full">
                 <SelectValue />
@@ -284,10 +232,8 @@ function ProductFormBody({
           <div className="flex items-center gap-2.5">
             <Switch
               id="product-active"
-              checked={values.isActive}
-              onCheckedChange={(checked) =>
-                setValues((v) => ({ ...v, isActive: checked }))
-              }
+              checked={values.isActive ?? false}
+              onCheckedChange={(checked) => form.setValue("isActive", checked, { shouldDirty: true })}
             />
             <Label htmlFor="product-active">Active</Label>
           </div>
@@ -308,14 +254,12 @@ function ProductFormBody({
                   min="0"
                   step="1"
                   placeholder="0"
-                  value={values.price}
+                  value={values.price ?? ""}
                   aria-invalid={Boolean(errors.price)}
-                  onChange={(e) =>
-                    setValues((v) => ({ ...v, price: e.target.value }))
-                  }
+                  onChange={(event) => form.setValue("price", event.target.valueAsNumber, { shouldDirty: true })}
                 />
               </InputGroup>
-              <FieldError>{errors.price}</FieldError>
+              <FieldError>{errors.price?.message}</FieldError>
             </Field>
 
             <Field data-invalid={Boolean(errors.costPrice)}>
@@ -333,30 +277,23 @@ function ProductFormBody({
                   min="0"
                   step="1"
                   placeholder="0"
-                  value={values.costPrice}
+                  value={values.costPrice ?? ""}
                   aria-invalid={Boolean(errors.costPrice)}
-                  onChange={(e) =>
-                    setValues((v) => ({
-                      ...v,
-                      costPrice: e.target.value,
-                    }))
-                  }
+                  onChange={(event) => form.setValue("costPrice", event.target.value === "" ? undefined : event.target.valueAsNumber, { shouldDirty: true })}
                 />
               </InputGroup>
               <FieldDescription>
                 What you pay per unit, used for margin reporting.
               </FieldDescription>
-              <FieldError>{errors.costPrice}</FieldError>
+              <FieldError>{errors.costPrice?.message}</FieldError>
             </Field>
           </div>
 
           <Field>
             <FieldLabel htmlFor="product-tax-rate">Tax rate</FieldLabel>
             <Select
-              value={values.taxRateId}
-              onValueChange={(value) =>
-                setValues((v) => ({ ...v, taxRateId: value ?? "" }))
-              }
+              value={values.taxRateId ?? ""}
+              onValueChange={(value) => form.setValue("taxRateId", value || undefined, { shouldDirty: true })}
             >
               <SelectTrigger id="product-tax-rate" className="w-full">
                 <SelectValue placeholder="Select rate">
@@ -390,13 +327,11 @@ function ProductFormBody({
             <Textarea
               id="product-description"
               placeholder="Describe this product"
-              value={values.description}
+              defaultValue={values.description ?? ""}
               aria-invalid={Boolean(errors.description)}
-              onChange={(e) =>
-                setValues((v) => ({ ...v, description: e.target.value }))
-              }
+              {...form.register("description")}
             />
-            <FieldError>{errors.description}</FieldError>
+            <FieldError>{errors.description?.message}</FieldError>
           </Field>
 
           <MultiSelectCombobox
@@ -405,16 +340,16 @@ function ProductFormBody({
             placeholder="Search tags..."
             emptyMessage="No tags found."
             options={productFeatures.data?.data ?? []}
-            selected={values.featureIds}
-            onChange={(ids) => setValues((v) => ({ ...v, featureIds: ids }))}
+            selected={values.featureIds ?? []}
+            onChange={(featureIds) => form.setValue("featureIds", featureIds, { shouldDirty: true })}
           />
 
           <Field>
             <FieldLabel>Images</FieldLabel>
             <MultiImageUpload
               folder="products"
-              value={values.images}
-              onChange={(images) => setValues((v) => ({ ...v, images }))}
+              value={values.images ?? []}
+              onChange={(images) => form.setValue("images", images, { shouldDirty: true })}
             />
           </Field>
         </FormSection>

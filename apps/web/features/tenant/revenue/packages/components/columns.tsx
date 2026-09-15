@@ -3,6 +3,7 @@
 import { MoreHorizontal, PenSquare, Trash2 } from "lucide-react"
 
 import { Badge } from "@repo/ui/components/ui/badge"
+import type { Package } from "@repo/types"
 import {
   createDataTableColumnHelper,
   createIndexColumn,
@@ -15,7 +16,6 @@ import {
   DropdownMenuTrigger,
 } from "@repo/ui/components/ui/dropdown-menu"
 
-import type { Package } from "../lib/schema"
 
 const currency = new Intl.NumberFormat("en-US", {
   style: "currency",

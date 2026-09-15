@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, type FormEvent } from "react"
+import { Controller, useForm, useWatch } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
 import { CalendarClock, Dumbbell, FileText, Info, MapPin, Palette } from "lucide-react"
 
 import { Button } from "@repo/ui/components/ui/button"
@@ -40,7 +41,6 @@ import { initialAreaTypes, initialClassTypes } from "@/features/tenant/settings/
 import { fullName } from "@/features/tenant/staff/components/columns"
 import { initialStaff } from "@/features/tenant/staff/lib/data"
 
-import { fieldErrors } from "../lib/validation"
 import {
   classSchema,
   classVisibilities,
@@ -48,9 +48,6 @@ import {
   repeatFrequencies,
   type ClassInput,
   type ClassSession,
-  type ClassVisibility,
-  type RepeatEndMode,
-  type RepeatFrequency,
 } from "../lib/schema"
 
 const instructorOptions = initialStaff.filter((s) => s.role === "Instructor")
@@ -68,36 +65,13 @@ function computeDuration(start: string, end: string) {
   return `${mins}m`
 }
 
-interface ClassFormValues {
-  name: string
-  classType: string
-  price: string
-  maxCapacity: string
-  visibility: ClassVisibility
-  instructorId: string
-  areaId: string
-  date: string
-  startTime: string
-  endTime: string
-  repeat: boolean
-  repeatEvery: string
-  repeatFrequency: RepeatFrequency
-  repeatEndMode: RepeatEndMode
-  repeatEndDate: string
-  repeatEndOccurrences: string
-  color: string
-  sport: string
-  description: string
-  notes: string
-}
-
-function toFormValues(cls?: ClassSession | null): ClassFormValues {
+function toFormValues(cls?: ClassSession | null): ClassInput {
   if (!cls) {
     return {
       name: "",
       classType: "",
-      price: "0",
-      maxCapacity: "",
+      price: 0,
+      maxCapacity: undefined,
       visibility: "Public",
       instructorId: "",
       areaId: "",
@@ -105,11 +79,11 @@ function toFormValues(cls?: ClassSession | null): ClassFormValues {
       startTime: "09:00",
       endTime: "10:00",
       repeat: false,
-      repeatEvery: "1",
+      repeatEvery: 1,
       repeatFrequency: "Week",
       repeatEndMode: "Never",
-      repeatEndDate: "",
-      repeatEndOccurrences: "",
+      repeatEndDate: undefined,
+      repeatEndOccurrences: undefined,
       color: "#3b82f6",
       sport: "",
       description: "",
@@ -119,8 +93,8 @@ function toFormValues(cls?: ClassSession | null): ClassFormValues {
   return {
     name: cls.name,
     classType: cls.classType ?? "",
-    price: String(cls.price),
-    maxCapacity: cls.maxCapacity ? String(cls.maxCapacity) : "",
+    price: cls.price,
+    maxCapacity: cls.maxCapacity,
     visibility: cls.visibility,
     instructorId: cls.instructorId ?? "",
     areaId: cls.areaId ?? "",
@@ -128,13 +102,11 @@ function toFormValues(cls?: ClassSession | null): ClassFormValues {
     startTime: cls.startTime,
     endTime: cls.endTime,
     repeat: cls.repeat,
-    repeatEvery: cls.repeatEvery ? String(cls.repeatEvery) : "1",
+    repeatEvery: cls.repeatEvery ?? 1,
     repeatFrequency: cls.repeatFrequency ?? "Week",
     repeatEndMode: cls.repeatEndMode ?? "Never",
-    repeatEndDate: cls.repeatEndDate ?? "",
-    repeatEndOccurrences: cls.repeatEndOccurrences
-      ? String(cls.repeatEndOccurrences)
-      : "",
+    repeatEndDate: cls.repeatEndDate,
+    repeatEndOccurrences: cls.repeatEndOccurrences,
     color: cls.color ?? "#3b82f6",
     sport: cls.sport ?? "",
     description: cls.description ?? "",
@@ -149,42 +121,27 @@ interface ClassFormBodyProps {
 }
 
 function ClassFormBody({ cls, onSubmit, onCancel }: ClassFormBodyProps) {
-  const [values, setValues] = useState<ClassFormValues>(() => toFormValues(cls))
-  const [errors, setErrors] = useState<Record<string, string>>({})
+  const form = useForm<ClassInput>({
+    resolver: zodResolver(classSchema),
+    defaultValues: toFormValues(cls),
+  })
+  const values = useWatch({ control: form.control })
   const isEdit = Boolean(cls)
-  const duration = computeDuration(values.startTime, values.endTime)
+  const duration = computeDuration(values.startTime ?? "", values.endTime ?? "")
 
-  function handleSubmit(event: FormEvent) {
-    event.preventDefault()
-
-    const result = classSchema.safeParse({
+  function handleSubmit(values: ClassInput) {
+    onSubmit({
       ...values,
-      price: Number(values.price),
-      maxCapacity: values.maxCapacity ? Number(values.maxCapacity) : undefined,
-      repeatEvery: values.repeat ? Number(values.repeatEvery) : undefined,
+      repeatEvery: values.repeat ? values.repeatEvery : undefined,
       repeatFrequency: values.repeat ? values.repeatFrequency : undefined,
       repeatEndMode: values.repeat ? values.repeatEndMode : undefined,
-      repeatEndDate:
-        values.repeat && values.repeatEndMode === "Until date"
-          ? values.repeatEndDate
-          : undefined,
-      repeatEndOccurrences:
-        values.repeat && values.repeatEndMode === "After occurrences"
-          ? Number(values.repeatEndOccurrences)
-          : undefined,
+      repeatEndDate: values.repeat && values.repeatEndMode === "Until date" ? values.repeatEndDate : undefined,
+      repeatEndOccurrences: values.repeat && values.repeatEndMode === "After occurrences" ? values.repeatEndOccurrences : undefined,
     })
-
-    if (!result.success) {
-      setErrors(fieldErrors(result.error))
-      return
-    }
-
-    setErrors({})
-    onSubmit(result.data)
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex h-full flex-col">
+    <form onSubmit={form.handleSubmit(handleSubmit)} className="flex h-full flex-col" noValidate>
       <SheetHeader>
         <FormSheetHeader
           icon={Dumbbell}
@@ -196,28 +153,23 @@ function ClassFormBody({ cls, onSubmit, onCancel }: ClassFormBodyProps) {
       <SheetBody className="flex flex-col gap-7">
         <FormSection icon={Info} title="Basic information">
           <div className="grid grid-cols-2 gap-4">
-            <Field data-invalid={Boolean(errors.name)}>
+            <Field data-invalid={Boolean(form.formState.errors.name)}>
               <FieldLabel htmlFor="class-name">
                 Class Name <span className="text-destructive">*</span>
               </FieldLabel>
               <Input
                 id="class-name"
-                value={values.name}
-                aria-invalid={Boolean(errors.name)}
-                onChange={(e) =>
-                  setValues((v) => ({ ...v, name: e.target.value }))
-                }
+                aria-invalid={Boolean(form.formState.errors.name)}
+                {...form.register("name")}
               />
-              <FieldError>{errors.name}</FieldError>
+              <FieldError>{form.formState.errors.name?.message}</FieldError>
             </Field>
 
             <Field>
               <FieldLabel htmlFor="class-type">Class Type</FieldLabel>
               <Select
                 value={values.classType}
-                onValueChange={(value) =>
-                  setValues((v) => ({ ...v, classType: value ?? "" }))
-                }
+                onValueChange={(value) => form.setValue("classType", value ?? "", { shouldDirty: true })}
               >
                 <SelectTrigger id="class-type" className="w-full">
                   <SelectValue placeholder="Select type" />
@@ -246,10 +198,7 @@ function ClassFormBody({ cls, onSubmit, onCancel }: ClassFormBodyProps) {
                   inputMode="decimal"
                   min="0"
                   step="1"
-                  value={values.price}
-                  onChange={(e) =>
-                    setValues((v) => ({ ...v, price: e.target.value }))
-                  }
+                  {...form.register("price", { valueAsNumber: true })}
                 />
               </InputGroup>
             </Field>
@@ -264,10 +213,7 @@ function ClassFormBody({ cls, onSubmit, onCancel }: ClassFormBodyProps) {
                 inputMode="numeric"
                 min="1"
                 step="1"
-                value={values.maxCapacity}
-                onChange={(e) =>
-                  setValues((v) => ({ ...v, maxCapacity: e.target.value }))
-                }
+                {...form.register("maxCapacity", { setValueAs: (value: string) => value === "" ? undefined : Number(value) })}
               />
             </Field>
 
@@ -275,12 +221,10 @@ function ClassFormBody({ cls, onSubmit, onCancel }: ClassFormBodyProps) {
               <FieldLabel htmlFor="class-visibility">Visibility</FieldLabel>
               <Select
                 value={values.visibility}
-                onValueChange={(value) =>
-                  setValues((v) => ({
-                    ...v,
-                    visibility: value as ClassVisibility,
-                  }))
-                }
+                onValueChange={(value) => {
+                  const visibility = classVisibilities.find((option) => option === value)
+                  if (visibility) form.setValue("visibility", visibility, { shouldDirty: true })
+                }}
               >
                 <SelectTrigger id="class-visibility" className="w-full">
                   <SelectValue />
@@ -303,9 +247,7 @@ function ClassFormBody({ cls, onSubmit, onCancel }: ClassFormBodyProps) {
               <FieldLabel htmlFor="class-instructor">Instructor</FieldLabel>
               <Select
                 value={values.instructorId}
-                onValueChange={(value) =>
-                  setValues((v) => ({ ...v, instructorId: value ?? "" }))
-                }
+                onValueChange={(value) => form.setValue("instructorId", value ?? "", { shouldDirty: true })}
               >
                 <SelectTrigger id="class-instructor" className="w-full">
                   <SelectValue placeholder="Instructors">
@@ -332,9 +274,7 @@ function ClassFormBody({ cls, onSubmit, onCancel }: ClassFormBodyProps) {
               <FieldLabel htmlFor="class-area">Select Area</FieldLabel>
               <Select
                 value={values.areaId}
-                onValueChange={(value) =>
-                  setValues((v) => ({ ...v, areaId: value ?? "" }))
-                }
+                onValueChange={(value) => form.setValue("areaId", value ?? "", { shouldDirty: true })}
               >
                 <SelectTrigger id="class-area" className="w-full">
                   <SelectValue placeholder="Select Area">
@@ -361,20 +301,17 @@ function ClassFormBody({ cls, onSubmit, onCancel }: ClassFormBodyProps) {
           title="Date & time"
           description="Times are in the club timezone (Asia/Kathmandu)."
         >
-          <Field data-invalid={Boolean(errors.date)}>
+          <Field data-invalid={Boolean(form.formState.errors.date)}>
             <FieldLabel htmlFor="class-date">
               Date <span className="text-destructive">*</span>
             </FieldLabel>
             <Input
               id="class-date"
               type="date"
-              value={values.date}
-              aria-invalid={Boolean(errors.date)}
-              onChange={(e) =>
-                setValues((v) => ({ ...v, date: e.target.value }))
-              }
+              aria-invalid={Boolean(form.formState.errors.date)}
+              {...form.register("date")}
             />
-            <FieldError>{errors.date}</FieldError>
+            <FieldError>{form.formState.errors.date?.message}</FieldError>
           </Field>
 
           <div className="grid grid-cols-3 gap-4">
@@ -382,27 +319,15 @@ function ClassFormBody({ cls, onSubmit, onCancel }: ClassFormBodyProps) {
               <FieldLabel htmlFor="class-start-time">
                 Start Time <span className="text-destructive">*</span>
               </FieldLabel>
-              <TimeSelect
-                id="class-start-time"
-                value={values.startTime}
-                onChange={(startTime) =>
-                  setValues((v) => ({ ...v, startTime }))
-                }
-              />
+              <Controller name="startTime" control={form.control} render={({ field }) => <TimeSelect id="class-start-time" value={field.value} onChange={field.onChange} />} />
             </Field>
 
-            <Field data-invalid={Boolean(errors.endTime)}>
+            <Field data-invalid={Boolean(form.formState.errors.endTime)}>
               <FieldLabel htmlFor="class-end-time">
                 End Time <span className="text-destructive">*</span>
               </FieldLabel>
-              <TimeSelect
-                id="class-end-time"
-                value={values.endTime}
-                onChange={(endTime) =>
-                  setValues((v) => ({ ...v, endTime }))
-                }
-              />
-              <FieldError>{errors.endTime}</FieldError>
+              <Controller name="endTime" control={form.control} render={({ field }) => <TimeSelect id="class-end-time" value={field.value} onChange={field.onChange} />} />
+              <FieldError>{form.formState.errors.endTime?.message}</FieldError>
             </Field>
 
             <Field>
@@ -417,13 +342,7 @@ function ClassFormBody({ cls, onSubmit, onCancel }: ClassFormBodyProps) {
           </div>
 
           <Field orientation="horizontal">
-            <Switch
-              id="class-repeat"
-              checked={values.repeat}
-              onCheckedChange={(checked) =>
-                setValues((v) => ({ ...v, repeat: checked }))
-              }
-            />
+            <Controller name="repeat" control={form.control} render={({ field }) => <Switch id="class-repeat" checked={field.value} onCheckedChange={field.onChange} />} />
             <FieldLabel htmlFor="class-repeat">Repeat</FieldLabel>
           </Field>
 
@@ -440,13 +359,8 @@ function ClassFormBody({ cls, onSubmit, onCancel }: ClassFormBodyProps) {
                     inputMode="numeric"
                     min="1"
                     step="1"
-                    value={values.repeatEvery}
-                    onChange={(e) =>
-                      setValues((v) => ({
-                        ...v,
-                        repeatEvery: e.target.value,
-                      }))
-                    }
+                    value={values.repeatEvery ?? ""}
+                    onChange={(event) => form.setValue("repeatEvery", event.target.valueAsNumber || 1, { shouldDirty: true })}
                   />
                 </Field>
 
@@ -456,12 +370,10 @@ function ClassFormBody({ cls, onSubmit, onCancel }: ClassFormBodyProps) {
                   </FieldLabel>
                   <Select
                     value={values.repeatFrequency}
-                    onValueChange={(value) =>
-                      setValues((v) => ({
-                        ...v,
-                        repeatFrequency: value as RepeatFrequency,
-                      }))
-                    }
+                    onValueChange={(value) => {
+                      const frequency = repeatFrequencies.find((option) => option === value)
+                      if (frequency) form.setValue("repeatFrequency", frequency, { shouldDirty: true })
+                    }}
                   >
                     <SelectTrigger
                       id="class-repeat-frequency"
@@ -484,12 +396,10 @@ function ClassFormBody({ cls, onSubmit, onCancel }: ClassFormBodyProps) {
                 <FieldLabel htmlFor="class-repeat-ends">Ends</FieldLabel>
                 <Select
                   value={values.repeatEndMode}
-                  onValueChange={(value) =>
-                    setValues((v) => ({
-                      ...v,
-                      repeatEndMode: value as RepeatEndMode,
-                    }))
-                  }
+                  onValueChange={(value) => {
+                    const endMode = repeatEndModes.find((option) => option === value)
+                    if (endMode) form.setValue("repeatEndMode", endMode, { shouldDirty: true })
+                  }}
                 >
                   <SelectTrigger id="class-repeat-ends" className="w-full">
                     <SelectValue />
@@ -518,13 +428,7 @@ function ClassFormBody({ cls, onSubmit, onCancel }: ClassFormBodyProps) {
                   <Input
                     id="class-repeat-end-date"
                     type="date"
-                    value={values.repeatEndDate}
-                    onChange={(e) =>
-                      setValues((v) => ({
-                        ...v,
-                        repeatEndDate: e.target.value,
-                      }))
-                    }
+                    {...form.register("repeatEndDate")}
                   />
                 </Field>
               )}
@@ -540,13 +444,8 @@ function ClassFormBody({ cls, onSubmit, onCancel }: ClassFormBodyProps) {
                     inputMode="numeric"
                     min="1"
                     step="1"
-                    value={values.repeatEndOccurrences}
-                    onChange={(e) =>
-                      setValues((v) => ({
-                        ...v,
-                        repeatEndOccurrences: e.target.value,
-                      }))
-                    }
+                    value={values.repeatEndOccurrences ?? ""}
+                    onChange={(event) => form.setValue("repeatEndOccurrences", event.target.valueAsNumber || undefined, { shouldDirty: true })}
                   />
                 </Field>
               )}
@@ -561,14 +460,11 @@ function ClassFormBody({ cls, onSubmit, onCancel }: ClassFormBodyProps) {
               <div className="flex items-center gap-2">
                 <span
                   className="size-9 shrink-0 rounded-md border border-input"
-                  style={{ backgroundColor: values.color }}
+                  style={{ backgroundColor: values.color ?? "#3b82f6" }}
                 />
                 <Input
                   id="class-color"
-                  value={values.color}
-                  onChange={(e) =>
-                    setValues((v) => ({ ...v, color: e.target.value }))
-                  }
+                  {...form.register("color")}
                 />
               </div>
             </Field>
@@ -578,10 +474,7 @@ function ClassFormBody({ cls, onSubmit, onCancel }: ClassFormBodyProps) {
               <Input
                 id="class-sport"
                 placeholder="Yoga, Boxing..."
-                value={values.sport}
-                onChange={(e) =>
-                  setValues((v) => ({ ...v, sport: e.target.value }))
-                }
+                {...form.register("sport")}
               />
             </Field>
           </div>
@@ -592,10 +485,7 @@ function ClassFormBody({ cls, onSubmit, onCancel }: ClassFormBodyProps) {
             <FieldLabel htmlFor="class-description">Description</FieldLabel>
             <Textarea
               id="class-description"
-              value={values.description}
-              onChange={(e) =>
-                setValues((v) => ({ ...v, description: e.target.value }))
-              }
+              {...form.register("description")}
             />
           </Field>
 
@@ -603,10 +493,7 @@ function ClassFormBody({ cls, onSubmit, onCancel }: ClassFormBodyProps) {
             <FieldLabel htmlFor="class-notes">Notes</FieldLabel>
             <Textarea
               id="class-notes"
-              value={values.notes}
-              onChange={(e) =>
-                setValues((v) => ({ ...v, notes: e.target.value }))
-              }
+              {...form.register("notes")}
             />
             <FieldDescription>
               Only visible to staff, never to members. Applies to this class

@@ -1,6 +1,8 @@
 "use client"
 
-import { useState, type FormEvent, type KeyboardEvent } from "react"
+import { useState, type KeyboardEvent } from "react"
+import { useForm, useWatch } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
 import { Banknote, Check, Info, MapPin, Save, SlidersHorizontal, X } from "lucide-react"
 
 import { Button } from "@repo/ui/components/ui/button"
@@ -44,35 +46,20 @@ import {
   areaStatusEnumSchema,
   areaVisibilityEnumSchema,
   type Area,
-  type AreaStatus,
-  type AreaVisibility,
   type NewArea,
 } from "@repo/types"
 
-import { fieldErrors } from "../lib/validation"
 import { areaAttributeOptions } from "../lib/schema"
 
-interface AreaFormValues {
-  name: string
-  areaTypeId: string
-  description: string
-  images: string[]
-  pricePerHour: string
-  maxConcurrentBookings: string
-  visibility: AreaVisibility
-  status: AreaStatus
-  attributes: string[]
-}
-
-function toFormValues(area?: Area | null): AreaFormValues {
+function toFormValues(area?: Area | null): NewArea {
   if (!area) {
     return {
       name: "",
       areaTypeId: "",
-      description: "",
+      description: undefined,
       images: [],
-      pricePerHour: "",
-      maxConcurrentBookings: "1",
+      pricePerHour: 0,
+      maxConcurrentBookings: 1,
       visibility: "Public",
       status: "Active",
       attributes: [],
@@ -81,10 +68,10 @@ function toFormValues(area?: Area | null): AreaFormValues {
   return {
     name: area.name,
     areaTypeId: area.areaTypeId ?? "",
-    description: area.description ?? "",
+    description: area.description ?? undefined,
     images: area.images,
-    pricePerHour: String(area.pricePerHour),
-    maxConcurrentBookings: String(area.maxConcurrentBookings),
+    pricePerHour: area.pricePerHour,
+    maxConcurrentBookings: area.maxConcurrentBookings,
     visibility: area.visibility,
     status: area.status,
     attributes: area.attributes,
@@ -103,8 +90,11 @@ function AreaFormBody({ tenant, area, pending, onSubmit, onCancel }: AreaFormBod
   const areaTypesQuery = useAreaTypesQuery(tenant, { limit: 100 })
   const areaTypes = areaTypesQuery.data?.data ?? []
 
-  const [values, setValues] = useState<AreaFormValues>(() => toFormValues(area))
-  const [errors, setErrors] = useState<Record<string, string>>({})
+  const form = useForm<NewArea>({
+    resolver: zodResolver(areaInsertSchema),
+    defaultValues: toFormValues(area),
+  })
+  const values = useWatch({ control: form.control })
   const [attributeDraft, setAttributeDraft] = useState("")
   const isEdit = Boolean(area)
 
@@ -112,20 +102,17 @@ function AreaFormBody({ tenant, area, pending, onSubmit, onCancel }: AreaFormBod
     const trimmed = name.trim()
     if (!trimmed) return
     if (
-      values.attributes.some((a) => a.toLowerCase() === trimmed.toLowerCase())
+      (values.attributes ?? []).some((a) => a.toLowerCase() === trimmed.toLowerCase())
     ) {
       setAttributeDraft("")
       return
     }
-    setValues((v) => ({ ...v, attributes: [...v.attributes, trimmed] }))
+    form.setValue("attributes", [...(form.getValues("attributes") ?? []), trimmed], { shouldDirty: true })
     setAttributeDraft("")
   }
 
   function removeAttribute(name: string) {
-    setValues((v) => ({
-      ...v,
-      attributes: v.attributes.filter((a) => a !== name),
-    }))
+    form.setValue("attributes", (form.getValues("attributes") ?? []).filter((attribute) => attribute !== name), { shouldDirty: true })
   }
 
   function onAttributeKeyDown(event: KeyboardEvent<HTMLInputElement>) {
@@ -135,43 +122,19 @@ function AreaFormBody({ tenant, area, pending, onSubmit, onCancel }: AreaFormBod
     } else if (
       event.key === "Backspace" &&
       !attributeDraft &&
-      values.attributes.length
+      (values.attributes ?? []).length
     ) {
-      removeAttribute(values.attributes[values.attributes.length - 1]!)
+      removeAttribute(values.attributes![values.attributes!.length - 1]!)
     }
   }
 
   const attributeSuggestions = areaAttributeOptions.filter(
     (option) =>
-      !values.attributes.some((a) => a.toLowerCase() === option.toLowerCase())
+      !(values.attributes ?? []).some((a) => a.toLowerCase() === option.toLowerCase())
   )
 
-  function handleSubmit(event: FormEvent) {
-    event.preventDefault()
-
-    const result = areaInsertSchema.safeParse({
-      name: values.name,
-      areaTypeId: values.areaTypeId || null,
-      description: values.description || undefined,
-      images: values.images,
-      visibility: values.visibility,
-      status: values.status,
-      attributes: values.attributes,
-      pricePerHour: Number(values.pricePerHour || 0),
-      maxConcurrentBookings: Number(values.maxConcurrentBookings || 0),
-    })
-
-    if (!result.success) {
-      setErrors(fieldErrors(result.error))
-      return
-    }
-
-    setErrors({})
-    onSubmit(result.data)
-  }
-
   return (
-    <form onSubmit={handleSubmit} className="flex h-full flex-col">
+    <form onSubmit={form.handleSubmit(onSubmit)} className="flex h-full flex-col" noValidate>
       <SheetHeader>
         <FormSheetHeader
           icon={MapPin}
@@ -183,40 +146,30 @@ function AreaFormBody({ tenant, area, pending, onSubmit, onCancel }: AreaFormBod
       <SheetBody className="flex flex-col gap-7">
         <FormSection icon={Info} title="Basic information">
           <div className="grid grid-cols-2 gap-4">
-            <Field data-invalid={Boolean(errors.name)}>
+            <Field data-invalid={Boolean(form.formState.errors.name)}>
               <FieldLabel htmlFor="area-name">
                 Name <span className="text-destructive">*</span>
               </FieldLabel>
               <Input
                 id="area-name"
                 placeholder="Studio A"
-                value={values.name}
-                aria-invalid={Boolean(errors.name)}
-                onChange={(e) =>
-                  setValues((v) => ({ ...v, name: e.target.value }))
-                }
+                aria-invalid={Boolean(form.formState.errors.name)}
+                {...form.register("name")}
               />
-              <FieldError>{errors.name}</FieldError>
+              <FieldError>{form.formState.errors.name?.message}</FieldError>
             </Field>
 
             <Field>
               <FieldLabel htmlFor="area-type">Area Type</FieldLabel>
               <Select
-                value={values.areaTypeId}
+                value={values.areaTypeId ?? ""}
                 onValueChange={(value) => {
                   const picked = areaTypes.find((t) => t.id === value)
-                  setValues((v) => ({
-                    ...v,
-                    areaTypeId: value ?? "",
-                    ...(picked && !isEdit
-                      ? {
-                          pricePerHour: String(picked.pricePerHour ?? 0),
-                          maxConcurrentBookings: String(
-                            picked.maxConcurrentBookings ?? 1
-                          ),
-                        }
-                      : {}),
-                  }))
+                  form.setValue("areaTypeId", value ?? "", { shouldDirty: true })
+                  if (picked && !isEdit) {
+                    form.setValue("pricePerHour", picked.pricePerHour ?? 0, { shouldDirty: true })
+                    form.setValue("maxConcurrentBookings", picked.maxConcurrentBookings ?? 1, { shouldDirty: true })
+                  }
                 }}
               >
                 <SelectTrigger id="area-type" className="w-full">
@@ -248,10 +201,7 @@ function AreaFormBody({ tenant, area, pending, onSubmit, onCancel }: AreaFormBod
             <Textarea
               id="area-description"
               placeholder="What this space is used for"
-              value={values.description}
-              onChange={(e) =>
-                setValues((v) => ({ ...v, description: e.target.value }))
-              }
+              {...form.register("description", { setValueAs: (value: string) => value || undefined })}
             />
           </Field>
 
@@ -259,8 +209,8 @@ function AreaFormBody({ tenant, area, pending, onSubmit, onCancel }: AreaFormBod
             <FieldLabel>Images</FieldLabel>
             <MultiImageUpload
               folder="areas"
-              value={values.images}
-              onChange={(images) => setValues((v) => ({ ...v, images }))}
+              value={values.images ?? []}
+              onChange={(images) => form.setValue("images", images, { shouldDirty: true })}
             />
             <FieldDescription>
               Add photos of this space. The first image is used as the cover.
@@ -270,7 +220,7 @@ function AreaFormBody({ tenant, area, pending, onSubmit, onCancel }: AreaFormBod
 
         <FormSection icon={Banknote} title="Pricing">
           <div className="grid grid-cols-2 gap-4">
-            <Field data-invalid={Boolean(errors.pricePerHour)}>
+            <Field data-invalid={Boolean(form.formState.errors.pricePerHour)}>
               <FieldLabel htmlFor="area-price">Price per Hour</FieldLabel>
               <InputGroup>
                 <InputGroupAddon>
@@ -283,17 +233,14 @@ function AreaFormBody({ tenant, area, pending, onSubmit, onCancel }: AreaFormBod
                   min="0"
                   step="1"
                   placeholder="0.00"
-                  value={values.pricePerHour}
-                  aria-invalid={Boolean(errors.pricePerHour)}
-                  onChange={(e) =>
-                    setValues((v) => ({ ...v, pricePerHour: e.target.value }))
-                  }
+                  aria-invalid={Boolean(form.formState.errors.pricePerHour)}
+                  {...form.register("pricePerHour", { valueAsNumber: true })}
                 />
               </InputGroup>
-              <FieldError>{errors.pricePerHour}</FieldError>
+              <FieldError>{form.formState.errors.pricePerHour?.message}</FieldError>
             </Field>
 
-            <Field data-invalid={Boolean(errors.maxConcurrentBookings)}>
+            <Field data-invalid={Boolean(form.formState.errors.maxConcurrentBookings)}>
               <FieldLabel htmlFor="area-max-bookings">
                 Max Concurrent Bookings
               </FieldLabel>
@@ -304,16 +251,10 @@ function AreaFormBody({ tenant, area, pending, onSubmit, onCancel }: AreaFormBod
                 min="1"
                 step="1"
                 placeholder="1"
-                value={values.maxConcurrentBookings}
-                aria-invalid={Boolean(errors.maxConcurrentBookings)}
-                onChange={(e) =>
-                  setValues((v) => ({
-                    ...v,
-                    maxConcurrentBookings: e.target.value,
-                  }))
-                }
+                aria-invalid={Boolean(form.formState.errors.maxConcurrentBookings)}
+                {...form.register("maxConcurrentBookings", { valueAsNumber: true })}
               />
-              <FieldError>{errors.maxConcurrentBookings}</FieldError>
+              <FieldError>{form.formState.errors.maxConcurrentBookings?.message}</FieldError>
             </Field>
           </div>
         </FormSection>
@@ -323,13 +264,11 @@ function AreaFormBody({ tenant, area, pending, onSubmit, onCancel }: AreaFormBod
             <Field>
               <FieldLabel htmlFor="area-visibility">Visibility</FieldLabel>
               <Select
-                value={values.visibility}
-                onValueChange={(value) =>
-                  setValues((v) => ({
-                    ...v,
-                    visibility: value as AreaVisibility,
-                  }))
-                }
+                value={values.visibility ?? "Public"}
+                onValueChange={(value) => {
+                  const visibility = areaVisibilityEnumSchema.options.find((option) => option === value)
+                  if (visibility) form.setValue("visibility", visibility, { shouldDirty: true })
+                }}
               >
                 <SelectTrigger id="area-visibility" className="w-full">
                   <SelectValue />
@@ -347,10 +286,11 @@ function AreaFormBody({ tenant, area, pending, onSubmit, onCancel }: AreaFormBod
             <Field>
               <FieldLabel htmlFor="area-status">Status</FieldLabel>
               <Select
-                value={values.status}
-                onValueChange={(value) =>
-                  setValues((v) => ({ ...v, status: value as AreaStatus }))
-                }
+                value={values.status ?? "Active"}
+                onValueChange={(value) => {
+                  const status = areaStatusEnumSchema.options.find((option) => option === value)
+                  if (status) form.setValue("status", status, { shouldDirty: true })
+                }}
               >
                 <SelectTrigger id="area-status" className="w-full">
                   <SelectValue />
@@ -375,9 +315,9 @@ function AreaFormBody({ tenant, area, pending, onSubmit, onCancel }: AreaFormBod
               onChange={(e) => setAttributeDraft(e.target.value)}
               onKeyDown={onAttributeKeyDown}
             />
-            {values.attributes.length > 0 && (
+            {(values.attributes ?? []).length > 0 && (
               <div className="flex flex-wrap gap-1.5">
-                {values.attributes.map((attribute) => (
+                {(values.attributes ?? []).map((attribute) => (
                   <span
                     key={attribute}
                     className="flex items-center gap-1 rounded-full border border-primary bg-primary px-3 py-1 text-xs font-medium text-primary-foreground"

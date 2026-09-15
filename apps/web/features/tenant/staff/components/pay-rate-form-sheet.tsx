@@ -1,14 +1,20 @@
 "use client"
 
-import { useState, type FormEvent } from "react"
+import {
+  useForm,
+  useWatch,
+  type FieldPath,
+  type FieldPathValue,
+} from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
 import { Banknote, BadgeDollarSign, Info, Save, Target } from "lucide-react"
 import {
   payRateEntranceMethodEnumSchema,
   payRateInsertSchema,
   payRateTypeEnumSchema,
   type NewPayRate,
+  type PayRateInsertInput,
   type PayRate,
-  type PayRateEntranceMethod,
   type PayRateType,
 } from "@repo/types"
 
@@ -48,8 +54,6 @@ import { FormSection, FormSheetHeader } from "@/features/tenant/components/form-
 import { useClassTypesQuery } from "@/features/tenant/settings/types/hooks/use-class-types"
 import { useInstructorTypesQuery } from "@/features/tenant/settings/types/hooks/use-instructor-types"
 
-import { fieldErrors } from "../lib/validation"
-
 const ALL = "all"
 
 const payRateTypeLabels: Record<PayRateType, string> = {
@@ -57,41 +61,19 @@ const payRateTypeLabels: Record<PayRateType, string> = {
   individual: "Individual training",
 }
 
-interface PayRateFormValues {
-  type: PayRateType
-  name: string
-  perClassRate: string
-  perPersonRate: string
-  perSessionRate: string
-  revenueSharePercent: string
-  compensateUnpaidBookings: boolean
-  classTypeId: string
-  instructorTypeId: string
-  entranceMethod: PayRateEntranceMethod
-}
-
-function toFormValues(policy?: PayRate | null): PayRateFormValues {
+function toFormValues(policy?: PayRate | null): PayRateInsertInput {
   return {
     type: policy?.type ?? "class",
     name: policy?.name ?? "",
-    perClassRate: policy?.perClassRate != null ? String(policy.perClassRate) : "",
-    perPersonRate:
-      policy?.perPersonRate != null ? String(policy.perPersonRate) : "",
-    perSessionRate:
-      policy?.perSessionRate != null ? String(policy.perSessionRate) : "",
-    revenueSharePercent:
-      policy?.revenueSharePercent != null
-        ? String(policy.revenueSharePercent)
-        : "",
+    perClassRate: policy?.perClassRate ?? undefined,
+    perPersonRate: policy?.perPersonRate ?? undefined,
+    perSessionRate: policy?.perSessionRate ?? undefined,
+    revenueSharePercent: policy?.revenueSharePercent ?? undefined,
     compensateUnpaidBookings: policy?.compensateUnpaidBookings ?? false,
     classTypeId: policy?.classTypeId ?? "",
     instructorTypeId: policy?.instructorTypeId ?? "",
     entranceMethod: policy?.entranceMethod ?? "All entrance methods",
   }
-}
-
-function toNumber(value: string): number | undefined {
-  return value.trim() === "" ? undefined : Number(value)
 }
 
 interface FormBodyProps {
@@ -106,43 +88,22 @@ function FormBody({ tenant, policy, pending, onSubmit, onCancel }: FormBodyProps
   const classTypes = useClassTypesQuery(tenant, { limit: 100 })
   const instructorTypes = useInstructorTypesQuery(tenant, { limit: 100 })
 
-  const [values, setValues] = useState<PayRateFormValues>(() =>
-    toFormValues(policy)
-  )
-  const [errors, setErrors] = useState<Record<string, string>>({})
+  const form = useForm<PayRateInsertInput, unknown, NewPayRate>({
+    resolver: zodResolver(payRateInsertSchema),
+    defaultValues: toFormValues(policy),
+  })
+  const values = useWatch({
+    control: form.control,
+    defaultValue: toFormValues(policy),
+  })
   const isEdit = Boolean(policy)
   const isClass = values.type === "class"
 
-  function set<K extends keyof PayRateFormValues>(
+  function set<K extends FieldPath<PayRateInsertInput>>(
     key: K,
-    value: PayRateFormValues[K]
+    value: FieldPathValue<PayRateInsertInput, K>
   ) {
-    setValues((v) => ({ ...v, [key]: value }))
-  }
-
-  function handleSubmit(event: FormEvent) {
-    event.preventDefault()
-
-    const result = payRateInsertSchema.safeParse({
-      type: values.type,
-      name: values.name,
-      perClassRate: isClass ? toNumber(values.perClassRate) : undefined,
-      perPersonRate: isClass ? toNumber(values.perPersonRate) : undefined,
-      perSessionRate: !isClass ? toNumber(values.perSessionRate) : undefined,
-      revenueSharePercent: toNumber(values.revenueSharePercent),
-      compensateUnpaidBookings: values.compensateUnpaidBookings,
-      classTypeId: isClass ? values.classTypeId || null : null,
-      instructorTypeId: values.instructorTypeId || null,
-      entranceMethod: values.entranceMethod,
-    })
-
-    if (!result.success) {
-      setErrors(fieldErrors(result.error))
-      return
-    }
-
-    setErrors({})
-    onSubmit(result.data)
+    form.setValue(key, value, { shouldDirty: true })
   }
 
   const classTypeItems = [
@@ -161,7 +122,7 @@ function FormBody({ tenant, policy, pending, onSubmit, onCancel }: FormBodyProps
   )
 
   return (
-    <form onSubmit={handleSubmit} className="flex h-full flex-col">
+    <form onSubmit={form.handleSubmit(onSubmit)} className="flex h-full flex-col" noValidate>
       <SheetHeader>
         <FormSheetHeader
           icon={BadgeDollarSign}
@@ -190,7 +151,7 @@ function FormBody({ tenant, policy, pending, onSubmit, onCancel }: FormBodyProps
         </div>
 
         <FormSection icon={BadgeDollarSign} title="Details">
-          <Field data-invalid={Boolean(errors.name)}>
+          <Field data-invalid={Boolean(form.formState.errors.name)}>
             <FieldLabel htmlFor="pay-rate-name">
               Policy name <span className="text-destructive">*</span>
             </FieldLabel>
@@ -198,10 +159,10 @@ function FormBody({ tenant, policy, pending, onSubmit, onCancel }: FormBodyProps
               id="pay-rate-name"
               placeholder="Standard instructor rate"
               value={values.name}
-              aria-invalid={Boolean(errors.name)}
+              aria-invalid={Boolean(form.formState.errors.name)}
               onChange={(e) => set("name", e.target.value)}
             />
-            <FieldError>{errors.name}</FieldError>
+            <FieldError>{form.formState.errors.name?.message}</FieldError>
           </Field>
         </FormSection>
 
@@ -212,7 +173,7 @@ function FormBody({ tenant, policy, pending, onSubmit, onCancel }: FormBodyProps
         >
           {isClass ? (
             <div className="grid grid-cols-2 gap-4">
-              <Field data-invalid={Boolean(errors.perClassRate)}>
+            <Field data-invalid={Boolean(form.formState.errors.perClassRate)}>
                 <FieldLabel htmlFor="pay-rate-per-class">Per class</FieldLabel>
                 <InputGroup>
                   <InputGroupAddon>
@@ -226,10 +187,10 @@ function FormBody({ tenant, policy, pending, onSubmit, onCancel }: FormBodyProps
                     step="1"
                     placeholder="800"
                     value={values.perClassRate}
-                    onChange={(e) => set("perClassRate", e.target.value)}
+                  onChange={(e) => set("perClassRate", e.target.value === "" ? undefined : Number(e.target.value))}
                   />
                 </InputGroup>
-                <FieldError>{errors.perClassRate}</FieldError>
+              <FieldError>{form.formState.errors.perClassRate?.message}</FieldError>
               </Field>
 
               <Field>
@@ -246,13 +207,13 @@ function FormBody({ tenant, policy, pending, onSubmit, onCancel }: FormBodyProps
                     step="1"
                     placeholder="200"
                     value={values.perPersonRate}
-                    onChange={(e) => set("perPersonRate", e.target.value)}
+                  onChange={(e) => set("perPersonRate", e.target.value === "" ? undefined : Number(e.target.value))}
                   />
                 </InputGroup>
               </Field>
             </div>
           ) : (
-            <Field data-invalid={Boolean(errors.perSessionRate)}>
+            <Field data-invalid={Boolean(form.formState.errors.perSessionRate)}>
               <FieldLabel htmlFor="pay-rate-per-session">Per session</FieldLabel>
               <InputGroup>
                 <InputGroupAddon>
@@ -266,10 +227,10 @@ function FormBody({ tenant, policy, pending, onSubmit, onCancel }: FormBodyProps
                   step="1"
                   placeholder="1500"
                   value={values.perSessionRate}
-                  onChange={(e) => set("perSessionRate", e.target.value)}
+                  onChange={(e) => set("perSessionRate", e.target.value === "" ? undefined : Number(e.target.value))}
                 />
               </InputGroup>
-              <FieldError>{errors.perSessionRate}</FieldError>
+              <FieldError>{form.formState.errors.perSessionRate?.message}</FieldError>
             </Field>
           )}
 
@@ -287,7 +248,7 @@ function FormBody({ tenant, policy, pending, onSubmit, onCancel }: FormBodyProps
                 step="1"
                 placeholder="40"
                 value={values.revenueSharePercent}
-                onChange={(e) => set("revenueSharePercent", e.target.value)}
+                  onChange={(e) => set("revenueSharePercent", e.target.value === "" ? undefined : Number(e.target.value))}
               />
               <InputGroupAddon align="inline-end">
                 <InputGroupText>%</InputGroupText>
@@ -330,7 +291,7 @@ function FormBody({ tenant, policy, pending, onSubmit, onCancel }: FormBodyProps
                 items={classTypeItems}
                 value={values.classTypeId || ALL}
                 onValueChange={(value) =>
-                  set("classTypeId", value === ALL ? "" : (value ?? ""))
+            set("classTypeId", value === ALL ? null : value)
                 }
               >
                 <SelectTrigger id="pay-rate-class-type" className="w-full">
@@ -355,7 +316,7 @@ function FormBody({ tenant, policy, pending, onSubmit, onCancel }: FormBodyProps
               items={instructorTypeItems}
               value={values.instructorTypeId || ALL}
               onValueChange={(value) =>
-                set("instructorTypeId", value === ALL ? "" : (value ?? ""))
+            set("instructorTypeId", value === ALL ? null : value)
               }
             >
               <SelectTrigger id="pay-rate-instructor-type" className="w-full">
@@ -382,9 +343,12 @@ function FormBody({ tenant, policy, pending, onSubmit, onCancel }: FormBodyProps
             <Select
               items={entranceMethodItems}
               value={values.entranceMethod}
-              onValueChange={(value) =>
-                set("entranceMethod", value as PayRateEntranceMethod)
-              }
+          onValueChange={(value) => {
+            const entranceMethod = payRateEntranceMethodEnumSchema.options.find(
+              (method) => method === value
+            )
+            if (entranceMethod) set("entranceMethod", entranceMethod)
+          }}
             >
               <SelectTrigger id="pay-rate-entrance-method" className="w-full">
                 <SelectValue />

@@ -6,12 +6,12 @@ import { toast } from "sonner"
 
 import { Button } from "@repo/ui/components/ui/button"
 import { DataTable } from "@repo/ui/components/ui/data-table"
+import type { Package, PackageInput } from "@repo/types"
 
 import { DeleteConfirmDialog } from "@/features/tenant/components/delete-confirm-dialog"
 import { FilterPills } from "@/features/tenant/components/filter-pills"
 import { exportToCsv } from "@/features/tenant/lib/export-csv"
 import { initialPackages } from "../lib/data"
-import type { Package, PackageInput } from "../lib/schema"
 import { createPackageColumns } from "./columns"
 import { PackageFormSheet } from "./package-form-sheet"
 

@@ -10,11 +10,9 @@ import {
   isSyntheticEmail,
   memberGenderEnumSchema,
   memberStatusEnumSchema,
-  memberUpdateSchema,
   memberWithUserAndMembershipInsertSchema,
   type MemberWithUser,
   type NewMemberWithUser,
-  type UpdateMember,
 } from "@repo/types"
 
 import { Button } from "@repo/ui/components/ui/button"
@@ -101,13 +99,9 @@ function MemberForm({ tenant, member, onClose }: { tenant: string; member?: Memb
   const updateMember = useUpdateMember(tenant)
   const pending = isEdit ? updateMember.isPending : createMember.isPending
 
-  const form = useForm<MemberFormValues>({
+  const form = useForm<MemberFormValues, unknown, NewMemberWithUser>({
     defaultValues: defaultValues(member),
-    resolver: async (values, context, options) => {
-      const schema = isEdit ? memberUpdateSchema : memberWithUserAndMembershipInsertSchema
-      const payload = isEdit || hasMembership ? values : { ...values, membership: undefined }
-      return zodResolver(schema )(payload, context, options)
-    },
+    resolver: zodResolver(memberWithUserAndMembershipInsertSchema),
   })
 
   const { register, control, handleSubmit, formState: { errors } } = form
@@ -115,7 +109,7 @@ function MemberForm({ tenant, member, onClose }: { tenant: string; member?: Memb
   const onSubmit = handleSubmit((data) => {
     if (isEdit && member) {
       updateMember.mutate(
-        { id: member.id, input: data as UpdateMember },
+        { id: member.id, input: { user: data.user, member: data.member } },
         {
           onSuccess: () => {
             toast.success(`${data.user?.name ?? member.user.name} updated`)
@@ -127,9 +121,8 @@ function MemberForm({ tenant, member, onClose }: { tenant: string; member?: Memb
       return
     }
 
-    const create = data as NewMemberWithUser
     createMember.mutate(
-      { ...create, membership: hasMembership ? create.membership : undefined },
+      { ...data, membership: hasMembership ? data.membership : undefined },
       {
         onSuccess: (created) => {
           toast.success(`${created.user.name} added`)

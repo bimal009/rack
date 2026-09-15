@@ -1,4 +1,4 @@
-import type { Package } from "./schema"
+import type { Package } from "@repo/types"
 
 export const initialPackages: Package[] = [
   {

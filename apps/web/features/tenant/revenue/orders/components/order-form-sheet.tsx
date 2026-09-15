@@ -1,7 +1,16 @@
 "use client"
 
-import { useState, type FormEvent } from "react"
+import { useForm, useWatch } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
 import { Banknote, Plus, Receipt, ShoppingCart, Trash2, UserRound } from "lucide-react"
+import {
+  orderFormSchema,
+  orderStatuses,
+  type Order,
+  type OrderFormInput,
+  type OrderFormItem,
+  type OrderStatus,
+} from "@repo/types"
 
 import { Button } from "@repo/ui/components/ui/button"
 import {
@@ -35,17 +44,7 @@ import { initialPackages } from "@/features/tenant/revenue/packages/lib/data"
 import { useProductsQuery } from "@/features/tenant/revenue/products/hooks/use-products"
 
 import { generateOrderId } from "../lib/data"
-import { orderStatuses, type Order, type OrderStatus } from "../lib/schema"
-
-type SaleItemType = "product" | "package"
-
-interface SaleItem {
-  type: SaleItemType
-  refId: string
-  name: string
-  price: number
-  quantity: number
-}
+type SaleItemType = OrderFormItem["type"]
 
 const currency = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -70,12 +69,19 @@ interface OrderFormBodyProps {
 function OrderFormBody({ tenant, onSubmit, onCancel }: OrderFormBodyProps) {
   const products = useProductsQuery(tenant, { limit: 100 })
   const members = useMembersQuery(tenant, { limit: 100 })
-  const [memberId, setMemberId] = useState<string | null>(null)
-  const [items, setItems] = useState<SaleItem[]>([])
-  const [status, setStatus] = useState<OrderStatus>("Paid")
-  const [error, setError] = useState("")
+  const form = useForm<OrderFormInput>({
+    resolver: zodResolver(orderFormSchema),
+    defaultValues: { memberId: "", items: [], status: "Paid" },
+  })
+  const values = useWatch<OrderFormInput>({
+    control: form.control,
+    defaultValue: { memberId: "", items: [], status: "Paid" },
+  })
+  const { errors } = form.formState
+  const memberId = values.memberId
+  const items = values.items
+  const status = values.status
 
-  const member = (members.data?.data ?? []).find((m) => m.id === memberId) ?? null
   const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0)
 
   function pickableOptions(type: SaleItemType) {
@@ -89,41 +95,33 @@ function OrderFormBody({ tenant, onSubmit, onCancel }: OrderFormBodyProps) {
   }
 
   function addItem(type: SaleItemType) {
-    setItems((prev) => [
-      ...prev,
+    form.setValue("items", [
+      ...form.getValues("items"),
       { type, refId: "", name: "", price: 0, quantity: 1 },
-    ])
+    ], { shouldDirty: true })
   }
 
-  function updateItem(index: number, patch: Partial<SaleItem>) {
-    setItems((prev) =>
-      prev.map((item, i) => (i === index ? { ...item, ...patch } : item))
-    )
+  function updateItem(index: number, patch: Partial<OrderFormItem>) {
+    form.setValue("items", form.getValues("items").map((item, i) =>
+      i === index ? { ...item, ...patch } : item
+    ), { shouldDirty: true })
   }
 
   function removeItem(index: number) {
-    setItems((prev) => prev.filter((_, i) => i !== index))
+    form.setValue("items", form.getValues("items").filter((_, i) => i !== index), { shouldDirty: true })
   }
 
-  function handleSubmit(event: FormEvent) {
-    event.preventDefault()
-
-    if (!member) {
-      setError("Select a member to continue.")
+  function submit(values: OrderFormInput) {
+    const selectedMember = (members.data?.data ?? []).find((candidate) => candidate.id === values.memberId)
+    if (!selectedMember) {
+      form.setError("memberId", { message: "Select a member to continue." })
       return
     }
-    const validItems = items.filter((item) => item.refId)
-    if (validItems.length === 0) {
-      setError("Add at least one product or package.")
-      return
-    }
-
-    setError("")
-
+    const validItems = values.items.filter((item) => item.refId)
     const order: Order = {
       id: generateOrderId(),
-      memberName: member.user.name,
-      memberEmail: member.user.email,
+      memberName: selectedMember.user.name,
+      memberEmail: selectedMember.user.email,
       items: validItems.map((item) => ({
         name: item.name,
         qty: item.quantity,
@@ -133,7 +131,7 @@ function OrderFormBody({ tenant, onSubmit, onCancel }: OrderFormBodyProps) {
         (sum, item) => sum + item.price * item.quantity,
         0
       ),
-      status,
+      status: values.status,
       date: formatOrderDate(new Date()),
     }
 
@@ -141,7 +139,7 @@ function OrderFormBody({ tenant, onSubmit, onCancel }: OrderFormBodyProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex h-full flex-col">
+    <form onSubmit={form.handleSubmit(submit)} className="flex h-full flex-col">
       <SheetHeader>
         <FormSheetHeader
           icon={Receipt}
@@ -160,8 +158,8 @@ function OrderFormBody({ tenant, onSubmit, onCancel }: OrderFormBodyProps) {
                 const found = members.data?.data.find((m) => m.id === id)
                 return found ? `${found.user.name} — ${found.user.email}` : id
               }}
-              value={memberId}
-              onValueChange={setMemberId}
+              value={memberId || null}
+              onValueChange={(value) => form.setValue("memberId", value ?? "", { shouldDirty: true })}
             >
               <ComboboxInput
                 id="order-member"
@@ -181,6 +179,7 @@ function OrderFormBody({ tenant, onSubmit, onCancel }: OrderFormBodyProps) {
                 </ComboboxList>
               </ComboboxContent>
             </Combobox>
+            <FieldError>{errors.memberId?.message}</FieldError>
           </Field>
         </FormSection>
 
@@ -255,7 +254,7 @@ function OrderFormBody({ tenant, onSubmit, onCancel }: OrderFormBodyProps) {
             </div>
           )}
 
-          <FieldError>{error}</FieldError>
+          <FieldError>{errors.items?.message}</FieldError>
 
           <div className="flex items-center gap-2">
             <button
@@ -282,7 +281,7 @@ function OrderFormBody({ tenant, onSubmit, onCancel }: OrderFormBodyProps) {
             <FieldLabel htmlFor="order-status">Payment status</FieldLabel>
             <Select
               value={status}
-              onValueChange={(value) => setStatus(value as OrderStatus)}
+              onValueChange={(value) => form.setValue("status", value as OrderStatus, { shouldDirty: true })}
             >
               <SelectTrigger id="order-status" className="w-full">
                 <SelectValue />

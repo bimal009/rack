@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, type FormEvent } from "react"
+import { Controller, useForm, useWatch } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
 import { CalendarOff, UserRound } from "lucide-react"
 
 import { Button } from "@repo/ui/components/ui/button"
@@ -28,7 +29,6 @@ import { FormSection, FormSheetHeader } from "@/features/tenant/components/form-
 import { fullName } from "@/features/tenant/staff/components/columns"
 import { initialStaff } from "@/features/tenant/staff/lib/data"
 
-import { fieldErrors } from "../lib/validation"
 import {
   timeOffSchema,
   type TimeOff,
@@ -78,35 +78,24 @@ function TimeOffFormBody({
   onSubmit,
   onCancel,
 }: TimeOffFormBodyProps) {
-  const [values, setValues] = useState<TimeOffFormValues>(() =>
-    toFormValues(timeOff, defaultDate)
-  )
-  const [errors, setErrors] = useState<Record<string, string>>({})
+  const form = useForm<TimeOffFormValues>({
+    resolver: zodResolver(timeOffSchema),
+    defaultValues: toFormValues(timeOff, defaultDate),
+  })
+  const allDay = useWatch({ control: form.control, name: "allDay" })
+  const staffId = useWatch({ control: form.control, name: "staffId" })
   const isEdit = Boolean(timeOff)
 
-  function handleSubmit(event: FormEvent) {
-    event.preventDefault()
-
-    const result = timeOffSchema.safeParse({
-      staffId: values.staffId,
-      date: values.date,
-      allDay: values.allDay,
+  function handleSubmit(values: TimeOffFormValues) {
+    onSubmit({
+      ...values,
       startTime: values.allDay ? undefined : values.startTime,
       endTime: values.allDay ? undefined : values.endTime,
-      reason: values.reason,
     })
-
-    if (!result.success) {
-      setErrors(fieldErrors(result.error))
-      return
-    }
-
-    setErrors({})
-    onSubmit(result.data)
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex h-full flex-col">
+    <form onSubmit={form.handleSubmit(handleSubmit)} className="flex h-full flex-col" noValidate>
       <SheetHeader>
         <FormSheetHeader
           icon={CalendarOff}
@@ -117,20 +106,18 @@ function TimeOffFormBody({
 
       <SheetBody className="flex flex-col gap-7">
         <FormSection icon={UserRound} title="Staff">
-          <Field data-invalid={Boolean(errors.staffId)}>
+          <Field data-invalid={Boolean(form.formState.errors.staffId)}>
             <FieldLabel htmlFor="time-off-staff">
               Staff <span className="text-destructive">*</span>
             </FieldLabel>
             <Select
-              value={values.staffId}
-              onValueChange={(value) =>
-                setValues((v) => ({ ...v, staffId: value ?? "" }))
-              }
+              value={staffId}
+              onValueChange={(value) => form.setValue("staffId", value ?? "", { shouldDirty: true })}
             >
               <SelectTrigger
                 id="time-off-staff"
                 className="w-full"
-                aria-invalid={Boolean(errors.staffId)}
+                aria-invalid={Boolean(form.formState.errors.staffId)}
               >
                 <SelectValue placeholder="Select staff">
                   {(value: string | null) => {
@@ -147,7 +134,7 @@ function TimeOffFormBody({
                 ))}
               </SelectContent>
             </Select>
-            <FieldError>{errors.staffId}</FieldError>
+            <FieldError>{form.formState.errors.staffId?.message}</FieldError>
           </Field>
 
           <Field>
@@ -155,65 +142,41 @@ function TimeOffFormBody({
             <Textarea
               id="time-off-reason"
               placeholder="Personal leave, sick day..."
-              value={values.reason}
-              onChange={(e) =>
-                setValues((v) => ({ ...v, reason: e.target.value }))
-              }
+              {...form.register("reason")}
             />
           </Field>
         </FormSection>
 
         <FormSection icon={CalendarOff} title="Date & time">
-          <Field data-invalid={Boolean(errors.date)}>
+          <Field data-invalid={Boolean(form.formState.errors.date)}>
             <FieldLabel htmlFor="time-off-date">
               Date <span className="text-destructive">*</span>
             </FieldLabel>
             <Input
               id="time-off-date"
               type="date"
-              value={values.date}
-              aria-invalid={Boolean(errors.date)}
-              onChange={(e) =>
-                setValues((v) => ({ ...v, date: e.target.value }))
-              }
+              aria-invalid={Boolean(form.formState.errors.date)}
+              {...form.register("date")}
             />
-            <FieldError>{errors.date}</FieldError>
+            <FieldError>{form.formState.errors.date?.message}</FieldError>
           </Field>
 
           <Field orientation="horizontal">
-            <Switch
-              id="time-off-all-day"
-              checked={values.allDay}
-              onCheckedChange={(checked) =>
-                setValues((v) => ({ ...v, allDay: checked }))
-              }
-            />
+            <Controller name="allDay" control={form.control} render={({ field }) => <Switch id="time-off-all-day" checked={field.value} onCheckedChange={field.onChange} />} />
             <FieldLabel htmlFor="time-off-all-day">All day</FieldLabel>
           </Field>
 
-          {!values.allDay && (
+          {!allDay && (
             <div className="grid grid-cols-2 gap-4">
               <Field>
                 <FieldLabel htmlFor="time-off-start">Start Time</FieldLabel>
-                <TimeSelect
-                  id="time-off-start"
-                  value={values.startTime}
-                  onChange={(startTime) =>
-                    setValues((v) => ({ ...v, startTime }))
-                  }
-                />
+                <Controller name="startTime" control={form.control} render={({ field }) => <TimeSelect id="time-off-start" value={field.value} onChange={field.onChange} />} />
               </Field>
 
-              <Field data-invalid={Boolean(errors.endTime)}>
+              <Field data-invalid={Boolean(form.formState.errors.endTime)}>
                 <FieldLabel htmlFor="time-off-end">End Time</FieldLabel>
-                <TimeSelect
-                  id="time-off-end"
-                  value={values.endTime}
-                  onChange={(endTime) =>
-                    setValues((v) => ({ ...v, endTime }))
-                  }
-                />
-                <FieldError>{errors.endTime}</FieldError>
+                <Controller name="endTime" control={form.control} render={({ field }) => <TimeSelect id="time-off-end" value={field.value} onChange={field.onChange} />} />
+                <FieldError>{form.formState.errors.endTime?.message}</FieldError>
               </Field>
             </div>
           )}
