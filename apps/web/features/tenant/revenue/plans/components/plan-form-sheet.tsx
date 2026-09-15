@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, type FormEvent } from "react"
-import { useParams } from "next/navigation"
 import { Banknote, Check, Clock, CreditCard, Info, Save, SquareCheck, Tags } from "lucide-react"
 import {
   gymPlanBillingTypeEnumSchema,
@@ -235,14 +234,14 @@ function CoveragePicker({
 }
 
 interface PlanFormBodyProps {
+  tenant: string
   plan?: GymPlan | null
   pending?: boolean
   onSubmit: (values: NewGymPlan) => void
   onCancel: () => void
 }
 
-function PlanFormBody({ plan, pending, onSubmit, onCancel }: PlanFormBodyProps) {
-  const tenant = useParams<{ id: string }>().id
+function PlanFormBody({ tenant, plan, pending, onSubmit, onCancel }: PlanFormBodyProps) {
   const categories = useMembershipCategoriesQuery(tenant, { limit: 100 })
   const sports = useGymSportsQuery(tenant, { limit: 100 })
   const features = useGymFeaturesQuery(tenant, { limit: 100 })
@@ -766,6 +765,7 @@ function PlanFormBody({ plan, pending, onSubmit, onCancel }: PlanFormBodyProps) 
 }
 
 interface PlanFormSheetProps {
+  tenant: string
   open: boolean
   onOpenChange: (open: boolean) => void
   plan?: GymPlan | null
@@ -774,6 +774,7 @@ interface PlanFormSheetProps {
 }
 
 export function PlanFormSheet({
+  tenant,
   open,
   onOpenChange,
   plan,
@@ -786,6 +787,7 @@ export function PlanFormSheet({
         {open && (
           <PlanFormBody
             key={plan?.id ?? "new"}
+            tenant={tenant}
             plan={plan}
             pending={pending}
             onSubmit={onSubmit}

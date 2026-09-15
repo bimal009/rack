@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, type FormEvent, type KeyboardEvent } from "react"
-import { useParams } from "next/navigation"
 import { Banknote, Check, Info, MapPin, Save, SlidersHorizontal, X } from "lucide-react"
 
 import { Button } from "@repo/ui/components/ui/button"
@@ -93,14 +92,14 @@ function toFormValues(area?: Area | null): AreaFormValues {
 }
 
 interface AreaFormBodyProps {
+  tenant: string
   area?: Area | null
   pending?: boolean
   onSubmit: (values: NewArea) => void
   onCancel: () => void
 }
 
-function AreaFormBody({ area, pending, onSubmit, onCancel }: AreaFormBodyProps) {
-  const tenant = useParams<{ id: string }>().id
+function AreaFormBody({ tenant, area, pending, onSubmit, onCancel }: AreaFormBodyProps) {
   const areaTypesQuery = useAreaTypesQuery(tenant, { limit: 100 })
   const areaTypes = areaTypesQuery.data?.data ?? []
 
@@ -431,6 +430,7 @@ function AreaFormBody({ area, pending, onSubmit, onCancel }: AreaFormBodyProps) 
 }
 
 interface AreaFormSheetProps {
+  tenant: string
   open: boolean
   onOpenChange: (open: boolean) => void
   area?: Area | null
@@ -439,6 +439,7 @@ interface AreaFormSheetProps {
 }
 
 export function AreaFormSheet({
+  tenant,
   open,
   onOpenChange,
   area,
@@ -451,6 +452,7 @@ export function AreaFormSheet({
         {open && (
           <AreaFormBody
             key={area?.id ?? "new"}
+            tenant={tenant}
             area={area}
             pending={pending}
             onSubmit={onSubmit}

@@ -1,7 +1,6 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { useParams } from "next/navigation"
 import { Plus } from "lucide-react"
 import { toast } from "sonner"
 import type { Area, NewArea } from "@repo/types"
@@ -23,8 +22,11 @@ import { createAreaColumns } from "./columns"
 
 const filters = ["All", "Active", "Inactive"] as const
 
-export function AreasList() {
-  const tenant = useParams<{ id: string }>().id
+interface AreasListProps {
+  tenant: string
+}
+
+export function AreasList({ tenant }: AreasListProps) {
 
   const [filter, setFilter] = useState<(typeof filters)[number]>("All")
   const [sheetOpen, setSheetOpen] = useState(false)
@@ -114,6 +116,7 @@ export function AreasList() {
       />
 
       <AreaFormSheet
+        tenant={tenant}
         open={sheetOpen}
         onOpenChange={setSheetOpen}
         area={editingArea}

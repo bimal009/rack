@@ -1,7 +1,6 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { useParams } from "next/navigation"
 import {
   ChevronLeft,
   ChevronRight,
@@ -40,8 +39,11 @@ import { usePlanFilters } from "../hooks/use-plan-filters"
 import { createGymPlanColumns } from "./columns"
 import { PlanFormSheet } from "./plan-form-sheet"
 
-export function PlansList() {
-  const tenant = useParams<{ id: string }>().id
+interface PlansListProps {
+  tenant: string
+}
+
+export function PlansList({ tenant }: PlansListProps) {
   const [filters, setFilters] = usePlanFilters()
   const [sheetOpen, setSheetOpen] = useState(false)
   const [editing, setEditing] = useState<GymPlan | null>(null)
@@ -240,6 +242,7 @@ export function PlansList() {
       )}
 
       <PlanFormSheet
+        tenant={tenant}
         open={sheetOpen}
         onOpenChange={setSheetOpen}
         plan={editing}

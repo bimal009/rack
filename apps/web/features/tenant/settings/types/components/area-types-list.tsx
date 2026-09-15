@@ -55,6 +55,7 @@ export function AreaTypesList({ id }: { id: string }) {
       useDelete={useDeleteAreaType}
       renderForm={(props) => (
         <AreaTypeFormSheet
+          tenant={id}
           open={props.open}
           onOpenChange={props.onOpenChange}
           area={props.item}

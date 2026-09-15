@@ -1,9 +1,13 @@
 "use client"
 
-import { useState, type FormEvent } from "react"
-import { useParams } from "next/navigation"
+import { Controller, useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
-import { openingHoursSchema, type OpeningHours } from "@repo/types"
+import {
+  openingHoursFormSchema,
+  type OpeningHours,
+  type OpeningHoursFormInput,
+} from "@repo/types"
 
 import { Button } from "@repo/ui/components/ui/button"
 import {
@@ -28,21 +32,14 @@ interface OrganizationHoursFormBodyProps {
 }
 
 function OrganizationHoursFormBody({ tenant, hours }: OrganizationHoursFormBodyProps) {
-  const [values, setValues] = useState<OpeningHours>(hours)
-  const [error, setError] = useState("")
   const updateHours = useUpdateOperatingHours(tenant)
+  const form = useForm<OpeningHoursFormInput>({
+    resolver: zodResolver(openingHoursFormSchema),
+    defaultValues: { openingHours: hours },
+  })
 
-  function handleSubmit(event: FormEvent) {
-    event.preventDefault()
-
-    const result = openingHoursSchema.safeParse(values)
-    if (!result.success) {
-      setError("Check your hours. Each closing time must be after its opening time.")
-      return
-    }
-
-    setError("")
-    updateHours.mutate(result.data, {
+  function handleSubmit(values: OpeningHoursFormInput) {
+    updateHours.mutate(values.openingHours, {
       onSuccess: () => toast.success("Operating hours updated"),
       onError: (error) =>
         toast.error(
@@ -52,15 +49,21 @@ function OrganizationHoursFormBody({ tenant, hours }: OrganizationHoursFormBodyP
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+    <form onSubmit={form.handleSubmit(handleSubmit)} className="flex flex-col gap-6" noValidate>
       <FieldSet>
         <FieldLegend>Operating Hours</FieldLegend>
         <FieldGroup>
           <FieldDescription>
             Turn off a day if your gym is closed on it.
           </FieldDescription>
-          <OpeningHoursEditor value={values} onChange={setValues} />
-          <FieldError>{error}</FieldError>
+          <Controller
+            control={form.control}
+            name="openingHours"
+            render={({ field }) => (
+              <OpeningHoursEditor value={field.value} onChange={field.onChange} />
+            )}
+          />
+          <FieldError>{form.formState.errors.openingHours?.message}</FieldError>
         </FieldGroup>
       </FieldSet>
 
@@ -73,8 +76,7 @@ function OrganizationHoursFormBody({ tenant, hours }: OrganizationHoursFormBodyP
   )
 }
 
-export function OrganizationHoursForm() {
-  const tenant = useParams<{ id: string }>().id
+export function OrganizationHoursForm({ tenant }: { tenant: string }) {
   const { data: hours, isLoading, isError, error } = useOperatingHoursQuery(tenant)
 
   if (isLoading) {

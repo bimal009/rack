@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, type FormEvent } from "react"
-import { useParams } from "next/navigation"
 import { Banknote, Check, LayoutGrid, Save } from "lucide-react"
 import { areaTypeInsertSchema } from "@repo/types"
 import type { AreaType, NewAreaType } from "@repo/types"
@@ -60,14 +59,14 @@ function toFormValues(area?: AreaType | null): FormValues {
 }
 
 interface FormBodyProps {
+  tenant: string
   area?: AreaType | null
   pending?: boolean
   onSubmit: (values: NewAreaType) => void
   onCancel: () => void
 }
 
-function FormBody({ area, pending, onSubmit, onCancel }: FormBodyProps) {
-  const tenant = useParams<{ id: string }>().id
+function FormBody({ tenant, area, pending, onSubmit, onCancel }: FormBodyProps) {
   const sportsQuery = useGymSportsQuery(tenant)
   const [values, setValues] = useState<FormValues>(() => toFormValues(area))
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -272,6 +271,7 @@ function FormBody({ area, pending, onSubmit, onCancel }: FormBodyProps) {
 }
 
 interface SheetProps {
+  tenant: string
   open: boolean
   onOpenChange: (open: boolean) => void
   area?: AreaType | null
@@ -280,6 +280,7 @@ interface SheetProps {
 }
 
 export function AreaTypeFormSheet({
+  tenant,
   open,
   onOpenChange,
   area,
@@ -292,6 +293,7 @@ export function AreaTypeFormSheet({
         {open && (
           <FormBody
             key={area?.id ?? "new"}
+            tenant={tenant}
             area={area}
             pending={pending}
             onSubmit={onSubmit}

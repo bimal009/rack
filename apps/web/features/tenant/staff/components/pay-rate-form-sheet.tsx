@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, type FormEvent } from "react"
-import { useParams } from "next/navigation"
 import { Banknote, BadgeDollarSign, Info, Save, Target } from "lucide-react"
 import {
   payRateEntranceMethodEnumSchema,
@@ -96,14 +95,14 @@ function toNumber(value: string): number | undefined {
 }
 
 interface FormBodyProps {
+  tenant: string
   policy?: PayRate | null
   pending?: boolean
   onSubmit: (values: NewPayRate) => void
   onCancel: () => void
 }
 
-function FormBody({ policy, pending, onSubmit, onCancel }: FormBodyProps) {
-  const tenant = useParams<{ id: string }>().id
+function FormBody({ tenant, policy, pending, onSubmit, onCancel }: FormBodyProps) {
   const classTypes = useClassTypesQuery(tenant, { limit: 100 })
   const instructorTypes = useInstructorTypesQuery(tenant, { limit: 100 })
 
@@ -419,6 +418,7 @@ function FormBody({ policy, pending, onSubmit, onCancel }: FormBodyProps) {
 }
 
 interface PayRateFormSheetProps {
+  tenant: string
   open: boolean
   onOpenChange: (open: boolean) => void
   policy?: PayRate | null
@@ -427,6 +427,7 @@ interface PayRateFormSheetProps {
 }
 
 export function PayRateFormSheet({
+  tenant,
   open,
   onOpenChange,
   policy,
@@ -439,6 +440,7 @@ export function PayRateFormSheet({
         {open && (
           <FormBody
             key={policy?.id ?? "new"}
+            tenant={tenant}
             policy={policy}
             pending={pending}
             onSubmit={onSubmit}

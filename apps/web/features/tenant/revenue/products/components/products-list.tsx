@@ -1,7 +1,6 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { useParams } from "next/navigation"
 import {
   ChevronLeft,
   ChevronRight,
@@ -41,8 +40,11 @@ import { useProductFilters } from "../hooks/use-product-filters"
 import { createProductColumns } from "./columns"
 import { ProductFormSheet } from "./product-form-sheet"
 
-export function ProductsList() {
-  const tenant = useParams<{ id: string }>().id
+interface ProductsListProps {
+  tenant: string
+}
+
+export function ProductsList({ tenant }: ProductsListProps) {
   const [filters, setFilters] = useProductFilters()
   const [sheetOpen, setSheetOpen] = useState(false)
   const [editing, setEditing] = useState<Product | null>(null)
@@ -262,6 +264,7 @@ export function ProductsList() {
       )}
 
       <ProductFormSheet
+        tenant={tenant}
         open={sheetOpen}
         onOpenChange={setSheetOpen}
         product={editing}

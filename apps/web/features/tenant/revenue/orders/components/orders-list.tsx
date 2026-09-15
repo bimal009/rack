@@ -18,7 +18,7 @@ import { OrderFormSheet } from "./order-form-sheet"
 
 const filters = ["All", ...orderStatuses] as const
 
-export function OrdersList() {
+export function OrdersList({ tenant }: { tenant: string }) {
   const [orders, setOrders] = useState<Order[]>(initialOrders)
   const [filter, setFilter] = useState<(typeof filters)[number]>("All")
   const [view, setView] = useState<"list" | "grid">("list")
@@ -119,6 +119,7 @@ export function OrdersList() {
       />
 
       <OrderFormSheet
+        tenant={tenant}
         open={newSaleOpen}
         onOpenChange={setNewSaleOpen}
         onCreate={handleCreateOrder}

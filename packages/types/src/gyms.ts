@@ -79,6 +79,12 @@ export const openingHoursSchema = z
 
 export type OpeningHours = z.infer<typeof openingHoursSchema>;
 
+export const openingHoursFormSchema = z.object({
+  openingHours: openingHoursSchema,
+});
+
+export type OpeningHoursFormInput = z.infer<typeof openingHoursFormSchema>;
+
 export const DEFAULT_OPENING_HOURS: OpeningHours = WEEKDAYS.map((day) => ({
   day,
   open: "06:00",

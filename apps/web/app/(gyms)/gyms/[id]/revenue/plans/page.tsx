@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   title: "Plans",
 }
 
-export default function Page() {
-  return <PlansList />
+export default async function Page({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  return <PlansList tenant={id} />
 }

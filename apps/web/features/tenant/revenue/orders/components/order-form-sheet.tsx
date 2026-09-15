@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, type FormEvent } from "react"
-import { useParams } from "next/navigation"
 import { Banknote, Plus, Receipt, ShoppingCart, Trash2, UserRound } from "lucide-react"
 
 import { Button } from "@repo/ui/components/ui/button"
@@ -63,12 +62,12 @@ function formatOrderDate(date: Date) {
 }
 
 interface OrderFormBodyProps {
+  tenant: string
   onSubmit: (order: Order) => void
   onCancel: () => void
 }
 
-function OrderFormBody({ onSubmit, onCancel }: OrderFormBodyProps) {
-  const tenant = useParams<{ id: string }>().id
+function OrderFormBody({ tenant, onSubmit, onCancel }: OrderFormBodyProps) {
   const products = useProductsQuery(tenant, { limit: 100 })
   const members = useMembersQuery(tenant, { limit: 100 })
   const [memberId, setMemberId] = useState<string | null>(null)
@@ -316,12 +315,14 @@ function OrderFormBody({ onSubmit, onCancel }: OrderFormBodyProps) {
 }
 
 interface OrderFormSheetProps {
+  tenant: string
   open: boolean
   onOpenChange: (open: boolean) => void
   onCreate: (order: Order) => void
 }
 
 export function OrderFormSheet({
+  tenant,
   open,
   onOpenChange,
   onCreate,
@@ -332,6 +333,7 @@ export function OrderFormSheet({
         {open && (
           <OrderFormBody
             key="new-sale"
+            tenant={tenant}
             onSubmit={(order) => {
               onCreate(order)
               onOpenChange(false)

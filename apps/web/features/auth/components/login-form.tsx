@@ -1,8 +1,10 @@
 "use client"
 
-import { useState, type FormEvent } from "react"
+import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "react-hook-form"
 import { Eye, EyeOff, TriangleAlert } from "lucide-react"
 
 import { Button } from "@repo/ui/components/ui/button"
@@ -20,28 +22,21 @@ import { Checkbox } from "@repo/ui/components/ui/checkbox"
 import { AuthDivider } from "@/features/auth/components/auth-divider"
 import { GoogleAuthButton } from "@/features/auth/components/google-auth-button"
 import { useLoginMutation } from "@/features/auth/hooks/use-login-mutation"
-import { loginSchema, fieldErrors } from "@/features/auth/lib/validation"
+import { loginSchema, type LoginInput } from "@/features/auth/lib/validation"
 
 export function LoginForm() {
   const router = useRouter()
   const login = useLoginMutation()
 
-  const [values, setValues] = useState({ email: "", password: "" })
-  const [errors, setErrors] = useState<Record<string, string>>({})
   const [showPassword, setShowPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(false)
+  const form = useForm<LoginInput>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { email: "", password: "" },
+  })
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-
-    const result = loginSchema.safeParse(values)
-    if (!result.success) {
-      setErrors(fieldErrors(result.error))
-      return
-    }
-
-    setErrors({})
-    login.mutate(result.data, {
+  function handleSubmit(values: LoginInput) {
+    login.mutate(values, {
       onSuccess: () => router.push("/"),
     })
   }
@@ -64,25 +59,22 @@ export function LoginForm() {
         </Alert>
       )}
 
-      <form className="space-y-5" onSubmit={handleSubmit} noValidate>
+      <form className="space-y-5" onSubmit={form.handleSubmit(handleSubmit)} noValidate>
         <FieldGroup>
-          <Field data-invalid={Boolean(errors.email)}>
+          <Field data-invalid={Boolean(form.formState.errors.email)}>
             <FieldLabel htmlFor="email">Email</FieldLabel>
             <Input
               id="email"
               type="email"
               autoComplete="email"
               placeholder="you@example.com"
-              value={values.email}
-              aria-invalid={Boolean(errors.email)}
-              onChange={(e) =>
-                setValues((v) => ({ ...v, email: e.target.value }))
-              }
+              aria-invalid={Boolean(form.formState.errors.email)}
+              {...form.register("email")}
             />
-            <FieldError>{errors.email}</FieldError>
+            <FieldError>{form.formState.errors.email?.message}</FieldError>
           </Field>
 
-          <Field data-invalid={Boolean(errors.password)}>
+          <Field data-invalid={Boolean(form.formState.errors.password)}>
             <FieldLabel htmlFor="password">Password</FieldLabel>
             <div className="relative">
               <Input
@@ -90,11 +82,8 @@ export function LoginForm() {
                 type={showPassword ? "text" : "password"}
                 autoComplete="current-password"
                 placeholder="••••••••"
-                value={values.password}
-                aria-invalid={Boolean(errors.password)}
-                onChange={(e) =>
-                  setValues((v) => ({ ...v, password: e.target.value }))
-                }
+                aria-invalid={Boolean(form.formState.errors.password)}
+                {...form.register("password")}
                 className="pr-9"
               />
               <button
@@ -110,7 +99,7 @@ export function LoginForm() {
                 )}
               </button>
             </div>
-            <FieldError>{errors.password}</FieldError>
+            <FieldError>{form.formState.errors.password?.message}</FieldError>
           </Field>
         </FieldGroup>
 

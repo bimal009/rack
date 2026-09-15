@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   title: "Products",
 }
 
-export default function Page() {
-  return <ProductsList />
+export default async function Page({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  return <ProductsList tenant={id} />
 }

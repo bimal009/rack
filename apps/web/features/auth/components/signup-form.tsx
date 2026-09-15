@@ -1,8 +1,10 @@
 "use client"
 
-import { useState, type FormEvent } from "react"
+import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { Controller, useForm } from "react-hook-form"
 import { Eye, EyeOff, TriangleAlert } from "lucide-react"
 
 import { Button } from "@repo/ui/components/ui/button"
@@ -20,33 +22,26 @@ import { Alert, AlertDescription } from "@repo/ui/components/ui/alert"
 import { AuthDivider } from "@/features/auth/components/auth-divider"
 import { GoogleAuthButton } from "@/features/auth/components/google-auth-button"
 import { useSignupMutation } from "@/features/auth/hooks/use-signup-mutation"
-import { signupSchema, fieldErrors } from "@/features/auth/lib/validation"
+import { signupSchema, type SignupInput } from "@/features/auth/lib/validation"
 
 export function SignupForm() {
   const router = useRouter()
   const signup = useSignupMutation()
 
-  const [values, setValues] = useState({
-    name: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-    acceptTerms: false,
-  })
-  const [errors, setErrors] = useState<Record<string, string>>({})
   const [showPassword, setShowPassword] = useState(false)
+  const form = useForm<SignupInput>({
+    resolver: zodResolver(signupSchema),
+    defaultValues: {
+      name: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+      acceptTerms: false,
+    },
+  })
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-
-    const result = signupSchema.safeParse(values)
-    if (!result.success) {
-      setErrors(fieldErrors(result.error))
-      return
-    }
-
-    setErrors({})
-    signup.mutate(result.data, {
+  function handleSubmit(values: SignupInput) {
+    signup.mutate(values, {
       onSuccess: () => router.push("/onboarding"),
     })
   }
@@ -69,40 +64,34 @@ export function SignupForm() {
         </Alert>
       )}
 
-      <form className="space-y-5" onSubmit={handleSubmit} noValidate>
+      <form className="space-y-5" onSubmit={form.handleSubmit(handleSubmit)} noValidate>
         <FieldGroup>
-          <Field data-invalid={Boolean(errors.name)}>
+          <Field data-invalid={Boolean(form.formState.errors.name)}>
             <FieldLabel htmlFor="name">Full name</FieldLabel>
             <Input
               id="name"
               autoComplete="name"
               placeholder="Alex Rivera"
-              value={values.name}
-              aria-invalid={Boolean(errors.name)}
-              onChange={(e) =>
-                setValues((v) => ({ ...v, name: e.target.value }))
-              }
+              aria-invalid={Boolean(form.formState.errors.name)}
+              {...form.register("name")}
             />
-            <FieldError>{errors.name}</FieldError>
+            <FieldError>{form.formState.errors.name?.message}</FieldError>
           </Field>
 
-          <Field data-invalid={Boolean(errors.email)}>
+          <Field data-invalid={Boolean(form.formState.errors.email)}>
             <FieldLabel htmlFor="email">Email</FieldLabel>
             <Input
               id="email"
               type="email"
               autoComplete="email"
               placeholder="you@example.com"
-              value={values.email}
-              aria-invalid={Boolean(errors.email)}
-              onChange={(e) =>
-                setValues((v) => ({ ...v, email: e.target.value }))
-              }
+              aria-invalid={Boolean(form.formState.errors.email)}
+              {...form.register("email")}
             />
-            <FieldError>{errors.email}</FieldError>
+            <FieldError>{form.formState.errors.email?.message}</FieldError>
           </Field>
 
-          <Field data-invalid={Boolean(errors.password)}>
+          <Field data-invalid={Boolean(form.formState.errors.password)}>
             <FieldLabel htmlFor="password">Password</FieldLabel>
             <div className="relative">
               <Input
@@ -110,11 +99,8 @@ export function SignupForm() {
                 type={showPassword ? "text" : "password"}
                 autoComplete="new-password"
                 placeholder="At least 8 characters"
-                value={values.password}
-                aria-invalid={Boolean(errors.password)}
-                onChange={(e) =>
-                  setValues((v) => ({ ...v, password: e.target.value }))
-                }
+                aria-invalid={Boolean(form.formState.errors.password)}
+                {...form.register("password")}
                 className="pr-9"
               />
               <button
@@ -130,10 +116,10 @@ export function SignupForm() {
                 )}
               </button>
             </div>
-            <FieldError>{errors.password}</FieldError>
+            <FieldError>{form.formState.errors.password?.message}</FieldError>
           </Field>
 
-          <Field data-invalid={Boolean(errors.confirmPassword)}>
+          <Field data-invalid={Boolean(form.formState.errors.confirmPassword)}>
             <FieldLabel htmlFor="confirmPassword">Confirm password</FieldLabel>
             <div className="relative">
               <Input
@@ -141,11 +127,8 @@ export function SignupForm() {
                 type={showPassword ? "text" : "password"}
                 autoComplete="new-password"
                 placeholder="Re-enter your password"
-                value={values.confirmPassword}
-                aria-invalid={Boolean(errors.confirmPassword)}
-                onChange={(e) =>
-                  setValues((v) => ({ ...v, confirmPassword: e.target.value }))
-                }
+                aria-invalid={Boolean(form.formState.errors.confirmPassword)}
+                {...form.register("confirmPassword")}
                 className="pr-9"
               />
               <button
@@ -161,21 +144,25 @@ export function SignupForm() {
                 )}
               </button>
             </div>
-            <FieldError>{errors.confirmPassword}</FieldError>
+            <FieldError>{form.formState.errors.confirmPassword?.message}</FieldError>
           </Field>
 
           <Field
             orientation="horizontal"
             className="items-start"
-            data-invalid={Boolean(errors.acceptTerms)}
+            data-invalid={Boolean(form.formState.errors.acceptTerms)}
           >
-            <Checkbox
-              id="acceptTerms"
-              className="mt-0.5"
-              checked={values.acceptTerms}
-              onCheckedChange={(checked) =>
-                setValues((v) => ({ ...v, acceptTerms: checked === true }))
-              }
+            <Controller
+              control={form.control}
+              name="acceptTerms"
+              render={({ field }) => (
+                <Checkbox
+                  id="acceptTerms"
+                  className="mt-0.5"
+                  checked={field.value}
+                  onCheckedChange={(checked) => field.onChange(checked === true)}
+                />
+              )}
             />
             <label
               htmlFor="acceptTerms"
@@ -186,7 +173,7 @@ export function SignupForm() {
               <Link href="/privacy">Privacy Policy</Link>.
             </label>
           </Field>
-          <FieldError className="-mt-3">{errors.acceptTerms}</FieldError>
+          <FieldError className="-mt-3">{form.formState.errors.acceptTerms?.message}</FieldError>
         </FieldGroup>
 
         <Button

@@ -1,12 +1,13 @@
 "use client"
 
-import { useState, type FormEvent } from "react"
+import { Controller, useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
 import {
   CURRENCY_OPTIONS,
   updateGymSchema,
-  type Currency,
   type GymRecord,
+  type UpdateGymInput,
 } from "@repo/types"
 
 import { Button } from "@repo/ui/components/ui/button"
@@ -21,19 +22,9 @@ import {
 } from "@repo/ui/components/ui/select"
 import { Skeleton } from "@repo/ui/components/ui/skeleton"
 
-import { fieldErrors } from "../../lib/validation"
 import { useGymQuery, useUpdateGymMutation } from "@/features/tenant/gyms/hook/useGyms"
 
-interface OrganizationFormValues {
-  businessName: string
-  address: string
-  phone: string
-  email: string
-  website: string
-  currency: Currency
-}
-
-function toFormValues(gym: GymRecord): OrganizationFormValues {
+function toFormValues(gym: GymRecord): UpdateGymInput {
   return {
     businessName: gym.businessName,
     address: gym.address,
@@ -49,27 +40,14 @@ interface OrganizationFormProps {
 }
 
 function OrganizationForm({ gym }: OrganizationFormProps) {
-  const [values, setValues] = useState<OrganizationFormValues>(() =>
-    toFormValues(gym)
-  )
-  const [errors, setErrors] = useState<Record<string, string>>({})
   const updateGym = useUpdateGymMutation()
+  const form = useForm<UpdateGymInput>({
+    resolver: zodResolver(updateGymSchema),
+    defaultValues: toFormValues(gym),
+  })
 
-  function handleSubmit(event: FormEvent) {
-    event.preventDefault()
-
-    const result = updateGymSchema.safeParse({
-      ...values,
-      website: values.website || undefined,
-    })
-
-    if (!result.success) {
-      setErrors(fieldErrors(result.error))
-      return
-    }
-
-    setErrors({})
-    updateGym.mutate(result.data, {
+  function handleSubmit(values: UpdateGymInput) {
+    updateGym.mutate({ ...values, website: values.website || undefined }, {
       onSuccess: () => toast.success("Organization details updated"),
       onError: (error) =>
         toast.error(
@@ -81,69 +59,57 @@ function OrganizationForm({ gym }: OrganizationFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+    <form onSubmit={form.handleSubmit(handleSubmit)} className="flex flex-col gap-6" noValidate>
       <FieldGroup>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Field data-invalid={Boolean(errors.businessName)}>
+          <Field data-invalid={Boolean(form.formState.errors.businessName)}>
             <FieldLabel htmlFor="org-name">Name</FieldLabel>
             <Input
               id="org-name"
-              value={values.businessName}
-              aria-invalid={Boolean(errors.businessName)}
-              onChange={(e) =>
-                setValues((v) => ({ ...v, businessName: e.target.value }))
-              }
+              aria-invalid={Boolean(form.formState.errors.businessName)}
+              {...form.register("businessName")}
             />
-            <FieldError>{errors.businessName}</FieldError>
+            <FieldError>{form.formState.errors.businessName?.message}</FieldError>
           </Field>
 
         </div>
 
-        <Field data-invalid={Boolean(errors.address)}>
+        <Field data-invalid={Boolean(form.formState.errors.address)}>
           <FieldLabel htmlFor="org-address">Address</FieldLabel>
           <Input
             id="org-address"
-            value={values.address}
-            aria-invalid={Boolean(errors.address)}
-            onChange={(e) =>
-              setValues((v) => ({ ...v, address: e.target.value }))
-            }
+            aria-invalid={Boolean(form.formState.errors.address)}
+            {...form.register("address")}
           />
-          <FieldError>{errors.address}</FieldError>
+          <FieldError>{form.formState.errors.address?.message}</FieldError>
         </Field>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Field data-invalid={Boolean(errors.phone)}>
+          <Field data-invalid={Boolean(form.formState.errors.phone)}>
             <FieldLabel htmlFor="org-phone">Phone</FieldLabel>
             <Input
               id="org-phone"
               type="tel"
-              value={values.phone}
-              aria-invalid={Boolean(errors.phone)}
-              onChange={(e) =>
-                setValues((v) => ({ ...v, phone: e.target.value }))
-              }
+              aria-invalid={Boolean(form.formState.errors.phone)}
+              {...form.register("phone")}
             />
-            <FieldError>{errors.phone}</FieldError>
+            <FieldError>{form.formState.errors.phone?.message}</FieldError>
           </Field>
 
-          <Field data-invalid={Boolean(errors.email)}>
+          <Field data-invalid={Boolean(form.formState.errors.email)}>
             <FieldLabel htmlFor="org-email">Email</FieldLabel>
             <Input
               id="org-email"
               type="email"
-              value={values.email}
-              aria-invalid={Boolean(errors.email)}
-              onChange={(e) =>
-                setValues((v) => ({ ...v, email: e.target.value }))
-              }
+              aria-invalid={Boolean(form.formState.errors.email)}
+              {...form.register("email")}
             />
-            <FieldError>{errors.email}</FieldError>
+            <FieldError>{form.formState.errors.email?.message}</FieldError>
           </Field>
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Field data-invalid={Boolean(errors.website)}>
+          <Field data-invalid={Boolean(form.formState.errors.website)}>
             <FieldLabel htmlFor="org-website">
               Website{" "}
               <span className="text-muted-foreground">(optional)</span>
@@ -151,37 +117,36 @@ function OrganizationForm({ gym }: OrganizationFormProps) {
             <Input
               id="org-website"
               placeholder="https://yourbusiness.com"
-              value={values.website}
-              aria-invalid={Boolean(errors.website)}
-              onChange={(e) =>
-                setValues((v) => ({ ...v, website: e.target.value }))
-              }
+              aria-invalid={Boolean(form.formState.errors.website)}
+              {...form.register("website")}
             />
-            <FieldError>{errors.website}</FieldError>
+            <FieldError>{form.formState.errors.website?.message}</FieldError>
           </Field>
 
-          <Field>
+          <Field data-invalid={Boolean(form.formState.errors.currency)}>
             <FieldLabel htmlFor="org-currency">Currency</FieldLabel>
-            <Select
-              value={values.currency}
-              onValueChange={(value) =>
-                setValues((v) => ({ ...v, currency: value as Currency }))
-              }
-            >
-              <SelectTrigger id="org-currency" className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {CURRENCY_OPTIONS.map((currency) => (
-                  <SelectItem key={currency} value={currency}>
-                    {currency}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Controller
+              control={form.control}
+              name="currency"
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger id="org-currency" className="w-full" aria-invalid={Boolean(form.formState.errors.currency)}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CURRENCY_OPTIONS.map((currency) => (
+                      <SelectItem key={currency} value={currency}>
+                        {currency}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
             <FieldDescription>
               Used for pricing across plans, products, and packages.
             </FieldDescription>
+            <FieldError>{form.formState.errors.currency?.message}</FieldError>
           </Field>
         </div>
       </FieldGroup>

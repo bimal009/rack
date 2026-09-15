@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, type FormEvent } from "react"
-import { useParams } from "next/navigation"
 import { Banknote, Check, ImageIcon, Info, ShoppingBag } from "lucide-react"
 import {
   productInsertSchema,
@@ -105,6 +104,7 @@ function toFormValues(product?: Product | null): ProductFormValues {
 }
 
 interface ProductFormBodyProps {
+  tenant: string
   product?: Product | null
   pending?: boolean
   onSubmit: (values: NewProduct) => void
@@ -112,12 +112,12 @@ interface ProductFormBodyProps {
 }
 
 function ProductFormBody({
+  tenant,
   product,
   pending,
   onSubmit,
   onCancel,
 }: ProductFormBodyProps) {
-  const tenant = useParams<{ id: string }>().id
   const categories = useProductCategoriesQuery(tenant, { limit: 100 })
   const brands = useBrandsQuery(tenant, { limit: 100 })
   const taxRates = useTaxRatesQuery(tenant, { limit: 100 })
@@ -434,6 +434,7 @@ function ProductFormBody({
 }
 
 interface ProductFormSheetProps {
+  tenant: string
   open: boolean
   onOpenChange: (open: boolean) => void
   product?: Product | null
@@ -442,6 +443,7 @@ interface ProductFormSheetProps {
 }
 
 export function ProductFormSheet({
+  tenant,
   open,
   onOpenChange,
   product,
@@ -454,6 +456,7 @@ export function ProductFormSheet({
         {open && (
           <ProductFormBody
             key={product?.id ?? "new"}
+            tenant={tenant}
             product={product}
             pending={pending}
             onSubmit={onSubmit}

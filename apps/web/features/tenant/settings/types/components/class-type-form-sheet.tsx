@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, type FormEvent } from "react"
-import { useParams } from "next/navigation"
 import { Banknote, Check, Dumbbell, Save } from "lucide-react"
 import { classTypeInsertSchema } from "@repo/types"
 import type { ClassType, NewClassType } from "@repo/types"
@@ -60,14 +59,14 @@ function toFormValues(type?: ClassType | null): FormValues {
 }
 
 interface FormBodyProps {
+  tenant: string
   type?: ClassType | null
   pending?: boolean
   onSubmit: (values: NewClassType) => void
   onCancel: () => void
 }
 
-function FormBody({ type, pending, onSubmit, onCancel }: FormBodyProps) {
-  const tenant = useParams<{ id: string }>().id
+function FormBody({ tenant, type, pending, onSubmit, onCancel }: FormBodyProps) {
   const sportsQuery = useGymSportsQuery(tenant)
   const [values, setValues] = useState<FormValues>(() => toFormValues(type))
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -274,6 +273,7 @@ function FormBody({ type, pending, onSubmit, onCancel }: FormBodyProps) {
 }
 
 interface SheetProps {
+  tenant: string
   open: boolean
   onOpenChange: (open: boolean) => void
   type?: ClassType | null
@@ -282,6 +282,7 @@ interface SheetProps {
 }
 
 export function ClassTypeFormSheet({
+  tenant,
   open,
   onOpenChange,
   type,
@@ -294,6 +295,7 @@ export function ClassTypeFormSheet({
         {open && (
           <FormBody
             key={type?.id ?? "new"}
+            tenant={tenant}
             type={type}
             pending={pending}
             onSubmit={onSubmit}

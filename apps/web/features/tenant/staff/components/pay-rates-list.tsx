@@ -80,6 +80,7 @@ export function PayRatesList({ id }: { id: string }) {
       useDelete={useDeletePayRate}
       renderForm={(props) => (
         <PayRateFormSheet
+          tenant={id}
           open={props.open}
           onOpenChange={props.onOpenChange}
           policy={props.item}

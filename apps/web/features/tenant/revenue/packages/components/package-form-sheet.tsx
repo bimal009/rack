@@ -7,7 +7,6 @@ import {
   type ChangeEvent,
   type FormEvent,
 } from "react"
-import { useParams } from "next/navigation"
 import { CalendarCheck, Info, Layers, ListChecks, Plus, Sliders, Trash2, X } from "lucide-react"
 
 import { Button } from "@repo/ui/components/ui/button"
@@ -99,13 +98,13 @@ interface ImagePreview {
 }
 
 interface PackageFormBodyProps {
+  tenant: string
   pkg?: Package | null
   onSubmit: (values: PackageInput) => void
   onCancel: () => void
 }
 
-function PackageFormBody({ pkg, onSubmit, onCancel }: PackageFormBodyProps) {
-  const tenant = useParams<{ id: string }>().id
+function PackageFormBody({ tenant, pkg, onSubmit, onCancel }: PackageFormBodyProps) {
   const gymPlans = useGymPlansQuery(tenant, { limit: 100 })
   const products = useProductsQuery(tenant, { limit: 100 })
   const [values, setValues] = useState<PackageFormValues>(() =>
@@ -472,6 +471,7 @@ function PackageFormBody({ pkg, onSubmit, onCancel }: PackageFormBodyProps) {
 }
 
 interface PackageFormSheetProps {
+  tenant: string
   open: boolean
   onOpenChange: (open: boolean) => void
   pkg?: Package | null
@@ -479,6 +479,7 @@ interface PackageFormSheetProps {
 }
 
 export function PackageFormSheet({
+  tenant,
   open,
   onOpenChange,
   pkg,
@@ -490,6 +491,7 @@ export function PackageFormSheet({
         {open && (
           <PackageFormBody
             key={pkg?.id ?? "new"}
+            tenant={tenant}
             pkg={pkg}
             onSubmit={(values) => {
               onSubmit(values)

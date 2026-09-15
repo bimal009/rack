@@ -55,6 +55,7 @@ export function ClassTypesList({ id }: { id: string }) {
       useDelete={useDeleteClassType}
       renderForm={(props) => (
         <ClassTypeFormSheet
+          tenant={id}
           open={props.open}
           onOpenChange={props.onOpenChange}
           type={props.item}

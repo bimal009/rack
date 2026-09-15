@@ -21,7 +21,7 @@ function generateId() {
   return `pkg_${Math.random().toString(36).slice(2, 10)}`
 }
 
-export function PackagesList() {
+export function PackagesList({ tenant }: { tenant: string }) {
   const [packages, setPackages] = useState<Package[]>(initialPackages)
   const [filter, setFilter] = useState<(typeof filters)[number]>("All")
   const [view, setView] = useState<"list" | "grid">("list")
@@ -133,6 +133,7 @@ export function PackagesList() {
       />
 
       <PackageFormSheet
+        tenant={tenant}
         open={sheetOpen}
         onOpenChange={setSheetOpen}
         pkg={editingPackage}
