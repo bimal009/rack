@@ -41,7 +41,14 @@ export function OnboardingWizard() {
   const { control, formState: { errors }, handleSubmit, setValue, trigger } = form
   const specialties = useWatch({ control, name: "specialties" }) ?? []
   const features = useWatch({ control, name: "features" }) ?? []
-  const businessDetails = useWatch({ control }) ?? initialData
+  const watchedBusinessDetails = useWatch({ control })
+  const businessDetails = {
+    businessName: watchedBusinessDetails.businessName ?? "",
+    address: watchedBusinessDetails.address ?? "",
+    phone: watchedBusinessDetails.phone ?? "",
+    email: watchedBusinessDetails.email ?? "",
+    website: watchedBusinessDetails.website ?? "",
+  }
   const openingHours = useWatch({ control, name: "openingHours" }) ?? DEFAULT_OPENING_HOURS
 
   function handleBack() {
@@ -64,7 +71,7 @@ export function OnboardingWizard() {
     const submit = handleSubmit((data) => {
       setIsRedirecting(true)
       onboarding.mutate(data, {
-        onSuccess: (result) => router.push(`/${result.id}`),
+        onSuccess: (result) => router.push(`/gyms/${result.id}`),
         onError: (error) => {
           setIsRedirecting(false)
           toast.error(error.message)

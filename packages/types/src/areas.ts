@@ -48,6 +48,7 @@ export const areaInsertSchema = z.object({
   attributes: z.array(z.string()).default([]),
 });
 export type NewArea = z.infer<typeof areaInsertSchema>;
+export type AreaInsertInput = z.input<typeof areaInsertSchema>;
 
 export const areaUpdateSchema = areaInsertSchema.partial();
 export type UpdateArea = z.infer<typeof areaUpdateSchema>;

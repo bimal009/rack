@@ -46,6 +46,7 @@ import {
   areaStatusEnumSchema,
   areaVisibilityEnumSchema,
   type Area,
+  type AreaInsertInput,
   type NewArea,
 } from "@repo/types"
 
@@ -90,7 +91,7 @@ function AreaFormBody({ tenant, area, pending, onSubmit, onCancel }: AreaFormBod
   const areaTypesQuery = useAreaTypesQuery(tenant, { limit: 100 })
   const areaTypes = areaTypesQuery.data?.data ?? []
 
-  const form = useForm<NewArea>({
+  const form = useForm<AreaInsertInput, unknown, NewArea>({
     resolver: zodResolver(areaInsertSchema),
     defaultValues: toFormValues(area),
   })
@@ -134,7 +135,11 @@ function AreaFormBody({ tenant, area, pending, onSubmit, onCancel }: AreaFormBod
   )
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="flex h-full flex-col" noValidate>
+    <form
+      onSubmit={form.handleSubmit((values) => onSubmit(areaInsertSchema.parse(values)))}
+      className="flex h-full flex-col"
+      noValidate
+    >
       <SheetHeader>
         <FormSheetHeader
           icon={MapPin}
