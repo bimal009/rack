@@ -101,6 +101,7 @@ export type MemberWithUser = Omit<Member, "joinedAt" | "createdAt" | "updatedAt"
   user: MemberProfileUser;
 };
 
+
 export const memberListQuerySchema = z.object({
   ...paginationFields,
   status: memberStatusEnumSchema.optional(),

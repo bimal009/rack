@@ -1,8 +1,8 @@
 "use client"
 
 import { CalendarIcon, InfoIcon, Wallet } from "lucide-react"
-import { z } from "zod"
-import { gymMembershipAssignmentSchema, gymMembershipStatusEnumSchema } from "@repo/types"
+import { Controller, useFormContext } from "react-hook-form"
+import { gymMembershipStatusEnumSchema } from "@repo/types"
 
 import { Button } from "@repo/ui/components/ui/button"
 import { Calendar } from "@repo/ui/components/ui/calendar"
@@ -32,19 +32,17 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@repo/ui/components/ui/
 import { FormSection } from "@/features/tenant/components/form-section"
 import { useGymPlansQuery } from "../../revenue/plans/hooks/use-plans"
 
-export type MembershipValues = z.infer<typeof gymMembershipAssignmentSchema>
-
 export function formatDate(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`
 }
 
-export function newMembership(): MembershipValues {
+export function newMembership() {
   return {
     planId: "",
-    status: "Active",
+    status: "Active" as const,
     startDate: formatDate(new Date()),
     price: 0,
-    signupFee: null,
+    signupFee: null as number | null,
     extendedDays: 0,
     extensionReason: "",
   }
@@ -52,78 +50,93 @@ export function newMembership(): MembershipValues {
 
 interface MembershipSectionProps {
   tenant: string
-  values: MembershipValues
-  onChange: (values: MembershipValues) => void
-  errors: Record<string, string>
+  namePrefix?: string
+  selectedPlanName?: string
 }
 
-export function MembershipSection({ tenant, values, onChange, errors }: MembershipSectionProps) {
-  // NOTE: was previously called with no query object, so it silently used
-  // whatever the API's default page size is instead of every plan.
+export function MembershipSection({ tenant, namePrefix = "", selectedPlanName }: MembershipSectionProps) {
+  const {
+    control,
+    register,
+    watch,
+    setValue,
+    formState: { errors },
+  } = useFormContext<any>()
+
   const { data: plansResponse } = useGymPlansQuery(tenant, { limit: 100 })
   const plans = plansResponse?.data ?? []
 
-  function set<K extends keyof MembershipValues>(key: K, value: MembershipValues[K]) {
-    onChange({ ...values, [key]: value })
-  }
+  const name = (field: string) => (namePrefix ? `${namePrefix}.${field}` : field)
+  const errorFor = (field: string) =>
+    name(field)
+      .split(".")
+      .reduce((acc: any, key) => acc?.[key], errors)?.message as string | undefined
+
+  const extendedDays = watch(name("extendedDays")) ?? 0
 
   return (
     <FormSection icon={Wallet} title="Membership Details">
       <div className="flex flex-col gap-4">
         <p className="text-sm font-medium text-foreground">General</p>
         <div className="grid grid-cols-2 gap-4">
-          <Field data-invalid={Boolean(errors["membership.planId"])}>
+          <Field data-invalid={Boolean(errorFor("planId"))}>
             <FieldLabel htmlFor="membership-plan">
               Plan <span className="text-destructive">*</span>
             </FieldLabel>
-            <Select
-              value={values.planId}
-              onValueChange={(value) => {
-                if (!value) return
-                const plan = plans.find((p) => p.id === value)
-                onChange({
-                  ...values,
-                  planId: value,
-                  price: plan?.pricePerPeriod ?? values.price,
-                  signupFee: plan?.signupFee ?? null,
-                })
-              }}
-            >
-              <SelectTrigger id="membership-plan" className="w-full">
-                <SelectValue placeholder="Select a plan">
-                  {plans.find((plan) => plan.id === values.planId)?.name}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                {plans.map((plan) => (
-                  <SelectItem key={plan.id} value={plan.id}>
-                    {plan.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <FieldError>{errors["membership.planId"]}</FieldError>
+            <Controller
+              control={control}
+              name={name("planId")}
+              render={({ field }) => (
+                <Select
+                  value={field.value}
+                  onValueChange={(value) => {
+                    if (!value) return
+                    field.onChange(value)
+                    const plan = plans.find((p) => p.id === value)
+                    if (plan) {
+                      setValue(name("price"), plan.pricePerPeriod)
+                      setValue(name("signupFee"), plan.signupFee ?? null)
+                    }
+                  }}
+                >
+                  <SelectTrigger id="membership-plan" className="w-full">
+                    <SelectValue placeholder="Select a plan">
+                      {plans.find((plan) => plan.id === field.value)?.name ?? selectedPlanName}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {plans.map((plan) => (
+                      <SelectItem key={plan.id} value={plan.id}>
+                        {plan.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
+            <FieldError>{errorFor("planId")}</FieldError>
           </Field>
 
           <Field>
             <FieldLabel htmlFor="membership-status">Status</FieldLabel>
-            <Select
-              value={values.status}
-              onValueChange={(value) => {
-                if (value !== null) set("status", value as MembershipValues["status"])
-              }}
-            >
-              <SelectTrigger id="membership-status" className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {gymMembershipStatusEnumSchema.options.map((status) => (
-                  <SelectItem key={status} value={status}>
-                    {status}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Controller
+              control={control}
+              name={name("status")}
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger id="membership-status" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {gymMembershipStatusEnumSchema.options.map((status) => (
+                      <SelectItem key={status} value={status}>
+                        {status}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
           </Field>
         </div>
       </div>
@@ -131,7 +144,7 @@ export function MembershipSection({ tenant, values, onChange, errors }: Membersh
       <div className="flex flex-col gap-4">
         <p className="text-sm font-medium text-foreground">Pricing</p>
         <div className="grid grid-cols-2 gap-4">
-          <Field data-invalid={Boolean(errors["membership.price"])}>
+          <Field data-invalid={Boolean(errorFor("price"))}>
             <FieldLabel htmlFor="membership-price">
               Price <span className="text-destructive">*</span>
             </FieldLabel>
@@ -143,15 +156,14 @@ export function MembershipSection({ tenant, values, onChange, errors }: Membersh
                 id="membership-price"
                 type="number"
                 min={0}
-                value={values.price}
-                aria-invalid={Boolean(errors["membership.price"])}
-                onChange={(e) => set("price", Number(e.target.value))}
+                aria-invalid={Boolean(errorFor("price"))}
+                {...register(name("price"), { valueAsNumber: true })}
               />
             </InputGroup>
-            <FieldError>{errors["membership.price"]}</FieldError>
+            <FieldError>{errorFor("price")}</FieldError>
           </Field>
 
-          <Field data-invalid={Boolean(errors["membership.signupFee"])}>
+          <Field data-invalid={Boolean(errorFor("signupFee"))}>
             <FieldLabel htmlFor="membership-signup-fee">Signup Fee</FieldLabel>
             <InputGroup>
               <InputGroupAddon>
@@ -162,50 +174,57 @@ export function MembershipSection({ tenant, values, onChange, errors }: Membersh
                 type="number"
                 min={0}
                 placeholder="New members only"
-                value={values.signupFee ?? ""}
-                aria-invalid={Boolean(errors["membership.signupFee"])}
-                onChange={(e) =>
-                  set("signupFee", e.target.value ? Number(e.target.value) : null)
-                }
+                aria-invalid={Boolean(errorFor("signupFee"))}
+                {...register(name("signupFee"), {
+                  setValueAs: (v) => (v === "" || v === null || v === undefined ? null : Number(v)),
+                })}
               />
             </InputGroup>
-            <FieldError>{errors["membership.signupFee"]}</FieldError>
+            <FieldError>{errorFor("signupFee")}</FieldError>
           </Field>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          <Field data-invalid={Boolean(errors["membership.startDate"])}>
+          <Field data-invalid={Boolean(errorFor("startDate"))}>
             <FieldLabel htmlFor="membership-start">
               Start Date <span className="text-destructive">*</span>
             </FieldLabel>
-            <Popover>
-              <PopoverTrigger
-                render={
-                  <Button
-                    id="membership-start"
-                    type="button"
-                    variant="outline"
-                    className="w-full justify-start font-normal"
-                    aria-invalid={Boolean(errors["membership.startDate"])}
-                  />
-                }
-              >
-                <CalendarIcon className="size-4" />
-                {new Date(`${values.startDate}T00:00:00`).toLocaleDateString(undefined, {
-                  day: "numeric",
-                  month: "short",
-                  year: "numeric",
-                })}
-              </PopoverTrigger>
-              <PopoverContent align="start" className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={new Date(`${values.startDate}T00:00:00`)}
-                  onSelect={(date) => date && set("startDate", formatDate(date))}
-                />
-              </PopoverContent>
-            </Popover>
-            <FieldError>{errors["membership.startDate"]}</FieldError>
+            <Controller
+              control={control}
+              name={name("startDate")}
+              render={({ field }) => (
+                <Popover>
+                  <PopoverTrigger
+                    render={
+                      <Button
+                        id="membership-start"
+                        type="button"
+                        variant="outline"
+                        className="w-full justify-start font-normal"
+                        aria-invalid={Boolean(errorFor("startDate"))}
+                      />
+                    }
+                  >
+                    <CalendarIcon className="size-4" />
+                    {field.value
+                      ? new Date(`${field.value}T00:00:00`).toLocaleDateString(undefined, {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        })
+                      : "Pick a date"}
+                  </PopoverTrigger>
+                  <PopoverContent align="start" className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={field.value ? new Date(`${field.value}T00:00:00`) : undefined}
+                      onSelect={(date) => date && field.onChange(formatDate(date))}
+                    />
+                  </PopoverContent>
+                </Popover>
+              )}
+            />
+            <FieldError>{errorFor("startDate")}</FieldError>
           </Field>
 
           <Field>
@@ -244,39 +263,37 @@ export function MembershipSection({ tenant, values, onChange, errors }: Membersh
           </div>
           <Switch
             id="membership-extend"
-            checked={values.extendedDays > 0}
+            checked={extendedDays > 0}
             onCheckedChange={(checked) => {
-              set("extendedDays", checked ? 1 : 0)
-              if (!checked) set("extensionReason", "")
+              setValue(name("extendedDays"), checked ? 1 : 0)
+              if (!checked) setValue(name("extensionReason"), "")
             }}
           />
         </div>
 
-        {values.extendedDays > 0 && (
+        {extendedDays > 0 && (
           <div className="grid grid-cols-2 gap-4">
-            <Field data-invalid={Boolean(errors["membership.extendedDays"])}>
+            <Field data-invalid={Boolean(errorFor("extendedDays"))}>
               <FieldLabel htmlFor="membership-extend-days">Extra Days</FieldLabel>
               <Input
                 id="membership-extend-days"
                 type="number"
                 min={1}
-                value={values.extendedDays}
-                aria-invalid={Boolean(errors["membership.extendedDays"])}
-                onChange={(e) => set("extendedDays", Number(e.target.value))}
+                aria-invalid={Boolean(errorFor("extendedDays"))}
+                {...register(name("extendedDays"), { valueAsNumber: true })}
               />
-              <FieldError>{errors["membership.extendedDays"]}</FieldError>
+              <FieldError>{errorFor("extendedDays")}</FieldError>
             </Field>
 
-            <Field data-invalid={Boolean(errors["membership.extensionReason"])}>
+            <Field data-invalid={Boolean(errorFor("extensionReason"))}>
               <FieldLabel htmlFor="membership-extend-reason">Reason</FieldLabel>
               <Input
                 id="membership-extend-reason"
                 placeholder="Why the extension"
-                value={values.extensionReason ?? ""}
-                aria-invalid={Boolean(errors["membership.extensionReason"])}
-                onChange={(e) => set("extensionReason", e.target.value)}
+                aria-invalid={Boolean(errorFor("extensionReason"))}
+                {...register(name("extensionReason"))}
               />
-              <FieldError>{errors["membership.extensionReason"]}</FieldError>
+              <FieldError>{errorFor("extensionReason")}</FieldError>
             </Field>
           </div>
         )}

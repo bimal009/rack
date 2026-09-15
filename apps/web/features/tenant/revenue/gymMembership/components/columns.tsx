@@ -1,8 +1,10 @@
 "use client"
 
+import { Eye, Pencil, RotateCw } from "lucide-react"
 import type { GymMembershipWithMemberAndPlan } from "@repo/types"
 
 import { Badge } from "@repo/ui/components/ui/badge"
+import { Button } from "@repo/ui/components/ui/button"
 import {
   createDataTableColumnHelper,
   createIndexColumn,
@@ -24,7 +26,13 @@ const STATUS_VARIANT: Record<
   Cancelled: "destructive",
 }
 
-export function createGymMembershipColumns() {
+interface GymMembershipColumnActions {
+  onView: (membership: GymMembershipWithMemberAndPlan) => void
+  onEdit: (membership: GymMembershipWithMemberAndPlan) => void
+  onExtend: (membership: GymMembershipWithMemberAndPlan) => void
+}
+
+export function createGymMembershipColumns({ onView, onEdit, onExtend }: GymMembershipColumnActions) {
   const columnHelper = createDataTableColumnHelper<GymMembershipWithMemberAndPlan>()
 
   return columnHelper.columns([
@@ -85,6 +93,41 @@ export function createGymMembershipColumns() {
       enableGlobalFilter: false,
       cell: ({ getValue }) => (
         <span className="font-medium text-foreground">{currency.format(getValue())}</span>
+      ),
+    }),
+    columnHelper.display({
+      id: "actions",
+      header: "Actions",
+      cell: ({ row }) => (
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="text-muted-foreground hover:text-foreground"
+            onClick={() => onView(row.original)}
+          >
+            <Eye className="size-4" />
+            <span className="sr-only">View membership</span>
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="text-muted-foreground hover:text-foreground"
+            onClick={() => onEdit(row.original)}
+          >
+            <Pencil className="size-4" />
+            <span className="sr-only">Edit membership</span>
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="text-muted-foreground hover:text-foreground"
+            onClick={() => onExtend(row.original)}
+          >
+            <RotateCw className="size-4" />
+            <span className="sr-only">Extend membership</span>
+          </Button>
+        </div>
       ),
     }),
   ])

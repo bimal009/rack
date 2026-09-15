@@ -20,7 +20,7 @@ export interface ImageUploadProps {
   /** ImageKit folder to upload into, e.g. `"staff/avatars"`. */
   folder?: string
   disabled?: boolean
-  shape?: "circle" | "square" | "wide"
+  shape?: "square" | "wide"
   /** Max file size in bytes (default 5 MB). */
   maxSize?: number
   className?: string
@@ -70,11 +70,9 @@ export function ImageUpload({
   }
 
   const frame =
-    shape === "circle"
-      ? "aspect-square rounded-full w-28"
-      : shape === "wide"
-        ? "aspect-[16/6] rounded-xl w-full"
-        : "aspect-square rounded-xl w-32"
+    shape === "wide"
+      ? "aspect-[16/6] w-full rounded-xl"
+      : "aspect-[4/3] w-full max-w-56 rounded-xl"
 
   return (
     <div className={cn("flex flex-col gap-2", className)}>
@@ -84,7 +82,7 @@ export function ImageUpload({
         aria-label={value ? "Change image" : "Upload image"}
         aria-busy={isUploading}
         className={cn(
-          "group relative flex items-center justify-center overflow-hidden border border-dashed border-border bg-muted/40 text-muted-foreground outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring/50",
+          "group relative flex items-center justify-center overflow-hidden border border-dashed border-border/80 bg-muted/25 text-muted-foreground outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring/50",
           frame,
           dragging && "border-primary bg-primary/5",
           !busy && "cursor-pointer hover:border-primary/60 active:scale-[0.98]"

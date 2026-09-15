@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { Check, ChevronsUpDown } from "lucide-react"
-import type { MemberWithUser } from "@repo/types"
+import type { User } from "@repo/types"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@repo/ui/components/ui/avatar"
 import { Button } from "@repo/ui/components/ui/button"
@@ -31,11 +31,12 @@ function initials(name: string): string {
 
 interface MemberComboboxProps {
   tenant: string
-  value: MemberWithUser | null
-  onChange: (member: MemberWithUser | null) => void
+  value: Pick<User, "id" | "name" | "email" | "image"> | null
+  onChange: (member: Pick<User, "id" | "name" | "email" | "image"> | null) => void
+  disabled?: boolean
 }
 
-export function MemberCombobox({ tenant, value, onChange }: MemberComboboxProps) {
+export function MemberCombobox({ tenant, value, onChange, disabled = false }: MemberComboboxProps) {
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState("")
   const debouncedSearch = useDebounce(search, 300)
@@ -56,6 +57,7 @@ export function MemberCombobox({ tenant, value, onChange }: MemberComboboxProps)
             variant="outline"
             role="combobox"
             aria-expanded={open}
+            disabled={disabled}
             className="w-full justify-between font-normal"
           />
         }
@@ -63,12 +65,12 @@ export function MemberCombobox({ tenant, value, onChange }: MemberComboboxProps)
         {value ? (
           <span className="flex min-w-0 items-center gap-2">
             <Avatar className="size-5">
-              <AvatarImage src={value.user.image ?? undefined} alt={value.user.name} />
+              <AvatarImage src={value.image ?? undefined} alt={value.name} />
               <AvatarFallback className="text-[10px]">
-                {initials(value.user.name)}
+                {initials(value.name)}
               </AvatarFallback>
             </Avatar>
-            <span className="truncate">{value.user.name}</span>
+            <span className="truncate">{value.name}</span>
           </span>
         ) : (
           <span className="text-muted-foreground">Select member</span>
@@ -96,7 +98,7 @@ export function MemberCombobox({ tenant, value, onChange }: MemberComboboxProps)
                       key={member.id}
                       value={member.id}
                       onSelect={() => {
-                        onChange(member)
+                        onChange({ id: member.id, name: member.user.name, email: member.user.email, image: member.user.image })
                         setOpen(false)
                       }}
                       className="flex items-center gap-2"

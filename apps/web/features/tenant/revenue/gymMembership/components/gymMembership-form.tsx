@@ -1,9 +1,17 @@
 "use client"
 
-import { useState, type FormEvent } from "react"
-import { useParams } from "next/navigation"
+import { useState } from "react"
 import { IdCard, UserPlus } from "lucide-react"
-import { gymMembershipAssignmentSchema, type MemberWithUser, type NewGymMembership } from "@repo/types"
+import { FormProvider, useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import {
+  gymMembershipAssignmentSchema,
+  type GymMembershipAssignment,
+  type GymMembershipWithMemberAndPlan,
+  type User,
+  type NewGymMembership,
+  type UpdateGymMembership,
+} from "@repo/types"
 
 import { Button } from "@repo/ui/components/ui/button"
 import { Field, FieldError, FieldLabel } from "@repo/ui/components/ui/field"
@@ -20,109 +28,124 @@ import { FormSheetHeader } from "@/features/tenant/components/form-section"
 import {
   MembershipSection,
   newMembership,
-  type MembershipValues,
 } from "@/features/tenant/members/components/membership-section"
 import { MemberCombobox } from "./member-combobox"
 
 interface MembershipFormBodyProps {
   pending?: boolean
   onSubmit: (memberId: string, values: NewGymMembership) => void
+  onUpdate?: (memberId: string, id: string, values: UpdateGymMembership) => void
+  editingMembership?: GymMembershipWithMemberAndPlan | null
   onCancel: () => void
 }
 
-function MembershipFormBody({ pending, onSubmit, onCancel }: MembershipFormBodyProps) {
-  const tenant = useParams<{ id: string }>().id
+function MembershipFormBody({ tenant, pending, onSubmit, onUpdate, editingMembership, onCancel }: MembershipFormBodyProps & { tenant: string }) {
 
-  const [member, setMember] = useState<MemberWithUser | null>(null)
-  const [membership, setMembership] = useState<MembershipValues>(newMembership)
-  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [member, setMember] = useState<Pick<User, "id" | "name" | "email" | "image"> | null>(
+    editingMembership
+      ? {
+          id: editingMembership.member.id,
+          name: editingMembership.member.user.name,
+          email: editingMembership.member.user.email,
+        }
+      : null
+  )
+  const [memberError, setMemberError] = useState<string>()
 
-  function handleSubmit(event: FormEvent) {
-    event.preventDefault()
+  const form = useForm<GymMembershipAssignment>({
+    resolver: zodResolver(gymMembershipAssignmentSchema) as never,
+    defaultValues: editingMembership
+      ? {
+          planId: editingMembership.planId,
+          status: editingMembership.status,
+          startDate: editingMembership.startDate,
+          price: editingMembership.price,
+          signupFee: editingMembership.signupFee,
+          extendedDays: editingMembership.extendedDays,
+          extensionReason: editingMembership.extensionReason ?? "",
+        }
+      : newMembership(),
+  })
 
+  const onValid = form.handleSubmit((values) => {
     if (!member) {
-      setErrors({ member: "Select a member" })
+      setMemberError("Select a member")
       return
     }
-    const result = gymMembershipAssignmentSchema.safeParse(membership)
-    if (!result.success) {
-      setErrors(
-        Object.fromEntries(
-          result.error.issues.map((issue) => [
-            `membership.${issue.path.join(".")}`,
-            issue.message,
-          ])
-        )
-      )
+    setMemberError(undefined)
+
+    if (editingMembership && onUpdate) {
+      onUpdate(member.id, editingMembership.id, values as UpdateGymMembership)
       return
     }
-
-    setErrors({})
-
-    onSubmit(member.id, {
-      memberId: member.id,
-      ...result.data,
-    } as NewGymMembership)
-  }
+    onSubmit(member.id, { memberId: member.id, ...values } as NewGymMembership)
+  })
 
   return (
-    <form onSubmit={handleSubmit} className="flex h-full flex-col">
-      <SheetHeader>
-        <FormSheetHeader
-          icon={UserPlus}
-          title="Add membership"
-          description="Assign a member to a plan."
-        />
-      </SheetHeader>
+    <FormProvider {...form}>
+      <form onSubmit={onValid} className="flex h-full flex-col">
+        <SheetHeader>
+          <FormSheetHeader
+            icon={UserPlus}
+            title={editingMembership ? "Edit membership" : "Add membership"}
+            description={editingMembership ? "Update this membership." : "Assign a member to a plan."}
+          />
+        </SheetHeader>
 
-      <SheetBody className="flex flex-col gap-6">
-        <Field data-invalid={Boolean(errors.member)}>
-          <FieldLabel>Member</FieldLabel>
-          <MemberCombobox tenant={tenant} value={member} onChange={setMember} />
-          <FieldError>{errors.member}</FieldError>
-        </Field>
+        <SheetBody className="flex flex-col gap-6">
+          <Field data-invalid={Boolean(memberError)}>
+            <FieldLabel>Member</FieldLabel>
+            <MemberCombobox tenant={tenant} value={member} onChange={setMember} disabled={Boolean(editingMembership)} />
+            <FieldError>{memberError}</FieldError>
+          </Field>
 
-        <MembershipSection
-          tenant={tenant}
-          values={membership}
-          onChange={setMembership}
-          errors={errors}
-        />
-      </SheetBody>
+          <MembershipSection tenant={tenant} selectedPlanName={editingMembership?.plan.name} />
+        </SheetBody>
 
-      <SheetFooter>
-        <Button type="button" variant="outline" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button type="submit" disabled={pending}>
-          {pending ? <Spinner /> : <IdCard className="size-4" />}
-          Add membership
-        </Button>
-      </SheetFooter>
-    </form>
+        <SheetFooter>
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={pending}>
+            {pending ? <Spinner /> : <IdCard className="size-4" />}
+            {editingMembership ? "Save changes" : "Add membership"}
+          </Button>
+        </SheetFooter>
+      </form>
+    </FormProvider>
   )
 }
 
 interface MembershipFormSheetProps {
+  tenant: string
   open: boolean
   onOpenChange: (open: boolean) => void
   pending?: boolean
   onSubmit: (memberId: string, values: NewGymMembership) => void
+  onUpdate?: (memberId: string, id: string, values: UpdateGymMembership) => void
+  editingMembership?: GymMembershipWithMemberAndPlan | null
 }
 
 export function GymMembershipFormSheet({
+  tenant,
   open,
   onOpenChange,
   pending = false,
   onSubmit,
+  onUpdate,
+  editingMembership,
 }: MembershipFormSheetProps) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="sm:max-w-xl">
+      <SheetContent className="sm:max-w-2xl">
         {open && (
           <MembershipFormBody
+            key={editingMembership?.id ?? "new"}
+            tenant={tenant}
             pending={pending}
             onSubmit={onSubmit}
+            onUpdate={onUpdate}
+            editingMembership={editingMembership}
             onCancel={() => onOpenChange(false)}
           />
         )}
@@ -130,4 +153,3 @@ export function GymMembershipFormSheet({
     </Sheet>
   )
 }
-

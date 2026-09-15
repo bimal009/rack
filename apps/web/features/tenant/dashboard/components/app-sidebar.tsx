@@ -40,6 +40,7 @@ const mainNav = [
   { title: "Schedule", icon: CalendarRange, segment: "schedule" },
   { title: "Areas", icon: MapPin, segment: "areas" },
   { title: "Staff", icon: UserRoundCog, segment: "staff/directory", match: "staff" },
+  { title: "Website", icon: UserRoundCog, segment: "website"},
 ]
 
 const accountNav = [

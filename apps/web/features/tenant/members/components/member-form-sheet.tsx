@@ -1,18 +1,20 @@
 "use client"
 
-import { useState, type FormEvent } from "react"
+import { useState } from "react"
 import { CalendarIcon, IdCard, MapPin, Minus, Plus, UserRound } from "lucide-react"
 import { toast } from "sonner"
+import { Controller, FormProvider, useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import {
   isSyntheticEmail,
-  memberFieldsSchema,
   memberGenderEnumSchema,
   memberStatusEnumSchema,
   memberUpdateSchema,
-  memberUserFieldsSchema,
   memberWithUserAndMembershipInsertSchema,
   type MemberWithUser,
+  type NewMemberWithUser,
+  type UpdateMember,
 } from "@repo/types"
 
 import { Button } from "@repo/ui/components/ui/button"
@@ -46,41 +48,23 @@ import {
 } from "@repo/ui/components/ui/sheet"
 import { Spinner } from "@repo/ui/components/ui/spinner"
 
-import { FormSection, FormSheetHeader } from "@/features/tenant/components/form-section"
+import { FormSheetHeader } from "@/features/tenant/components/form-section"
 
 import { useCreateMember, useUpdateMember } from "../hooks/use-members"
-import { fieldErrors } from "../lib/validation"
-import { MembershipSection, newMembership, type MembershipValues } from "./membership-section"
+import { formatDate, MembershipSection, newMembership } from "./membership-section"
 
-type MemberUserValues = z.input<typeof memberUserFieldsSchema>
-type MemberFieldValues = z.input<typeof memberFieldsSchema>
+type MemberFormValues = z.input<typeof memberWithUserAndMembershipInsertSchema>
 
-interface MemberFormValues {
-  user: MemberUserValues
-  member: MemberFieldValues
-  membership: MembershipValues | null
-}
-
-function toFormValues(member?: MemberWithUser | null): MemberFormValues {
+function defaultValues(member?: MemberWithUser | null): MemberFormValues {
   if (!member) {
     return {
       user: { name: "", email: "" },
-      member: {
-        status: "Active",
-        phone: "",
-        dateOfBirth: "",
-        gender: "",
-        address: "",
-      },
-      membership: null,
+      member: { status: "Active", phone: "", dateOfBirth: "", gender: "", address: "" },
+      membership: newMembership(),
     }
   }
-
   return {
-    user: {
-      name: member.user.name,
-      email: isSyntheticEmail(member.user.email) ? "" : member.user.email,
-    },
+    user: { name: member.user.name, email: isSyntheticEmail(member.user.email) ? "" : member.user.email },
     member: {
       status: member.status,
       phone: member.phone ?? "",
@@ -88,7 +72,6 @@ function toFormValues(member?: MemberWithUser | null): MemberFormValues {
       gender: member.gender ?? "",
       address: member.address ?? "",
     },
-    membership: null,
   }
 }
 
@@ -99,73 +82,43 @@ interface MemberFormSheetProps {
   member?: MemberWithUser | null
 }
 
-export function MemberFormSheet({
-  tenant,
-  open,
-  onOpenChange,
-  member,
-}: MemberFormSheetProps) {
+export function MemberFormSheet({ tenant, open, onOpenChange, member }: MemberFormSheetProps) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="sm:max-w-xl">
+      <SheetContent className="sm:max-w-2xl">
         {open && (
-          <MemberForm
-            key={member?.id ?? "new"}
-            tenant={tenant}
-            member={member}
-            onClose={() => onOpenChange(false)}
-          />
+          <MemberForm key={member?.id ?? "new"} tenant={tenant} member={member} onClose={() => onOpenChange(false)} />
         )}
       </SheetContent>
     </Sheet>
   )
 }
 
-function MemberForm({
-  tenant,
-  member,
-  onClose,
-}: {
-  tenant: string
-  member?: MemberWithUser | null
-  onClose: () => void
-}) {
+function MemberForm({ tenant, member, onClose }: { tenant: string; member?: MemberWithUser | null; onClose: () => void }) {
   const isEdit = Boolean(member)
-  const [values, setValues] = useState<MemberFormValues>(() => toFormValues(member))
-  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [hasMembership, setHasMembership] = useState(false)
   const createMember = useCreateMember(tenant)
   const updateMember = useUpdateMember(tenant)
-
   const pending = isEdit ? updateMember.isPending : createMember.isPending
-  const hasMembership = values.membership !== null
 
-  function toggleMembership() {
-    setValues((v) => ({ ...v, membership: v.membership ? null : newMembership() }))
-  }
+  const form = useForm<MemberFormValues>({
+    defaultValues: defaultValues(member),
+    resolver: async (values, context, options) => {
+      const schema = isEdit ? memberUpdateSchema : memberWithUserAndMembershipInsertSchema
+      const payload = isEdit || hasMembership ? values : { ...values, membership: undefined }
+      return zodResolver(schema )(payload, context, options)
+    },
+  })
 
-  function handleSubmit(event: FormEvent) {
-    event.preventDefault()
+  const { register, control, handleSubmit, formState: { errors } } = form
 
-    const user = values.user
-    const payload = isEdit
-      ? { user, member: values.member }
-      : { user, member: values.member, membership: values.membership ?? undefined }
-
-    const schema = isEdit ? memberUpdateSchema : memberWithUserAndMembershipInsertSchema
-    const result = schema.safeParse(payload)
-
-    if (!result.success) {
-      setErrors(fieldErrors(result.error))
-      return
-    }
-    setErrors({})
-
+  const onSubmit = handleSubmit((data) => {
     if (isEdit && member) {
       updateMember.mutate(
-        { id: member.id, input: result.data },
+        { id: member.id, input: data as UpdateMember },
         {
           onSuccess: () => {
-            toast.success(`${values.user.name} updated`)
+            toast.success(`${data.user?.name ?? member.user.name} updated`)
             onClose()
           },
           onError: (error) => toast.error(error.message),
@@ -174,240 +127,205 @@ function MemberForm({
       return
     }
 
-    createMember.mutate(result.data as z.infer<typeof memberWithUserAndMembershipInsertSchema>, {
-      onSuccess: (created) => {
-        toast.success(`${created.user.name} added`)
-        onClose()
-      },
-      onError: (error) => toast.error(error.message),
-    })
-  }
+    const create = data as NewMemberWithUser
+    createMember.mutate(
+      { ...create, membership: hasMembership ? create.membership : undefined },
+      {
+        onSuccess: (created) => {
+          toast.success(`${created.user.name} added`)
+          onClose()
+        },
+        onError: (error) => toast.error(error.message),
+      }
+    )
+  })
 
   return (
-    <form onSubmit={handleSubmit} className="flex h-full flex-col">
-      <SheetHeader className="flex-row items-center justify-between">
-        <FormSheetHeader
-          icon={UserRound}
-          title={isEdit ? "Edit member" : "Add member"}
-          description={
-            isEdit
-              ? "Update this member's profile."
-              : "Creates a user account and adds them as a member."
-          }
-        />
-      </SheetHeader>
-
-      <SheetBody className="flex flex-col gap-7">
-        <FormSection icon={UserRound} title="Basic information">
-          <Field data-invalid={Boolean(errors["user.name"])}>
-            <FieldLabel htmlFor="member-name">
-              Name <span className="text-destructive">*</span>
-            </FieldLabel>
-            <Input
-              id="member-name"
-              placeholder="Jane Doe"
-              value={values.user.name}
-              aria-invalid={Boolean(errors["user.name"])}
-              onChange={(e) =>
-                setValues((v) => ({ ...v, user: { ...v.user, name: e.target.value } }))
-              }
-            />
-            <FieldError>{errors["user.name"]}</FieldError>
-          </Field>
-
-          <Field data-invalid={Boolean(errors["user.email"])}>
-            <FieldLabel htmlFor="member-email">Email</FieldLabel>
-            <Input
-              id="member-email"
-              type="email"
-              placeholder="jane@example.com (optional)"
-              value={values.user.email ?? ""}
-              aria-invalid={Boolean(errors["user.email"])}
-              onChange={(e) =>
-                setValues((v) => ({ ...v, user: { ...v.user, email: e.target.value } }))
-              }
-            />
-            <FieldError>{errors["user.email"]}</FieldError>
-          </Field>
-
-          <Field data-invalid={Boolean(errors["member.phone"])}>
-            <FieldLabel htmlFor="member-phone">
-              Phone <span className="text-destructive">*</span>
-            </FieldLabel>
-            <InputGroup>
-              <InputGroupAddon>
-                <InputGroupText>+977</InputGroupText>
-              </InputGroupAddon>
-              <InputGroupInput
-                id="member-phone"
-                type="tel"
-                placeholder="98XXXXXXXX"
-                value={values.member.phone}
-                aria-invalid={Boolean(errors["member.phone"])}
-                onChange={(e) =>
-                  setValues((v) => ({ ...v, member: { ...v.member, phone: e.target.value } }))
-                }
-              />
-            </InputGroup>
-            <FieldError>{errors["member.phone"]}</FieldError>
-          </Field>
-
-          <Field>
-            <FieldLabel htmlFor="member-status">Status</FieldLabel>
-            <Select
-              value={values.member.status}
-              onValueChange={(value) =>
-                setValues((v) => ({
-                  ...v,
-                  member: { ...v.member, status: value as MemberFieldValues["status"] },
-                }))
-              }
-            >
-              <SelectTrigger id="member-status" className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {memberStatusEnumSchema.options.map((status) => (
-                  <SelectItem key={status} value={status}>
-                    {status}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </Field>
-
-          <div className="grid grid-cols-2 gap-4">
-            <Field>
-              <FieldLabel htmlFor="member-dob">Date of Birth</FieldLabel>
-              <Popover>
-                <PopoverTrigger
-                  render={
-                    <Button
-                      id="member-dob"
-                      type="button"
-                      variant="outline"
-                      className="w-full justify-start font-normal data-[empty=true]:text-muted-foreground"
-                      data-empty={!values.member.dateOfBirth}
-                    />
-                  }
-                >
-                  <CalendarIcon className="size-4" />
-                  {values.member.dateOfBirth
-                    ? new Date(`${values.member.dateOfBirth}T00:00:00`).toLocaleDateString(
-                        undefined,
-                        { day: "numeric", month: "short", year: "numeric" }
-                      )
-                    : "Pick a date"}
-                </PopoverTrigger>
-                <PopoverContent align="start" className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    captionLayout="dropdown"
-                    startMonth={new Date(1940, 0)}
-                    endMonth={new Date()}
-                    disabled={{ after: new Date() }}
-                    selected={
-                      values.member.dateOfBirth
-                        ? new Date(`${values.member.dateOfBirth}T00:00:00`)
-                        : undefined
-                    }
-                    onSelect={(date) =>
-                      setValues((v) => ({
-                        ...v,
-                        member: {
-                          ...v.member,
-                          dateOfBirth: date
-                            ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`
-                            : "",
-                        },
-                      }))
-                    }
-                  />
-                </PopoverContent>
-              </Popover>
-            </Field>
-
-            <Field>
-              <FieldLabel htmlFor="member-gender">Gender</FieldLabel>
-              <Select
-                value={values.member.gender ?? ""}
-                onValueChange={(value) =>
-                  setValues((v) => ({
-                    ...v,
-                    member: { ...v.member, gender: value as MemberFieldValues["gender"] },
-                  }))
-                }
-              >
-                <SelectTrigger id="member-gender" className="w-full">
-                  <SelectValue placeholder="Select gender" />
-                </SelectTrigger>
-                <SelectContent>
-                  {memberGenderEnumSchema.options.map((gender) => (
-                    <SelectItem key={gender} value={gender}>
-                      {gender}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </Field>
-          </div>
-        </FormSection>
-
-        <FormSection icon={MapPin} title="Address">
-          <Field>
-            <FieldLabel htmlFor="member-address">Address</FieldLabel>
-            <Input
-              id="member-address"
-              placeholder="Street, city, postcode"
-              value={values.member.address ?? ""}
-              onChange={(e) =>
-                setValues((v) => ({ ...v, member: { ...v.member, address: e.target.value } }))
-              }
-            />
-          </Field>
-        </FormSection>
-
-        {!isEdit && (
-          <div className="flex justify-end">
-            <button
-              type="button"
-              onClick={toggleMembership}
-              className="inline-flex items-center gap-1.5 rounded-full border border-primary px-4 py-2 text-sm font-medium text-primary hover:bg-primary/5"
-            >
-              {hasMembership ? (
-                <>
-                  <Minus className="size-4" />
-                  Remove Membership
-                </>
-              ) : (
-                <>
-                  <Plus className="size-4" />
-                  Add Membership
-                </>
-              )}
-            </button>
-          </div>
-        )}
-
-        {!isEdit && values.membership && (
-          <MembershipSection
-            tenant={tenant}
-            values={values.membership}
-            onChange={(membership) => setValues((v) => ({ ...v, membership }))}
-            errors={errors}
+    <FormProvider {...form}>
+      <form onSubmit={onSubmit} className="flex h-full flex-col">
+        <SheetHeader className="flex-row items-center justify-between">
+          <FormSheetHeader
+            icon={UserRound}
+            title={isEdit ? "Edit member" : "Add member"}
+            description={isEdit ? "Update this member's profile." : "Creates a user account and adds them as a member."}
           />
-        )}
-      </SheetBody>
+        </SheetHeader>
 
-      <SheetFooter>
-        <Button type="button" variant="outline" onClick={onClose}>
-          Cancel
-        </Button>
-        <Button type="submit" disabled={pending}>
-          {pending ? <Spinner /> : <IdCard className="size-4" />}
-          {isEdit ? "Save changes" : "Add member"}
-        </Button>
-      </SheetFooter>
-    </form>
+        <SheetBody className="flex flex-col gap-6">
+          <section className="border-t border-border/70 pt-5 first:border-t-0 first:pt-0">
+            <h3 className="mb-4 text-sm font-semibold">Basic information</h3>
+            <Field data-invalid={Boolean(errors.user?.name)}>
+              <FieldLabel htmlFor="member-name">
+                Name <span className="text-destructive">*</span>
+              </FieldLabel>
+              <Input id="member-name" placeholder="Jane Doe" aria-invalid={Boolean(errors.user?.name)} {...register("user.name")} />
+              <FieldError>{errors.user?.name?.message}</FieldError>
+            </Field>
+
+            <Field data-invalid={Boolean(errors.user?.email)}>
+              <FieldLabel htmlFor="member-email">Email</FieldLabel>
+              <Input
+                id="member-email"
+                type="email"
+                placeholder="jane@example.com (optional)"
+                aria-invalid={Boolean(errors.user?.email)}
+                {...register("user.email")}
+              />
+              <FieldError>{errors.user?.email?.message}</FieldError>
+            </Field>
+
+            <Field data-invalid={Boolean(errors.member?.phone)}>
+              <FieldLabel htmlFor="member-phone">
+                Phone <span className="text-destructive">*</span>
+              </FieldLabel>
+              <InputGroup>
+                <InputGroupAddon>
+                  <InputGroupText>+977</InputGroupText>
+                </InputGroupAddon>
+                <InputGroupInput
+                  id="member-phone"
+                  type="tel"
+                  placeholder="98XXXXXXXX"
+                  aria-invalid={Boolean(errors.member?.phone)}
+                  {...register("member.phone")}
+                />
+              </InputGroup>
+              <FieldError>{errors.member?.phone?.message}</FieldError>
+            </Field>
+
+            <Field>
+              <FieldLabel htmlFor="member-status">Status</FieldLabel>
+              <Controller
+                control={control}
+                name="member.status"
+                render={({ field }) => (
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger id="member-status" className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {memberStatusEnumSchema.options.map((status) => (
+                        <SelectItem key={status} value={status}>
+                          {status}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            </Field>
+
+            <div className="grid grid-cols-2 gap-4">
+              <Field>
+                <FieldLabel htmlFor="member-dob">Date of Birth</FieldLabel>
+                <Controller
+                  control={control}
+                  name="member.dateOfBirth"
+                  render={({ field }) => (
+                    <Popover>
+                      <PopoverTrigger
+                        render={
+                          <Button
+                            id="member-dob"
+                            type="button"
+                            variant="outline"
+                            className="w-full justify-start font-normal data-[empty=true]:text-muted-foreground"
+                            data-empty={!field.value}
+                          />
+                        }
+                      >
+                        <CalendarIcon className="size-4" />
+                        {field.value
+                          ? new Date(`${field.value}T00:00:00`).toLocaleDateString(undefined, {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                            })
+                          : "Pick a date"}
+                      </PopoverTrigger>
+                      <PopoverContent align="start" className="w-auto p-0">
+                        <Calendar
+                          mode="single"
+                          captionLayout="dropdown"
+                          startMonth={new Date(1940, 0)}
+                          endMonth={new Date()}
+                          disabled={{ after: new Date() }}
+                          selected={field.value ? new Date(`${field.value}T00:00:00`) : undefined}
+                          onSelect={(date) => field.onChange(date ? formatDate(date) : "")}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  )}
+                />
+              </Field>
+
+              <Field>
+                <FieldLabel htmlFor="member-gender">Gender</FieldLabel>
+                <Controller
+                  control={control}
+                  name="member.gender"
+                  render={({ field }) => (
+                    <Select value={field.value ?? ""} onValueChange={field.onChange}>
+                      <SelectTrigger id="member-gender" className="w-full">
+                        <SelectValue placeholder="Select gender" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {memberGenderEnumSchema.options.map((gender) => (
+                          <SelectItem key={gender} value={gender}>
+                            {gender}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+              </Field>
+            </div>
+          </section>
+
+          <section className="border-t border-border/70 pt-5">
+            <h3 className="mb-4 text-sm font-semibold">Address</h3>
+            <Field>
+              <FieldLabel htmlFor="member-address">Address</FieldLabel>
+              <Input id="member-address" placeholder="Street, city, postcode" {...register("member.address")} />
+            </Field>
+          </section>
+
+          {!isEdit && (
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => setHasMembership((v) => !v)}
+                className="inline-flex items-center gap-1.5 rounded-full border border-primary px-4 py-2 text-sm font-medium text-primary hover:bg-primary/5"
+              >
+                {hasMembership ? (
+                  <>
+                    <Minus className="size-4" />
+                    Remove Membership
+                  </>
+                ) : (
+                  <>
+                    <Plus className="size-4" />
+                    Add Membership
+                  </>
+                )}
+              </button>
+            </div>
+          )}
+
+          {!isEdit && hasMembership && <MembershipSection tenant={tenant} namePrefix="membership" />}
+        </SheetBody>
+
+        <SheetFooter>
+          <Button type="button" variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={pending}>
+            {pending ? <Spinner /> : <IdCard className="size-4" />}
+            {isEdit ? "Save changes" : "Add member"}
+          </Button>
+        </SheetFooter>
+      </form>
+    </FormProvider>
   )
 }

@@ -1,14 +1,21 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { useParams } from "next/navigation"
+import { useRouter } from "next/navigation"
 import { ChevronLeft, ChevronRight, ListFilter, Plus, SearchIcon } from "lucide-react"
 import { toast } from "sonner"
-import type { GymMembershipListQuery } from "@repo/types"
+import type { GymMembershipListQuery, GymMembershipWithMemberAndPlan } from "@repo/types"
 
 import { Button } from "@repo/ui/components/ui/button"
 import { DataTable } from "@repo/ui/components/ui/data-table"
 import { Input } from "@repo/ui/components/ui/input"
+import {
+  Sheet,
+  SheetBody,
+  SheetContent,
+  SheetFooter,
+  SheetHeader,
+} from "@repo/ui/components/ui/sheet"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,16 +32,26 @@ import { useDebounce } from "@/hooks/use-debounce"
 import { createGymMembershipColumns } from "./columns"
 import { GymMembershipFormSheet } from "./gymMembership-form"
 import { useMembershipFilters } from "../hook/use-membership-filters"
-import { useCreateMembership, useMembershipsQuery } from "../hook/useMembership"
+import { useCreateMembership, useExtendMembership, useMembershipsQuery, useUpdateMembership } from "../hook/useMembership"
 
 
 const STATUS_OPTIONS = ["all", "Active", "Paused", "Expired", "Cancelled"] as const
 
-export default function GymMembershipList() {
-  const tenant = useParams<{ id: string }>().id
+export default function GymMembershipList({ tenant }: { tenant: string }) {
+  const router = useRouter()
   const [filters, setFilters] = useMembershipFilters()
   const [formOpen, setFormOpen] = useState(false)
+  const [editingMembership, setEditingMembership] =
+    useState<GymMembershipWithMemberAndPlan | null>(null)
+  const [selectedMembership, setSelectedMembership] =
+    useState<GymMembershipWithMemberAndPlan | null>(null)
+  const [extendingMembership, setExtendingMembership] =
+    useState<GymMembershipWithMemberAndPlan | null>(null)
+  const [extensionDays, setExtensionDays] = useState("1")
+  const [extensionReason, setExtensionReason] = useState("")
   const createMembership = useCreateMembership(tenant)
+  const updateMembership = useUpdateMembership(tenant)
+  const extendMembership = useExtendMembership(tenant)
 
   const debouncedSearch = useDebounce(filters.search, 350)
   const categories = useMembershipCategoriesQuery(tenant, { limit: 100 })
@@ -56,7 +73,22 @@ export default function GymMembershipList() {
   const rows = query.data?.data ?? []
   const meta = query.data?.meta
 
-  const columns = useMemo(() => createGymMembershipColumns(), [])
+  const columns = useMemo(
+    () =>
+      createGymMembershipColumns({
+        onView: (membership) =>
+          router.push(`/gyms/${tenant}/revenue/membership/${membership.id}`),
+        onEdit: (membership) => {
+          setEditingMembership(membership)
+        },
+        onExtend: (membership) => {
+          setExtensionDays("1")
+          setExtensionReason("")
+          setExtendingMembership(membership)
+        },
+      }),
+    [router, tenant]
+  )
 
   return (
     <div className="flex flex-col gap-4">
@@ -171,9 +203,16 @@ export default function GymMembershipList() {
       )}
 
       <GymMembershipFormSheet
-        open={formOpen}
-        onOpenChange={setFormOpen}
-        pending={createMembership.isPending}
+        open={formOpen || Boolean(editingMembership)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setFormOpen(false)
+            setEditingMembership(null)
+          }
+        }}
+        pending={createMembership.isPending || updateMembership.isPending}
+        editingMembership={editingMembership}
+        tenant={tenant}
         onSubmit={(memberId, values) =>
           createMembership.mutate(
             { memberId, input: values },
@@ -186,7 +225,124 @@ export default function GymMembershipList() {
             }
           )
         }
+        onUpdate={(memberId, id, values) =>
+          updateMembership.mutate(
+            { memberId, id, input: values },
+            {
+              onSuccess: () => {
+                toast.success("Membership updated")
+                setEditingMembership(null)
+              },
+              onError: (error) => toast.error(error.message),
+            }
+          )
+        }
       />
+
+      <Sheet
+        open={Boolean(selectedMembership)}
+        onOpenChange={(open) => {
+          if (!open) setSelectedMembership(null)
+        }}
+      >
+        <SheetContent className="sm:max-w-md">
+          {selectedMembership && (
+            <>
+              <SheetHeader>
+                <h2 className="text-lg font-semibold">Membership details</h2>
+                <p className="text-sm text-muted-foreground">
+                  {selectedMembership.member.user.name} · {selectedMembership.plan.name}
+                </p>
+              </SheetHeader>
+              <SheetBody className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <p className="text-muted-foreground">Status</p>
+                  <p className="font-medium">{selectedMembership.status}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Price</p>
+                  <p className="font-medium">NPR {selectedMembership.price}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Start date</p>
+                  <p className="font-medium">{selectedMembership.startDate}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">End date</p>
+                  <p className="font-medium">{selectedMembership.endDate}</p>
+                </div>
+              </SheetBody>
+              <SheetFooter>
+                <Button variant="outline" onClick={() => setSelectedMembership(null)}>
+                  Close
+                </Button>
+              </SheetFooter>
+            </>
+          )}
+        </SheetContent>
+      </Sheet>
+
+      <Sheet
+        open={Boolean(extendingMembership)}
+        onOpenChange={(open) => {
+          if (!open) setExtendingMembership(null)
+        }}
+      >
+        <SheetContent className="sm:max-w-md">
+          <form
+            onSubmit={(event) => {
+              event.preventDefault()
+              if (!extendingMembership) return
+              extendMembership.mutate(
+                {
+                  memberId: extendingMembership.memberId,
+                  id: extendingMembership.id,
+                  input: { days: Number(extensionDays), reason: extensionReason },
+                },
+                {
+                  onSuccess: () => {
+                    toast.success("Membership extended")
+                    setExtendingMembership(null)
+                  },
+                  onError: (error) => toast.error(error.message),
+                }
+              )
+            }}
+            className="flex h-full flex-col"
+          >
+            <SheetHeader>
+              <h2 className="text-lg font-semibold">Extend membership</h2>
+              <p className="text-sm text-muted-foreground">
+                {extendingMembership?.member.user.name}
+              </p>
+            </SheetHeader>
+            <SheetBody className="flex flex-col gap-4">
+              <label className="flex flex-col gap-2 text-sm font-medium">
+                Extra days
+                <Input
+                  type="number"
+                  min={1}
+                  required
+                  value={extensionDays}
+                  onChange={(event) => setExtensionDays(event.target.value)}
+                />
+              </label>
+              <label className="flex flex-col gap-2 text-sm font-medium">
+                Reason <span className="font-normal text-muted-foreground">(optional)</span>
+                <Input value={extensionReason} onChange={(event) => setExtensionReason(event.target.value)} />
+              </label>
+            </SheetBody>
+            <SheetFooter>
+              <Button type="button" variant="outline" onClick={() => setExtendingMembership(null)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={extendMembership.isPending}>
+                Extend
+              </Button>
+            </SheetFooter>
+          </form>
+        </SheetContent>
+      </Sheet>
 
     </div>
   )

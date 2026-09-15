@@ -28,10 +28,10 @@ export function FormSection({
   className,
 }: FormSectionProps) {
   return (
-    <FieldSet className={className}>
+    <FieldSet className={cn("border-t border-border/70 pt-5 first:border-t-0 first:pt-0", className)}>
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-3">
-          <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+          <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg border border-border bg-muted/50 text-muted-foreground">
             <Icon className="size-4" />
           </span>
           <div className="min-w-0 pt-1">
@@ -45,7 +45,7 @@ export function FormSection({
         </div>
         {action}
       </div>
-      <FieldGroup className={cn("pl-11", description && "pt-0")}>
+      <FieldGroup className={cn("pt-4", description && "pt-3")}>
         {children}
       </FieldGroup>
     </FieldSet>

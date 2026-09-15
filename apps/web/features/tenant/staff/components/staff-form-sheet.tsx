@@ -331,8 +331,7 @@ function StaffForm({
               <Field>
                 <FieldLabel>Photo</FieldLabel>
                 <ImageUpload
-                  shape="circle"
-                  folder="staff/avatars"
+                folder="staff/avatars"
                   value={values.image || null}
                   onChange={(url) => set("image", url ?? "")}
                   disabled={pending}

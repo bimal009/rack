@@ -72,7 +72,7 @@ app.use("/api/v1/gyms", gymRoutes);
 app.use("/api/v1/gyms/:gymId/staff", staffRoutes);
 app.use("/api/v1/gyms/:gymId/members", memberRoutes);
 app.use(
-  "/api/v1/gyms/:gymId/members/:memberId/membership",
+  "/api/v1/gyms/:gymId/members/:memberId/memberships",
   gymMembershipRoutes
 );
 app.use("/api/v1/gyms/:gymId/memberships", gymMembershipListRouter);

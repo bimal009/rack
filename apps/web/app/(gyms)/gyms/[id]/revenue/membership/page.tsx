@@ -1,15 +1,11 @@
-import GymMembershipList from '@/features/tenant/revenue/gymMembership/components/gymMembership-list'
-import { Metadata } from 'next'
-import React from 'react'
+import GymMembershipList from "@/features/tenant/revenue/gymMembership/components/gymMembership-list"
+import type { Metadata } from "next"
 
 export const metadata: Metadata = {
   title: "Membership",
 }
 
-const page = () => {
-  return (
-   <GymMembershipList/>
-  )
+export default async function MembershipPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id: tenant } = await params
+  return <GymMembershipList tenant={tenant} />
 }
-
-export default page

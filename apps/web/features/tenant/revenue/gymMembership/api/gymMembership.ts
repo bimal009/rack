@@ -10,10 +10,8 @@ import type {
 } from "@repo/types"
 import { isAxiosError } from "axios"
 
-// Gym-level: /api/v1/gyms/:tenant/memberships  (list across all members)
 const listBase = (tenant: string) => `/api/v1/gyms/${tenant}/memberships`
 
-// Member-level: /api/v1/gyms/:tenant/members/:memberId/memberships  (single member's membership)
 const memberBase = (tenant: string, memberId: string) =>
   `/api/v1/gyms/${tenant}/members/${memberId}/memberships`
 
